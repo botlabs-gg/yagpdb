@@ -794,40 +794,37 @@ func (yc *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Cont
 		}
 	}
 
-	names := yc.overrideNames(containerChain)
+	name := yc.overrideName(containerChain)
 
 	// Assign the global settings, if existing
 	if global != nil {
-		yc.fillSettings(names, global, settings)
+		yc.fillSettings(name, global, settings)
 	}
 
 	// Assign the channel override, if existing
 	if channelOverride != nil {
-		yc.fillSettings(names, channelOverride, settings)
+		yc.fillSettings(name, channelOverride, settings)
 	}
 
 	return
 }
 
-// overrideNames returns the names a per command override may be saved under,
-// current name first.
-func (yc *YAGCommand) overrideNames(containerChain []*dcmd.Container) []string {
-	names := make([]string, 0, 2+len(yc.LegacyOverrideNames))
-
+// overrideName returns the single name per command overrides are recorded
+// under. Stored names are resolved to this through CanonicalOverrideName rather
+// than comparing against every alias.
+func (yc *YAGCommand) overrideName(containerChain []*dcmd.Container) string {
 	switch {
 	case yc.containerName != "":
-		names = append(names, yc.containerName+" "+yc.Name, yc.Name)
+		return yc.containerName + " " + yc.Name
 	case len(containerChain) > 1:
-		names = append(names, containerChain[len(containerChain)-1].Names[0]+" "+yc.Name)
+		return containerChain[len(containerChain)-1].Names[0] + " " + yc.Name
 	default:
-		names = append(names, yc.Name)
+		return yc.Name
 	}
-
-	return append(names, yc.LegacyOverrideNames...)
 }
 
 // Fills the command settings from a channel override, and if a matching command override is found, the command override
-func (cs *YAGCommand) fillSettings(names []string, override *models.CommandsChannelsOverride, settings *CommandSettings) {
+func (cs *YAGCommand) fillSettings(name string, override *models.CommandsChannelsOverride, settings *CommandSettings) {
 	settings.Enabled = override.CommandsEnabled
 	settings.AlwaysEphemeral = override.AlwaysEphemeral
 
@@ -839,26 +836,36 @@ func (cs *YAGCommand) fillSettings(names []string, override *models.CommandsChan
 	settings.DelResponseDelay = override.AutodeleteResponseDelay
 	settings.DelTriggerDelay = override.AutodeleteTriggerDelay
 
-	for _, name := range names {
-		for _, cmdOverride := range override.R.CommandsCommandOverrides {
-			if !common.ContainsStringSliceFold(cmdOverride.Commands, name) {
-				continue
-			}
+	for _, cmdOverride := range override.R.CommandsCommandOverrides {
+		if !overrideCoversCommand(cmdOverride.Commands, name) {
+			continue
+		}
 
-			settings.Enabled = cmdOverride.CommandsEnabled
-			settings.AlwaysEphemeral = cmdOverride.AlwaysEphemeral
+		settings.Enabled = cmdOverride.CommandsEnabled
+		settings.AlwaysEphemeral = cmdOverride.AlwaysEphemeral
 
-			settings.IgnoreRoles = cmdOverride.IgnoreRoles
-			settings.RequiredRoles = cmdOverride.RequireRoles
+		settings.IgnoreRoles = cmdOverride.IgnoreRoles
+		settings.RequiredRoles = cmdOverride.RequireRoles
 
-			settings.DelResponse = cmdOverride.AutodeleteResponse
-			settings.DelTrigger = cmdOverride.AutodeleteTrigger
-			settings.DelResponseDelay = cmdOverride.AutodeleteResponseDelay
-			settings.DelTriggerDelay = cmdOverride.AutodeleteTriggerDelay
+		settings.DelResponse = cmdOverride.AutodeleteResponse
+		settings.DelTrigger = cmdOverride.AutodeleteTrigger
+		settings.DelResponseDelay = cmdOverride.AutodeleteResponseDelay
+		settings.DelTriggerDelay = cmdOverride.AutodeleteTriggerDelay
 
-			return
+		return
+	}
+}
+
+// overrideCoversCommand reports whether a stored override applies to the
+// command, resolving old names through the alias map as it goes.
+func overrideCoversCommand(stored []string, name string) bool {
+	for _, storedName := range stored {
+		if strings.EqualFold(CanonicalOverrideName(storedName), name) {
+			return true
 		}
 	}
+
+	return false
 }
 
 // LongestCooldownLeft returns the longest cooldown for this command, either user scoped or guild scoped
@@ -1087,6 +1094,85 @@ func (yc *YAGCommand) FindNameFromContainerChain(cc []*dcmd.Container) string {
 	}
 
 	return name + yc.Name
+}
+
+// overrideNameAliases maps a name a per command override may have been saved
+// under to the name that command goes by now. Commands moved into a container
+// kept their old root level names as aliases, so saved overrides still name
+// them the old way. Built once by BuildOverrideNameAliases after every command
+// has registered, and read only afterwards.
+var overrideNameAliases map[string]string
+
+// BuildOverrideNameAliases must run after all commands are registered.
+func BuildOverrideNameAliases() {
+	aliases := make(map[string]string)
+
+	for _, registered := range CommandSystem.Root.Commands {
+		cmd, ok := registered.Command.(*YAGCommand)
+		if !ok {
+			continue
+		}
+
+		canonical := cmd.CanonicalName()
+		if canonical == "" {
+			continue
+		}
+
+		for _, old := range append([]string{cmd.Name}, cmd.LegacyOverrideNames...) {
+			if old == "" || strings.EqualFold(old, canonical) {
+				continue
+			}
+			aliases[strings.ToLower(old)] = canonical
+		}
+	}
+
+	overrideNameAliases = aliases
+}
+
+// CanonicalOverrideName resolves a stored override name to the command's
+// current name, leaving names it does not know about alone.
+func CanonicalOverrideName(stored string) string {
+	if canonical, ok := overrideNameAliases[strings.ToLower(stored)]; ok {
+		return canonical
+	}
+
+	return stored
+}
+
+// NormalizeOverrideCommandNames rewrites loaded overrides in memory so the
+// commands page shows each one under the name it now lists. Nothing is written
+// back here; saving the page stores the new name and drops the old one.
+func NormalizeOverrideCommandNames(channelOverrides []*models.CommandsChannelsOverride) {
+	for _, channelOverride := range channelOverrides {
+		if channelOverride.R == nil {
+			continue
+		}
+
+		for _, cmdOverride := range channelOverride.R.CommandsCommandOverrides {
+			cmdOverride.Commands = CanonicalOverrideNames(cmdOverride.Commands)
+		}
+	}
+}
+
+// CanonicalOverrideNames resolves a stored list to current names, dropping the
+// duplicate left behind when two old names collapse onto the same command.
+func CanonicalOverrideNames(stored []string) []string {
+	renamed := make([]string, 0, len(stored))
+	seen := make(map[string]bool, len(stored))
+
+	for _, name := range stored {
+		name = CanonicalOverrideName(name)
+
+		key := strings.ToLower(name)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+
+		renamed = append(renamed, name)
+	}
+
+	return renamed
 }
 
 // GetAllOverrides returns all channel overrides and ensures the global override with atleast a default is present

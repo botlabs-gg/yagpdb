@@ -86,6 +86,10 @@ func InitCommands() {
 			adder.AddCommands()
 		}
 	}
+
+	// Needs every command registered, including the root level aliases kept for
+	// commands that moved into a container.
+	BuildOverrideNameAliases()
 }
 
 var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
