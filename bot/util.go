@@ -239,7 +239,7 @@ func dmButtonRow(guildID int64) discordgo.ActionsRow {
 			discordgo.Button{
 				Label:    "Report and Delete DM",
 				Style:    discordgo.DangerButton,
-				Emoji:    &discordgo.ComponentEmoji{Name: "🚩"},
+				Emoji:    &discordgo.ComponentEmoji{Name: "⚠️"},
 				CustomID: fmt.Sprintf("%s%d", DMReportCustomIDPrefix, guildID),
 			},
 		},

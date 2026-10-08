@@ -459,7 +459,7 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 	}
 
 	meta := &discordgo.MessageSend{
-		Content: fmt.Sprintf("DM above reported by **%s** `%d`, sent on behalf of %s",
+		Content: fmt.Sprintf("DM above reported by **%s** `%d`, sent from server %s",
 			ic.User.String(), ic.User.ID, server),
 		AllowedMentions: discordgo.AllowedMentions{},
 	}
