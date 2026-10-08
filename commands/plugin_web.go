@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 	"fmt"
@@ -141,6 +142,10 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 			if t.HideFromCommandsPage {
 				continue
 			}
+			// don't show old backward compat names in the dropdown
+			if t.CanonicalName() != "" {
+				continue
+			}
 			addCommand(t, cmd.Trigger.Names[0])
 		case *dcmd.Container:
 			for _, containerCmd := range t.Commands {
@@ -161,6 +166,8 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	if err != nil {
 		return templateData, err
 	}
+
+	NormalizeOverrideCommandNames(channelOverrides)
 
 	var global *models.CommandsChannelsOverride
 	for i, v := range channelOverrides {
@@ -339,22 +346,51 @@ func HandleDeleteChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	return templateData, errors.WithMessage(err, "DeleteG")
 }
 
+// conflictingOverrideCommand reports the first command another override in the
+// same channel override already covers. It compares current names, so a sibling
+// still stored under a pre container alias is caught too, which a raw array
+// overlap in sql would miss.
+func conflictingOverrideCommand(ctx context.Context, channelOverrideID, excludeID int64, commands []string) (string, error) {
+	siblings, err := models.CommandsCommandOverrides(
+		qm.Where("commands_channels_overrides_id = ?", channelOverrideID),
+		qm.Where("id != ?", excludeID),
+	).AllG(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	taken := make(map[string]bool)
+	for _, sibling := range siblings {
+		for _, name := range CanonicalOverrideNames(sibling.Commands) {
+			taken[strings.ToLower(name)] = true
+		}
+	}
+
+	for _, name := range CanonicalOverrideNames(commands) {
+		if taken[strings.ToLower(name)] {
+			return name, nil
+		}
+	}
+
+	return "", nil
+}
+
 // Command handlers
 func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channelOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*CommandOverrideForm)
 
-	count, err := models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID), qm.Where("commands && ?", types.StringArray(formData.Commands))).CountG(r.Context())
+	conflict, err := conflictingOverrideCommand(r.Context(), channelOverride.ID, 0, formData.Commands)
 	if err != nil {
-		return templateData, errors.WithMessage(err, "count")
+		return templateData, errors.WithMessage(err, "conflict check")
 	}
 
-	if count > 0 {
-		return templateData, web.NewPublicError("One of the selected commands is already used in another command override for this channel override")
+	if conflict != "" {
+		return templateData, web.NewPublicError(fmt.Sprintf("%q is already used in another command override for this channel override", conflict))
 	}
 
-	count, err = models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).CountG(r.Context())
+	count, err := models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).CountG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count2")
 	}
@@ -371,7 +407,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 		GuildID:                     activeGuild.ID,
 		CommandsChannelsOverridesID: channelOverride.ID,
 
-		Commands:                formData.Commands,
+		Commands:                CanonicalOverrideNames(formData.Commands),
 		CommandsEnabled:         formData.CommandsEnabled,
 		AlwaysEphemeral:         formData.AlwaysEphemeral,
 		AutodeleteResponse:      formData.AutodeleteResponse,
@@ -401,16 +437,17 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*CommandOverrideForm)
-	count, err := models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID), qm.Where("commands && ?", types.StringArray(formData.Commands)), qm.Where("id != ?", override.ID)).CountG(r.Context())
+	conflict, err := conflictingOverrideCommand(r.Context(), channelOverride.ID, override.ID, formData.Commands)
 	if err != nil {
-		return templateData, errors.WithMessage(err, "count")
+		return templateData, errors.WithMessage(err, "conflict check")
 	}
 
-	if count > 0 {
-		return templateData, web.NewPublicError("One of the selected commands is already used in another command override for this channel override")
+	if conflict != "" {
+		return templateData, web.NewPublicError(fmt.Sprintf("%q is already used in another command override for this channel override", conflict))
 	}
 
-	override.Commands = formData.Commands
+	// Saving rewrites the row under the current name, dropping the old spelling.
+	override.Commands = CanonicalOverrideNames(formData.Commands)
 	override.CommandsEnabled = formData.CommandsEnabled
 	override.AlwaysEphemeral = formData.AlwaysEphemeral
 	override.AutodeleteResponse = formData.AutodeleteResponse
