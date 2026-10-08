@@ -174,19 +174,12 @@
                                                 onchange="triggerTypeChanged(this)">
                                                 <option value="none" {{if eq .CC.TriggerType 10}}selected{{end}}>None
                                                 </option>
-                                                <option value="cmd" {{if eq .CC.TriggerType 0}} selected{{end}}>Command
-                                                    (mention/cmd
-                                                    prefix)</option>
-                                                <option value="prefix" {{if eq .CC.TriggerType 1}} selected{{end}}>
-                                                    Starts with</option>
-                                                <option value="contains" {{if eq .CC.TriggerType 2}} selected{{end}}>
-                                                    Contains</option>
-                                                <option value="regex" {{if eq .CC.TriggerType 3}} selected{{end}}>Regex
-                                                </option>
-                                                <option value="exact" {{if eq .CC.TriggerType 4}} selected{{end}}>Exact
-                                                    match</option>
-                                                <option value="reaction" {{if eq .CC.TriggerType 6}} selected{{end}}>
-                                                    Reaction</option>
+                                                <option value="cmd" {{if eq .CC.TriggerType 0}} selected{{end}}>Command</option>
+                                                <option value="prefix" {{if eq .CC.TriggerType 1}} selected{{end}}>Starts with</option>
+                                                <option value="contains" {{if eq .CC.TriggerType 2}} selected{{end}}>Contains</option>
+                                                <option value="regex" {{if eq .CC.TriggerType 3}} selected{{end}}>Regex</option>
+                                                <option value="exact" {{if eq .CC.TriggerType 4}} selected{{end}}>Exact match</option>
+                                                <option value="reaction" {{if eq .CC.TriggerType 6}} selected{{end}}>Reaction</option>
                                                 <option value="interval_hours"
                                                     {{if eq (call .GetCCIntervalType .CC) 1}}selected{{end}}>
                                                     Hourly interval

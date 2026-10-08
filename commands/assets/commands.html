@@ -56,29 +56,27 @@
                 <div id="global-settings" class="tab-pane active show">
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/general" data-async-form>
                         <div class="row">
-                            <div class="col-lg-6">
+                            <div class="col-lg-12">
                                 <div class="form-group">
-                                    <label for="prefix">Command Prefix
-                                        {{if .PrefixCommandsDisabled}}
-                                        <br><b>Note: Built-in commands no longer respond to a prefix, so this prefix is only used for custom commands. Built-in commands are run with <code>/</code>.</b>
-                                        {{else}}
-                                        <br><b>Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>-</code></b>
-                                        {{end}}
-                                    </label>
-                                    <div class="row-lg-6">
+                                    <label for="prefix">{{if .PrefixCommandsDisabled}} Custom Command Activator {{else}} Command Prefix {{end}}</label>
+                                    <div>
+                                        <p>
+                                            {{if .PrefixCommandsDisabled}}
+                                            Applies to Custom Commmands of trigger type "Command"
+                                            {{else}}
+                                            Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>{{.CommandPrefix}}</code>
+                                            {{end}}
+                                        </p>
                                         <p id="example-command-usage" data-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -nodm{{end}}" data-trigger-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}ping{{end}}">Example {{if .PrefixCommandsDisabled}}custom {{end}}command usage: <code>{{.CommandPrefix}}{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -nodm{{end}}</code></p>
                                     </div>
                                     <input type="text" class="form-control" id="prefix" name="Prefix"
                                         value="{{.CommandPrefix}}">
                                 </div>
                             </div>
-                            <div class="col-lg-6">
-                                <i>...dust...</i>
-                            </div>
                         </div>
                         <div class="row mt-4">
                             <div class="col-lg-12">
-                                <button type="submit" class="btn btn-primary btn-lg btn-block">Save Prefix</button>
+                                <button type="submit" class="btn btn-primary btn-lg btn-block">Save {{if .PrefixCommandsDisabled}} Custom Command Activator {{else}} Prefix {{end}}</button>
                             </div>
                         </div>
                     </form>
