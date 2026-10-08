@@ -217,19 +217,136 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 	return int64(perms), nil
 }
 
-func GenerateServerInfoButton(guildID int64) []discordgo.TopLevelComponent {
-	return []discordgo.TopLevelComponent{
-		discordgo.ActionsRow{
-			Components: []discordgo.InteractiveComponent{
-				discordgo.Button{
-					Label:    "Show Server Info",
-					Style:    discordgo.PrimaryButton,
-					Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
-					CustomID: fmt.Sprintf("DM_%d", guildID),
-				},
+const (
+	// DMServerInfoCustomIDPrefix is matched before the report prefix would be,
+	// so the report prefix must not be reachable through it.
+	DMServerInfoCustomIDPrefix = "DM_"
+	DMReportCustomIDPrefix     = "DM_REPORT_"
+)
+
+// dmButtonRow is the row appended to every dm the bot sends on a server's
+// behalf. It is always last and always present, so a recipient can always see
+// where a dm came from and report it.
+func dmButtonRow(guildID int64) discordgo.ActionsRow {
+	return discordgo.ActionsRow{
+		Components: []discordgo.InteractiveComponent{
+			discordgo.Button{
+				Label:    "Show Server Info",
+				Style:    discordgo.PrimaryButton,
+				Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
+				CustomID: fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, guildID),
+			},
+			discordgo.Button{
+				Label:    "Report and Delete DM",
+				Style:    discordgo.DangerButton,
+				Emoji:    &discordgo.ComponentEmoji{Name: "⚠️"},
+				CustomID: fmt.Sprintf("%s%d", DMReportCustomIDPrefix, guildID),
 			},
 		},
 	}
+}
+
+// GenerateDMButtons returns just the dm button row, for callers that build a
+// message with no components of their own.
+func GenerateDMButtons(guildID int64) []discordgo.TopLevelComponent {
+	return []discordgo.TopLevelComponent{dmButtonRow(guildID)}
+}
+
+const (
+	// Action row limit without the components v2 flag.
+	MaxLegacyTopLevelComponents = 5
+
+	// With that flag there is no top level limit, only a total.
+	MaxComponentsV2Total = 40
+)
+
+// ErrInteractiveComponentsInDM is returned when a dm is built with something a
+// recipient could interact with. A dm carries no server context for a component
+// to act in, and the bot's own row must be the only thing to press.
+var ErrInteractiveComponentsInDM = errors.New("buttons, select menus and other interactive components cannot be sent in a DM")
+
+// ValidateDMComponents rejects components carrying anything interactive,
+// including rows nested in a container and the accessory on a section.
+func ValidateDMComponents(components []discordgo.TopLevelComponent) error {
+	if hasInteractiveComponents(components) {
+		return ErrInteractiveComponentsInDM
+	}
+
+	return nil
+}
+
+// Adds Show Server Info and Report and Delete DM to a sent DM from the bot.
+// A components v2 message carries its body in components, so nothing is dropped
+// to make room unless the total would be exceeded.
+func DMComponents(guildID int64, components []discordgo.TopLevelComponent, flags discordgo.MessageFlags) []discordgo.TopLevelComponent {
+	row := dmButtonRow(guildID)
+
+	if flags&discordgo.MessageFlagsIsComponentsV2 != 0 {
+		rowSize := countComponents([]discordgo.TopLevelComponent{row})
+		for len(components) > 0 && countComponents(components)+rowSize > MaxComponentsV2Total {
+			components = components[:len(components)-1]
+		}
+
+		return append(components, row)
+	}
+
+	if len(components) >= MaxLegacyTopLevelComponents {
+		components = components[:MaxLegacyTopLevelComponents-1]
+	}
+
+	return append(components, row)
+}
+
+// countComponents totals the tree the way discord does, nested ones included.
+func countComponents(components []discordgo.TopLevelComponent) int {
+	total := 0
+
+	for _, component := range components {
+		total++
+
+		switch v := component.(type) {
+		case discordgo.ActionsRow:
+			total += len(v.Components)
+		case discordgo.Container:
+			total += countComponents(v.Components)
+		case discordgo.Section:
+			total += len(v.Components)
+			if v.Accessory != nil {
+				total++
+			}
+		}
+	}
+
+	return total
+}
+
+func hasInteractiveComponents(components []discordgo.TopLevelComponent) bool {
+	for _, component := range components {
+		switch component.Type() {
+		case discordgo.TextDisplayComponent, discordgo.MediaGalleryComponent,
+			discordgo.FileComponent, discordgo.SeparatorComponent, discordgo.ThumbnailComponent:
+
+		case discordgo.ContainerComponent:
+			container, ok := component.(discordgo.Container)
+			if !ok || hasInteractiveComponents(container.Components) {
+				return true
+			}
+
+		case discordgo.SectionComponent:
+			section, ok := component.(discordgo.Section)
+			if !ok {
+				return true
+			}
+			if section.Accessory != nil && section.Accessory.Type() != discordgo.ThumbnailComponent {
+				return true
+			}
+
+		default:
+			return true
+		}
+	}
+
+	return false
 }
 
 func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {

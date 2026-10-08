@@ -38,6 +38,7 @@ var (
 
 var (
 	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
+	confDMReportChannel          = config.RegisterOption("yagpdb.dm.report.channel", "Channel that DMs reported by users are forwarded to", 0)
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
 

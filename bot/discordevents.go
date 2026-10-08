@@ -401,6 +401,81 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	}
 }
 
+// handleDMReportInteraction forwards the reported dm to the configured channel
+// and removes it from the recipient's dms.
+func handleDMReportInteraction(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+
+	respond := func(content string) {
+		err := evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{Content: content, Flags: 64},
+		})
+		if err != nil {
+			logger.WithError(err).Error("failed responding to dm report interaction")
+		}
+	}
+
+	reportChannel := int64(confDMReportChannel.GetInt())
+	if reportChannel == 0 {
+		respond("Reporting is not configured on this instance.")
+		return
+	}
+
+	customID := ic.MessageComponentData().CustomID
+	guildID, err := strconv.ParseInt(strings.TrimPrefix(customID, DMReportCustomIDPrefix), 10, 64)
+	if err != nil {
+		logger.Errorf("DM report with malformed customID: %s from user %d", customID, ic.User.ID)
+		respond("Something went wrong reporting this DM.")
+		return
+	}
+
+	if ic.Message == nil {
+		respond("Something went wrong reporting this DM.")
+		return
+	}
+
+	server := fmt.Sprintf("`%d` (could not fetch details)", guildID)
+	if gs, err := evt.Session.Guild(guildID); err == nil && gs != nil {
+		server = fmt.Sprintf("**%s** `%d`", gs.Name, guildID)
+	}
+
+	// Forward the message itself rather than rebuilding it, so the report shows
+	// exactly what was received, attachments and all. The context goes in its
+	// own message since a forward carries no content of its own.
+	forward := &discordgo.MessageSend{
+		Reference: &discordgo.MessageReference{
+			Type:      discordgo.MessageReferenceTypeForward,
+			ChannelID: ic.ChannelID,
+			MessageID: ic.Message.ID,
+		},
+	}
+
+	// Forwarded before deleting, so a failed delete cannot lose the report.
+	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, forward); err != nil {
+		logger.WithError(err).Error("failed forwarding reported dm")
+		respond("Something went wrong reporting this DM.")
+		return
+	}
+
+	meta := &discordgo.MessageSend{
+		Content: fmt.Sprintf("DM above reported by **%s** `%d`, sent from server %s",
+			ic.User.String(), ic.User.ID, server),
+		AllowedMentions: discordgo.AllowedMentions{},
+	}
+	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, meta); err != nil {
+		logger.WithError(err).Error("failed sending dm report details")
+	}
+
+	if err := evt.Session.ChannelMessageDelete(ic.ChannelID, ic.Message.ID); err != nil {
+		logger.WithError(err).Error("failed deleting reported dm")
+		respond("Reported, but the message could not be deleted.")
+		return
+	}
+
+	respond("Reported and deleted. Thank you.")
+}
+
 func HandleInteractionCreate(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 	if ic.GuildID != 0 {
@@ -414,7 +489,12 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	}
 	//handle dm message guild info interaction
 
-	if ic.Type == discordgo.InteractionMessageComponent && strings.HasPrefix(ic.MessageComponentData().CustomID, "DM_") {
+	if ic.Type == discordgo.InteractionMessageComponent &&
+		strings.HasPrefix(ic.MessageComponentData().CustomID, DMReportCustomIDPrefix) {
+		// Checked first, the server info prefix is a prefix of this one too.
+		handleDMReportInteraction(evt)
+	} else if ic.Type == discordgo.InteractionMessageComponent &&
+		strings.HasPrefix(ic.MessageComponentData().CustomID, DMServerInfoCustomIDPrefix) {
 		handleDmGuildInfoInteraction(evt)
 	} else {
 		err := pubsub.Publish("dm_interaction", -1, ic)

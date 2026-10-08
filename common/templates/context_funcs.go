@@ -71,28 +71,28 @@ func (c *Context) parseMessageInput(msg interface{}) (*discordgo.MessageSend, er
 	return msgSend, nil
 }
 
-func (c *Context) tmplSendDM(s ...interface{}) string {
+func (c *Context) tmplSendDM(s ...interface{}) (string, error) {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.ExecutedFrom == ExecutedFromLeave {
-		return ""
+		return "", nil
 	}
 
 	msgSend, err := c.parseMessageInput(s[0])
 	if err != nil {
-		return ""
+		return "", nil
 	}
 
 	if (len(msgSend.Embeds) == 0 && strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) && (len(msgSend.Components) == 0) {
-		return ""
+		return "", nil
 	}
 
 	if msgSend.Content != "" && reflect.TypeOf(s[0]).Kind() != reflect.Ptr && reflect.TypeOf(s[0]).Kind() != reflect.Struct {
-		msgSend.Content = common.ReplaceServerInvites(fmt.Sprint(s...), 0, "[removed-server-invite]")
+		msgSend.Content = fmt.Sprint(s...)
 	}
-	serverInfo := bot.GenerateServerInfoButton(c.GS.ID)
-	if len(msgSend.Components) >= 5 {
-		msgSend.Components = msgSend.Components[:4]
+
+	if err := bot.ValidateDMComponents(msgSend.Components); err != nil {
+		return "", err
 	}
-	msgSend.Components = append(serverInfo, msgSend.Components...)
+	msgSend.Components = bot.DMComponents(c.GS.ID, msgSend.Components, msgSend.Flags)
 
 	if msgSend.Reference != nil {
 		if msgSend.Reference.Type == discordgo.MessageReferenceTypeForward {
@@ -109,10 +109,10 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 
 	channel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 	if err != nil {
-		return ""
+		return "", nil
 	}
 	_, _ = common.BotSession.ChannelMessageSendComplex(channel.ID, msgSend)
-	return ""
+	return "", nil
 }
 
 func (c *Context) baseChannelArg(v interface{}) *dstate.ChannelState {
@@ -392,12 +392,11 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		if sendType == sendMessageDM {
-			msgSend.Content = common.ReplaceServerInvites(ToString(msg), 0, "[removed-server-invite]")
-			serverInfo := bot.GenerateServerInfoButton(c.GS.ID)
-			if len(msgSend.Components) >= 5 {
-				msgSend.Components = msgSend.Components[:4]
+			msgSend.Content = ToString(msg)
+			if err := bot.ValidateDMComponents(msgSend.Components); err != nil {
+				return "", err
 			}
-			msgSend.Components = append(serverInfo, msgSend.Components...)
+			msgSend.Components = bot.DMComponents(c.GS.ID, msgSend.Components, msgSend.Flags)
 		}
 
 		var repliedUser bool

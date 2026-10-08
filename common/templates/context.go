@@ -649,8 +649,10 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 		return nil, nil
 	}
 	if sendType == sendMessageDM {
-		msgSend.Content = common.ReplaceServerInvites(msgSend.Content, 0, "[removed-server-invite]")
-		msgSend.Components = bot.GenerateServerInfoButton(c.GS.ID)
+		if err := bot.ValidateDMComponents(msgSend.Components); err != nil {
+			return nil, err
+		}
+		msgSend.Components = bot.DMComponents(c.GS.ID, msgSend.Components, msgSend.Flags)
 	}
 
 	if c.CurrentFrame.EphemeralResponse {
