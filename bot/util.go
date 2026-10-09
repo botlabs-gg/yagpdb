@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -218,32 +219,42 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 }
 
 const (
-	// DMServerInfoCustomIDPrefix is matched before the report prefix would be,
-	// so the report prefix must not be reachable through it.
-	DMServerInfoCustomIDPrefix = "DM_"
-	DMReportCustomIDPrefix     = "DM_REPORT_"
+	// DMServerInfoCustomIDPrefix is a prefix of the others, so it is matched last.
+	DMServerInfoCustomIDPrefix  = "DM_"
+	DMReportCustomIDPrefix      = "DM_REPORT_"
+	DMDeleteCustomIDPrefix      = "DM_DELETE_"
+	DMReportModalCustomIDPrefix = "DM_REPORT_MODAL_"
 )
 
 // dmButtonRow is the row appended to every dm the bot sends on a server's
 // behalf. It is always last and always present, so a recipient can always see
-// where a dm came from and report it.
+// where a dm came from, and report it when reporting is configured.
 func dmButtonRow(guildID int64) discordgo.ActionsRow {
-	return discordgo.ActionsRow{
-		Components: []discordgo.InteractiveComponent{
-			discordgo.Button{
-				Label:    "Show Server Info",
-				Style:    discordgo.PrimaryButton,
-				Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
-				CustomID: fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, guildID),
-			},
-			discordgo.Button{
-				Label:    "Report and Delete DM",
-				Style:    discordgo.DangerButton,
-				Emoji:    &discordgo.ComponentEmoji{Name: "⚠️"},
-				CustomID: fmt.Sprintf("%s%d", DMReportCustomIDPrefix, guildID),
-			},
+	buttons := []discordgo.InteractiveComponent{
+		discordgo.Button{
+			Label:    "Info",
+			Style:    discordgo.PrimaryButton,
+			Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
+			CustomID: fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, guildID),
+		},
+		discordgo.Button{
+			Label:    "Delete",
+			Style:    discordgo.SecondaryButton,
+			Emoji:    &discordgo.ComponentEmoji{Name: "🗑️"},
+			CustomID: fmt.Sprintf("%s%d", DMDeleteCustomIDPrefix, guildID),
 		},
 	}
+
+	if confDMReportChannel.GetInt() != 0 {
+		buttons = append(buttons, discordgo.Button{
+			Label:    "Report",
+			Style:    discordgo.DangerButton,
+			Emoji:    &discordgo.ComponentEmoji{Name: "⚠️"},
+			CustomID: fmt.Sprintf("%s%d", DMReportCustomIDPrefix, guildID),
+		})
+	}
+
+	return discordgo.ActionsRow{Components: buttons}
 }
 
 // GenerateDMButtons returns just the dm button row, for callers that build a
@@ -262,11 +273,11 @@ const (
 
 // ErrInteractiveComponentsInDM is returned when a dm is built with something a
 // recipient could interact with. A dm carries no server context for a component
-// to act in, and the bot's own row must be the only thing to press.
-var ErrInteractiveComponentsInDM = errors.New("buttons, select menus and other interactive components cannot be sent in a DM")
+// to act in, so besides link buttons the bot's own row must be the only thing to press.
+var ErrInteractiveComponentsInDM = errors.New("only link buttons can be sent in a DM, other buttons, select menus and interactive components cannot")
 
-// ValidateDMComponents rejects components carrying anything interactive,
-// including rows nested in a container and the accessory on a section.
+// ValidateDMComponents rejects components carrying anything interactive other
+// than link buttons, including rows nested in a container and the accessory on a section.
 func ValidateDMComponents(components []discordgo.TopLevelComponent) error {
 	if hasInteractiveComponents(components) {
 		return ErrInteractiveComponentsInDM
@@ -275,16 +286,21 @@ func ValidateDMComponents(components []discordgo.TopLevelComponent) error {
 	return nil
 }
 
-// Adds Show Server Info and Report and Delete DM to a sent DM from the bot.
-// A components v2 message carries its body in components, so nothing is dropped
-// to make room unless the total would be exceeded.
+// Adds Info, Delete and Report to a sent DM from the bot, always as the last
+// action row. When there is no room, the message's own action rows are clipped
+// from the end to make some.
 func DMComponents(guildID int64, components []discordgo.TopLevelComponent, flags discordgo.MessageFlags) []discordgo.TopLevelComponent {
 	row := dmButtonRow(guildID)
 
 	if flags&discordgo.MessageFlagsIsComponentsV2 != 0 {
+		// The body is carried in components too, so action rows go before it does.
 		rowSize := countComponents([]discordgo.TopLevelComponent{row})
 		for len(components) > 0 && countComponents(components)+rowSize > MaxComponentsV2Total {
-			components = components[:len(components)-1]
+			if i := lastActionRowIndex(components); i != -1 {
+				components = slices.Delete(slices.Clone(components), i, i+1)
+			} else {
+				components = components[:len(components)-1]
+			}
 		}
 
 		return append(components, row)
@@ -295,6 +311,16 @@ func DMComponents(guildID int64, components []discordgo.TopLevelComponent, flags
 	}
 
 	return append(components, row)
+}
+
+func lastActionRowIndex(components []discordgo.TopLevelComponent) int {
+	for i, component := range slices.Backward(components) {
+		if component.Type() == discordgo.ActionsRowComponent {
+			return i
+		}
+	}
+
+	return -1
 }
 
 // countComponents totals the tree the way discord does, nested ones included.
@@ -322,28 +348,55 @@ func countComponents(components []discordgo.TopLevelComponent) int {
 
 func hasInteractiveComponents(components []discordgo.TopLevelComponent) bool {
 	for _, component := range components {
-		switch component.Type() {
-		case discordgo.TextDisplayComponent, discordgo.MediaGalleryComponent,
-			discordgo.FileComponent, discordgo.SeparatorComponent, discordgo.ThumbnailComponent:
+		// Templates build components as pointers, everything else as values.
+		switch v := component.(type) {
+		case *discordgo.ActionsRow:
+			component = *v
+		case *discordgo.Container:
+			component = *v
+		case *discordgo.Section:
+			component = *v
+		}
 
-		case discordgo.ContainerComponent:
-			container, ok := component.(discordgo.Container)
-			if !ok || hasInteractiveComponents(container.Components) {
+		switch v := component.(type) {
+		case discordgo.ActionsRow:
+			for _, inner := range v.Components {
+				if !isLinkButton(inner) {
+					return true
+				}
+			}
+
+		case discordgo.Container:
+			if hasInteractiveComponents(v.Components) {
 				return true
 			}
 
-		case discordgo.SectionComponent:
-			section, ok := component.(discordgo.Section)
-			if !ok {
-				return true
-			}
-			if section.Accessory != nil && section.Accessory.Type() != discordgo.ThumbnailComponent {
+		case discordgo.Section:
+			if v.Accessory != nil && v.Accessory.Type() != discordgo.ThumbnailComponent && !isLinkButton(v.Accessory) {
 				return true
 			}
 
 		default:
-			return true
+			switch component.Type() {
+			case discordgo.TextDisplayComponent, discordgo.MediaGalleryComponent,
+				discordgo.FileComponent, discordgo.SeparatorComponent, discordgo.ThumbnailComponent:
+			default:
+				return true
+			}
 		}
+	}
+
+	return false
+}
+
+// isLinkButton reports whether the component only opens a url, which needs no
+// server context and so is fine in a dm.
+func isLinkButton(component discordgo.MessageComponent) bool {
+	switch button := component.(type) {
+	case discordgo.Button:
+		return button.Style == discordgo.LinkButton
+	case *discordgo.Button:
+		return button.Style == discordgo.LinkButton
 	}
 
 	return false

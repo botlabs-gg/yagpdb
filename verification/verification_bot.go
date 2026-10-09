@@ -226,16 +226,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		return
 	}
 
-	cs := dstate.ChannelStateFromDgo(channel)
-
-	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "dm_verification_message"
-	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), guildID, target.ID, token)
-
-	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
-	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending verification dm message")
-	}
+	p.sendVerificationDM(conf, gs, ms, channel, "dm_verification_message", msg, token)
 
 	evt := &VerificationEventData{
 		UserID: target.ID,
@@ -478,18 +469,44 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 	if err != nil {
 		return err
 	}
+	p.sendVerificationDM(conf, gs, ms, channel, "warn message", msg, token)
+	return nil
+}
+
+// sendVerificationDM executes the template, falling back to the default dm
+// if it fails, so a broken template cannot keep a user from getting the link.
+func (p *Plugin) sendVerificationDM(conf *models.VerificationConfig, gs *dstate.GuildSet, ms *dstate.MemberState, channel *discordgo.Channel, name, source, token string) {
 	cs := dstate.ChannelStateFromDgo(channel)
-
-	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "warn message"
-	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
-
-	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
-	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending warning message")
+	newContext := func() *templates.Context {
+		tmplCTX := templates.NewContext(gs, &cs, ms)
+		tmplCTX.Name = name
+		tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
+		return tmplCTX
 	}
 
-	return nil
+	tmplCTX := newContext()
+	out, err := tmplCTX.Execute(source)
+	if err != nil && source != DefaultDMMessage && !common.IsDiscordErr(err, discordgo.ErrCodeCannotSendMessagesToThisUser) {
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Warnf("failed executing verification %s, sending the default", name)
+		p.logAction(gs.ID, conf.LogChannel, &ms.User, fmt.Sprintf("Failed executing the %s template, sent the default verification message instead.\nError: `%v`", name, err), 0xff8228)
+
+		tmplCTX = newContext()
+		out, err = tmplCTX.Execute(DefaultDMMessage)
+	}
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Errorf("failed sending verification %s", name)
+		return
+	}
+
+	out = strings.TrimSpace(out)
+	if utf8.RuneCountInString(out) > 2000 {
+		out = "Template output for " + name + " was longer than 2k (contact an admin on the server...)"
+	}
+
+	if _, err := tmplCTX.SendResponse(out); err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Errorf("failed sending verification %s", name)
+	}
 }
 
 func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {

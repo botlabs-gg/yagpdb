@@ -67,7 +67,7 @@
                                             Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>{{.CommandPrefix}}</code>
                                             {{end}}
                                         </p>
-                                        <p id="example-command-usage" data-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -nodm{{end}}" data-trigger-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}ping{{end}}">Example {{if .PrefixCommandsDisabled}}custom {{end}}command usage: <code>{{.CommandPrefix}}{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -nodm{{end}}</code></p>
+                                        <p id="example-command-usage" data-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -dm{{end}}" data-trigger-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}ping{{end}}">Example {{if .PrefixCommandsDisabled}}custom {{end}}command usage: <code>{{.CommandPrefix}}{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -dm{{end}}</code></p>
                                     </div>
                                     <input type="text" class="form-control" id="prefix" name="Prefix"
                                         value="{{.CommandPrefix}}">

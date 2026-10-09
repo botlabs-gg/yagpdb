@@ -401,39 +401,122 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	}
 }
 
-// handleDMReportInteraction forwards the reported dm to the configured channel
-// and removes it from the recipient's dms.
+func respondDMInteraction(evt *eventsystem.EventData, content string) {
+	ic := evt.InteractionCreate()
+	err := evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{Content: content, Flags: discordgo.MessageFlagsEphemeral},
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed responding to dm interaction")
+	}
+}
+
+// deferDMInteraction acknowledges the interaction straight away, for handlers
+// that may outlast the time discord allows before one must be answered. The
+// returned reply fills in the response once the work is done.
+func deferDMInteraction(evt *eventsystem.EventData) (reply func(content string), ok bool) {
+	ic := evt.InteractionCreate()
+	err := evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral},
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed deferring dm interaction")
+		return nil, false
+	}
+
+	return func(content string) {
+		_, err := evt.Session.EditOriginalInteractionResponse(common.BotApplication.ID, ic.Token, &discordgo.WebhookParams{Content: content})
+		if err != nil {
+			logger.WithError(err).Error("failed responding to dm interaction")
+		}
+	}, true
+}
+
+// handleDMReportInteraction asks the recipient why they are reporting the dm
+// and whether to delete it. The dm's id rides along in the modal's custom id,
+// since the submit is what does the reporting.
 func handleDMReportInteraction(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 
-	respond := func(content string) {
-		err := evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{Content: content, Flags: 64},
-		})
-		if err != nil {
-			logger.WithError(err).Error("failed responding to dm report interaction")
-		}
-	}
-
-	reportChannel := int64(confDMReportChannel.GetInt())
-	if reportChannel == 0 {
-		respond("Reporting is not configured on this instance.")
+	if confDMReportChannel.GetInt() == 0 {
+		respondDMInteraction(evt, "Reporting is not configured on this instance.")
 		return
 	}
 
 	customID := ic.MessageComponentData().CustomID
 	guildID, err := strconv.ParseInt(strings.TrimPrefix(customID, DMReportCustomIDPrefix), 10, 64)
-	if err != nil {
+	if err != nil || ic.Message == nil {
 		logger.Errorf("DM report with malformed customID: %s from user %d", customID, ic.User.ID)
-		respond("Something went wrong reporting this DM.")
+		respondDMInteraction(evt, "Something went wrong reporting this DM.")
 		return
 	}
 
-	if ic.Message == nil {
-		respond("Something went wrong reporting this DM.")
+	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseModal,
+		Data: &discordgo.InteractionResponseData{
+			Title:    "Report DM to YAGPDB Staff",
+			CustomID: fmt.Sprintf("%s%d_%d", DMReportModalCustomIDPrefix, guildID, ic.Message.ID),
+			Components: []discordgo.TopLevelComponent{
+				discordgo.TextDisplay{
+					Content: "This report goes to the **YAGPDB staff**, not to the moderators of the server the DM was sent from. " +
+						"A copy of the DM and your reason will be shared with them.",
+				},
+				discordgo.Label{
+					Label: "Reason for reporting to YAGPDB staff",
+					Component: discordgo.TextInput{
+						CustomID:    "reason",
+						Placeholder: "Tell YAGPDB staff what is wrong with this DM",
+						Style:       discordgo.TextInputParagraph,
+						Required:    true,
+						MaxLength:   1000,
+					},
+				},
+				discordgo.Label{
+					Label: "Delete this DM after reporting",
+					// The combined report and delete button on older dms shares this id
+					// and always deleted, so it still does unless unticked.
+					Component: discordgo.Checkbox{
+						CustomID: "delete",
+						Default:  true,
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed opening dm report modal")
+	}
+}
+
+// handleDMReportModalSubmit forwards the reported dm along with the reason to
+// the configured channel, then deletes it if the recipient asked to.
+func handleDMReportModalSubmit(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+	data := ic.ModalSubmitData()
+
+	reportChannel := int64(confDMReportChannel.GetInt())
+	if reportChannel == 0 {
+		respondDMInteraction(evt, "Reporting is not configured on this instance.")
 		return
 	}
+
+	guildID, messageID, err := parseDMReportModalCustomID(data.CustomID)
+	if err != nil {
+		logger.Errorf("DM report modal with malformed customID: %s from user %d", data.CustomID, ic.User.ID)
+		respondDMInteraction(evt, "Something went wrong reporting this DM.")
+		return
+	}
+
+	// Reporting takes several requests, more than fits in the time discord
+	// allows before an interaction must be answered.
+	reply, ok := deferDMInteraction(evt)
+	if !ok {
+		return
+	}
+
+	reason, deleteDM := dmReportModalValues(data)
 
 	server := fmt.Sprintf("`%d` (could not fetch details)", guildID)
 	if gs, err := evt.Session.Guild(guildID); err == nil && gs != nil {
@@ -447,33 +530,133 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 		Reference: &discordgo.MessageReference{
 			Type:      discordgo.MessageReferenceTypeForward,
 			ChannelID: ic.ChannelID,
-			MessageID: ic.Message.ID,
+			MessageID: messageID,
 		},
 	}
 
 	// Forwarded before deleting, so a failed delete cannot lose the report.
 	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, forward); err != nil {
 		logger.WithError(err).Error("failed forwarding reported dm")
-		respond("Something went wrong reporting this DM.")
+		reply("Something went wrong reporting this DM.")
 		return
 	}
 
 	meta := &discordgo.MessageSend{
-		Content: fmt.Sprintf("DM above reported by **%s** `%d`, sent from server %s",
-			ic.User.String(), ic.User.ID, server),
+		Content: fmt.Sprintf("DM above reported by **%s** `%d`, sent from server %s\n**Reason:**\n%s",
+			ic.User.String(), ic.User.ID, server, reason),
 		AllowedMentions: discordgo.AllowedMentions{},
 	}
 	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, meta); err != nil {
 		logger.WithError(err).Error("failed sending dm report details")
 	}
 
-	if err := evt.Session.ChannelMessageDelete(ic.ChannelID, ic.Message.ID); err != nil {
-		logger.WithError(err).Error("failed deleting reported dm")
-		respond("Reported, but the message could not be deleted.")
+	if !deleteDM {
+		disableDMReportButton(evt.Session, ic.ChannelID, messageID)
+		reply("Reported. Thank you.")
 		return
 	}
 
-	respond("Reported and deleted. Thank you.")
+	if err := evt.Session.ChannelMessageDelete(ic.ChannelID, messageID); err != nil {
+		logger.WithError(err).Error("failed deleting reported dm")
+		reply("Reported, but the message could not be deleted.")
+		return
+	}
+
+	reply("Reported and deleted. Thank you.")
+}
+
+// disableDMReportButton keeps a dm that was reported but kept from being
+// reported again.
+func disableDMReportButton(session *discordgo.Session, channelID, messageID int64) {
+	msg, err := session.ChannelMessage(channelID, messageID)
+	if err != nil {
+		logger.WithError(err).Error("failed fetching reported dm")
+		return
+	}
+
+	for _, component := range msg.Components {
+		row, ok := component.(*discordgo.ActionsRow)
+		if !ok {
+			continue
+		}
+
+		for _, c := range row.Components {
+			if button, ok := c.(*discordgo.Button); ok && strings.HasPrefix(button.CustomID, DMReportCustomIDPrefix) {
+				button.Label = "Reported"
+				button.Disabled = true
+			}
+		}
+	}
+
+	_, err = session.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		ID:         messageID,
+		Channel:    channelID,
+		Components: msg.Components,
+		// Flags are always sent on an edit, these are the only ones it may carry.
+		Flags: msg.Flags & (discordgo.MessageFlagsSuppressEmbeds | discordgo.MessageFlagsIsComponentsV2),
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed disabling report button on reported dm")
+	}
+}
+
+func parseDMReportModalCustomID(customID string) (guildID, messageID int64, err error) {
+	guildPart, messagePart, ok := strings.Cut(strings.TrimPrefix(customID, DMReportModalCustomIDPrefix), "_")
+	if !ok {
+		return 0, 0, errors.New("missing message id")
+	}
+
+	guildID, err = strconv.ParseInt(guildPart, 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	messageID, err = strconv.ParseInt(messagePart, 10, 64)
+	return guildID, messageID, err
+}
+
+func dmReportModalValues(data discordgo.ModalSubmitInteractionData) (reason string, deleteDM bool) {
+	for _, component := range data.Components {
+		label, ok := component.(*discordgo.Label)
+		if !ok {
+			continue
+		}
+
+		switch input := label.Component.(type) {
+		case *discordgo.TextInput:
+			if input.CustomID == "reason" {
+				reason = input.Value
+			}
+		case *discordgo.Checkbox:
+			if input.CustomID == "delete" {
+				deleteDM = input.Value
+			}
+		}
+	}
+
+	return reason, deleteDM
+}
+
+func handleDMDeleteInteraction(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+
+	if ic.Message == nil {
+		respondDMInteraction(evt, "Something went wrong deleting this DM.")
+		return
+	}
+
+	reply, ok := deferDMInteraction(evt)
+	if !ok {
+		return
+	}
+
+	if err := evt.Session.ChannelMessageDelete(ic.ChannelID, ic.Message.ID); err != nil {
+		logger.WithError(err).Error("failed deleting dm")
+		reply("The message could not be deleted.")
+		return
+	}
+
+	reply("Deleted.")
 }
 
 func HandleInteractionCreate(evt *eventsystem.EventData) {
@@ -489,18 +672,30 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	}
 	//handle dm message guild info interaction
 
-	if ic.Type == discordgo.InteractionMessageComponent &&
-		strings.HasPrefix(ic.MessageComponentData().CustomID, DMReportCustomIDPrefix) {
-		// Checked first, the server info prefix is a prefix of this one too.
-		handleDMReportInteraction(evt)
-	} else if ic.Type == discordgo.InteractionMessageComponent &&
-		strings.HasPrefix(ic.MessageComponentData().CustomID, DMServerInfoCustomIDPrefix) {
-		handleDmGuildInfoInteraction(evt)
-	} else {
-		err := pubsub.Publish("dm_interaction", -1, ic)
-		if err != nil {
-			logger.WithError(err).Error("failed publishing dm interaction")
+	if ic.Type == discordgo.InteractionModalSubmit &&
+		strings.HasPrefix(ic.ModalSubmitData().CustomID, DMReportModalCustomIDPrefix) {
+		handleDMReportModalSubmit(evt)
+	} else if ic.Type == discordgo.InteractionMessageComponent {
+		// The server info prefix is a prefix of the others, so it goes last.
+		switch customID := ic.MessageComponentData().CustomID; {
+		case strings.HasPrefix(customID, DMReportCustomIDPrefix):
+			handleDMReportInteraction(evt)
+		case strings.HasPrefix(customID, DMDeleteCustomIDPrefix):
+			handleDMDeleteInteraction(evt)
+		case strings.HasPrefix(customID, DMServerInfoCustomIDPrefix):
+			handleDmGuildInfoInteraction(evt)
+		default:
+			publishDMInteraction(ic)
 		}
+	} else {
+		publishDMInteraction(ic)
+	}
+}
+
+func publishDMInteraction(ic *discordgo.InteractionCreate) {
+	err := pubsub.Publish("dm_interaction", -1, ic)
+	if err != nil {
+		logger.WithError(err).Error("failed publishing dm interaction")
 	}
 }
 
