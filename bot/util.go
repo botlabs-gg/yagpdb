@@ -239,7 +239,7 @@ func dmButtonRow(guildID int64) discordgo.ActionsRow {
 		},
 		discordgo.Button{
 			Label:    "Delete",
-			Style:    discordgo.SecondaryButton,
+			Style:    discordgo.DangerButton,
 			Emoji:    &discordgo.ComponentEmoji{Name: "🗑️"},
 			CustomID: fmt.Sprintf("%s%d", DMDeleteCustomIDPrefix, guildID),
 		},
@@ -247,8 +247,8 @@ func dmButtonRow(guildID int64) discordgo.ActionsRow {
 
 	if confDMReportChannel.GetInt() != 0 {
 		buttons = append(buttons, discordgo.Button{
-			Label:    "Report",
-			Style:    discordgo.DangerButton,
+			Label:    "Report Message",
+			Style:    discordgo.SecondaryButton,
 			Emoji:    &discordgo.ComponentEmoji{Name: "⚠️"},
 			CustomID: fmt.Sprintf("%s%d", DMReportCustomIDPrefix, guildID),
 		})

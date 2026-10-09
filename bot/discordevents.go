@@ -460,17 +460,33 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 			CustomID: fmt.Sprintf("%s%d_%d", DMReportModalCustomIDPrefix, guildID, ic.Message.ID),
 			Components: []discordgo.TopLevelComponent{
 				discordgo.TextDisplay{
-					Content: "This report goes to the **YAGPDB staff**, not to the moderators of the server the DM was sent from. " +
-						"A copy of the DM and your reason will be shared with them.",
+					Content: "### This does NOT go to the server's moderators\n" +
+						"Reports go to **YAGPDB staff**, the team behind the bot. The moderators of the server this DM came from " +
+						"will **not** see it, and YAGPDB staff cannot act on how a server is run, only on abuse of the bot itself.",
 				},
 				discordgo.Label{
-					Label: "Reason for reporting to YAGPDB staff",
+					Label: "What are you reporting to YAGPDB staff?",
+					Component: discordgo.SelectMenu{
+						MenuType:    discordgo.StringSelectMenu,
+						CustomID:    "category",
+						Placeholder: "Pick the closest match",
+						MinValues:   &dmReportCategoriesPerReport,
+						MaxValues:   dmReportCategoriesPerReport,
+						Options:     dmReportCategoryOptions(),
+						Required:    true,
+					},
+				},
+				discordgo.Label{
+					Label:       "Details for YAGPDB staff",
+					Description: "At least 20 characters. Server moderators will not see this.",
 					Component: discordgo.TextInput{
 						CustomID:    "reason",
-						Placeholder: "Tell YAGPDB staff what is wrong with this DM",
+						Placeholder: "Describe what happened, so YAGPDB staff can act on it",
 						Style:       discordgo.TextInputParagraph,
 						Required:    true,
-						MaxLength:   1000,
+						// Long enough that a report carries an actual description.
+						MinLength: 20,
+						MaxLength: 1000,
 					},
 				},
 				discordgo.Label{
@@ -516,11 +532,53 @@ func handleDMReportModalSubmit(evt *eventsystem.EventData) {
 		return
 	}
 
-	reason, deleteDM := dmReportModalValues(data)
+	values := dmReportModalValues(data)
+	category, known := dmReportCategoryByValue(values.category)
+	if !known {
+		logger.Errorf("DM report with unknown category %q from user %d", values.category, ic.User.ID)
+		reply("Something went wrong reporting this DM.")
+		return
+	}
+
+	response := category.response
+	if category.forward {
+		if err := forwardDMReport(evt, reportChannel, guildID, messageID, category, values.reason); err != nil {
+			logger.WithError(err).Error("failed forwarding reported dm")
+			reply("Something went wrong reporting this DM.")
+			return
+		}
+	}
+
+	if !values.deleteDM {
+		if category.forward {
+			disableDMReportButton(evt.Session, ic.ChannelID, messageID)
+		}
+		reply(response)
+		return
+	}
+
+	// Deleted only after forwarding, so a failed delete cannot lose the report.
+	if err := evt.Session.ChannelMessageDelete(ic.ChannelID, messageID); err != nil {
+		logger.WithError(err).Error("failed deleting reported dm")
+		reply(response + "\n\nThe message could not be deleted.")
+		return
+	}
+
+	reply(response + "\n\nThe message has been deleted.")
+}
+
+// forwardDMReport forwards the reported dm to the report channel, followed by
+// the details, which link back to the forward so that reports arriving close
+// together cannot be mixed up.
+func forwardDMReport(evt *eventsystem.EventData, reportChannel, guildID, messageID int64, category dmReportCategory, reason string) error {
+	ic := evt.InteractionCreate()
 
 	server := fmt.Sprintf("`%d` (could not fetch details)", guildID)
-	if gs, err := evt.Session.Guild(guildID); err == nil && gs != nil {
+	// The guild is only in state when it is on this node's shards.
+	if gs := State.GetGuild(guildID); gs != nil {
 		server = fmt.Sprintf("**%s** `%d`", gs.Name, guildID)
+	} else if g, err := evt.Session.Guild(guildID); err == nil && g != nil {
+		server = fmt.Sprintf("**%s** `%d`", g.Name, guildID)
 	}
 
 	// Forward the message itself rather than rebuilding it, so the report shows
@@ -534,35 +592,26 @@ func handleDMReportModalSubmit(evt *eventsystem.EventData) {
 		},
 	}
 
-	// Forwarded before deleting, so a failed delete cannot lose the report.
-	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, forward); err != nil {
-		logger.WithError(err).Error("failed forwarding reported dm")
-		reply("Something went wrong reporting this DM.")
-		return
+	forwarded, err := common.BotSession.ChannelMessageSendComplex(reportChannel, forward)
+	if err != nil {
+		return err
+	}
+
+	// A sent message comes back without its guild, which the link needs.
+	if forwarded.GuildID == 0 {
+		forwarded.GuildID = reportChannelGuildID(evt.Session, reportChannel)
 	}
 
 	meta := &discordgo.MessageSend{
-		Content: fmt.Sprintf("DM above reported by **%s** `%d`, sent from server %s\n**Reason:**\n%s",
-			ic.User.String(), ic.User.ID, server, reason),
+		Content: fmt.Sprintf("[Reported DM](%s) reported by **%s** `%d`, sent from server %s\n**Category:** %s\n**Details:**\n%s",
+			forwarded.Link(), ic.User.String(), ic.User.ID, server, category.label, reason),
 		AllowedMentions: discordgo.AllowedMentions{},
 	}
 	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, meta); err != nil {
 		logger.WithError(err).Error("failed sending dm report details")
 	}
 
-	if !deleteDM {
-		disableDMReportButton(evt.Session, ic.ChannelID, messageID)
-		reply("Reported. Thank you.")
-		return
-	}
-
-	if err := evt.Session.ChannelMessageDelete(ic.ChannelID, messageID); err != nil {
-		logger.WithError(err).Error("failed deleting reported dm")
-		reply("Reported, but the message could not be deleted.")
-		return
-	}
-
-	reply("Reported and deleted. Thank you.")
+	return nil
 }
 
 // disableDMReportButton keeps a dm that was reported but kept from being
@@ -582,7 +631,7 @@ func disableDMReportButton(session *discordgo.Session, channelID, messageID int6
 
 		for _, c := range row.Components {
 			if button, ok := c.(*discordgo.Button); ok && strings.HasPrefix(button.CustomID, DMReportCustomIDPrefix) {
-				button.Label = "Reported"
+				button.Label = "Message Reported"
 				button.Disabled = true
 			}
 		}
@@ -600,6 +649,31 @@ func disableDMReportButton(session *discordgo.Session, channelID, messageID int6
 	}
 }
 
+var (
+	reportChannelGuildMu  sync.Mutex
+	reportChannelGuildIDs = make(map[int64]int64)
+)
+
+// reportChannelGuildID looks up the guild of the report channel once, as the
+// channel is fixed by config and so never moves.
+func reportChannelGuildID(session *discordgo.Session, channelID int64) int64 {
+	reportChannelGuildMu.Lock()
+	defer reportChannelGuildMu.Unlock()
+
+	if guildID, ok := reportChannelGuildIDs[channelID]; ok {
+		return guildID
+	}
+
+	channel, err := session.Channel(channelID)
+	if err != nil {
+		logger.WithError(err).Error("failed fetching dm report channel")
+		return 0
+	}
+
+	reportChannelGuildIDs[channelID] = channel.GuildID
+	return channel.GuildID
+}
+
 func parseDMReportModalCustomID(customID string) (guildID, messageID int64, err error) {
 	guildPart, messagePart, ok := strings.Cut(strings.TrimPrefix(customID, DMReportModalCustomIDPrefix), "_")
 	if !ok {
@@ -615,7 +689,13 @@ func parseDMReportModalCustomID(customID string) (guildID, messageID int64, err 
 	return guildID, messageID, err
 }
 
-func dmReportModalValues(data discordgo.ModalSubmitInteractionData) (reason string, deleteDM bool) {
+type dmReportValues struct {
+	category string
+	reason   string
+	deleteDM bool
+}
+
+func dmReportModalValues(data discordgo.ModalSubmitInteractionData) (values dmReportValues) {
 	for _, component := range data.Components {
 		label, ok := component.(*discordgo.Label)
 		if !ok {
@@ -623,18 +703,108 @@ func dmReportModalValues(data discordgo.ModalSubmitInteractionData) (reason stri
 		}
 
 		switch input := label.Component.(type) {
+		case *discordgo.SelectMenu:
+			if input.CustomID == "category" && len(input.Values) > 0 {
+				values.category = input.Values[0]
+			}
 		case *discordgo.TextInput:
 			if input.CustomID == "reason" {
-				reason = input.Value
+				values.reason = input.Value
 			}
 		case *discordgo.Checkbox:
 			if input.CustomID == "delete" {
-				deleteDM = input.Value
+				values.deleteDM = input.Value
 			}
 		}
 	}
 
-	return reason, deleteDM
+	return values
+}
+
+// dmReportCategory is what a recipient picks when reporting a dm. Only abuse
+// of the bot itself is forwarded to staff, the rest is up to the server and
+// the recipient is told so instead.
+type dmReportCategory struct {
+	value       string
+	label       string
+	description string
+	forward     bool
+	response    string
+}
+
+const dmReportForwardedResponse = "Reported to YAGPDB staff. Thank you."
+
+// Ordered with the categories that are not forwarded first, as those are what
+// most reports are about.
+var dmReportCategories = []dmReportCategory{
+	{
+		value:       "punishment",
+		label:       "I disagree with a punishment",
+		description: "You were warned, muted, kicked or banned and want to appeal",
+		response:    "YAGPDB staff cannot review or undo punishments, those are decided by the server's own moderators. Contact the server's staff to appeal.",
+	},
+	{
+		value:       "mod_abuse",
+		label:       "A moderator is abusing their powers",
+		description: "A server's staff are treating members unfairly",
+		response:    "YAGPDB staff do not moderate servers and cannot act on how one is run. Raise it with the server's owner, or leave the server if you prefer.",
+	},
+	{
+		value:       "unwanted",
+		label:       "I don't want these DMs",
+		description: "The DMs are not abusive, you just don't want them",
+		response:    "These DMs are set up by the server, not by YAGPDB staff. Ask the server's staff to stop them, leave the server, or use **Delete** to remove them.",
+	},
+	{
+		value:    "scam",
+		label:    "Scam, phishing or malicious links",
+		forward:  true,
+		response: dmReportForwardedResponse,
+	},
+	{
+		value:    "harassment",
+		label:    "Harassment, threats or hate speech",
+		forward:  true,
+		response: dmReportForwardedResponse,
+	},
+	{
+		value:    "nsfw_illegal",
+		label:    "Sexual or illegal content",
+		forward:  true,
+		response: dmReportForwardedResponse,
+	},
+	{
+		value:    "impersonation",
+		label:    "Pretending to be Discord or YAGPDB staff",
+		forward:  true,
+		response: dmReportForwardedResponse,
+	},
+}
+
+// A select menu needs its bounds by pointer, and a report has one category.
+var dmReportCategoriesPerReport = 1
+
+func dmReportCategoryOptions() []discordgo.SelectMenuOption {
+	options := make([]discordgo.SelectMenuOption, 0, len(dmReportCategories))
+	for _, category := range dmReportCategories {
+		options = append(options, discordgo.SelectMenuOption{
+			Value:       category.value,
+			Label:       category.label,
+			Description: category.description,
+		})
+	}
+
+	return options
+}
+
+func dmReportCategoryByValue(value string) (dmReportCategory, bool) {
+	for _, category := range dmReportCategories {
+		if category.value == value {
+			return category, true
+		}
+	}
+
+	return dmReportCategory{}, false
 }
 
 func handleDMDeleteInteraction(evt *eventsystem.EventData) {
