@@ -63,6 +63,10 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.Handle(pat.Post("/verification"), postHandler)
 
+	previewHandler := web.ControllerHandler(p.handlePreviewVerifyPage, "verification_verify_page")
+	web.CPMux.Handle(pat.Get("/verification/preview"), previewHandler)
+	web.CPMux.Handle(pat.Post("/verification/preview"), previewHandler)
+
 	getVerifyPageHandler := web.ControllerHandler(p.handleGetVerifyPage, "verification_verify_page")
 	postVerifyPageHandler := web.ControllerPostHandler(p.handlePostVerifyPage, getVerifyPageHandler, nil)
 	web.RootMux.Handle(pat.Get("/v/:token"), getVerifyPageHandler)
@@ -101,12 +105,9 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 	ctx := r.Context()
 	g, templateData := web.GetBaseCPContextData(ctx)
 
-	settings, err := models.FindVerificationConfigG(ctx, g.ID)
-	if err == sql.ErrNoRows {
-		settings = &models.VerificationConfig{
-			GuildID: g.ID,
-		}
-		err = nil
+	settings, err := findVerificationSettings(ctx, g.ID)
+	if err != nil {
+		return templateData, err
 	}
 
 	roleInvalid := true
@@ -117,15 +118,16 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		}
 	}
 
-	if settings != nil && settings.DMMessage == "" {
+	if settings.DMMessage == "" {
 		settings.DMMessage = DefaultDMMessage
 	}
 
+	settings.PageContent = pageContentOrDefault(settings.PageContent)
 	templateData["DefaultPageContent"] = DefaultPageContent
 	templateData["PluginSettings"] = settings
 	templateData["RoleInvalid"] = roleInvalid
 
-	return templateData, err
+	return templateData, nil
 }
 
 func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -191,14 +193,35 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 
 	templateData["GoogleReCaptchaSiteKey"] = confGoogleReCAPTCHASiteKey.GetString()
 
-	msg := settings.PageContent
-	if msg == "" {
-		msg = DefaultPageContent
+	templateData["RenderedPageContent"] = renderPageContent(settings.PageContent)
+
+	return templateData, nil
+}
+
+func renderPageContent(content string) template.HTML {
+	unsafe := blackfriday.MarkdownCommon([]byte(pageContentOrDefault(content)))
+	return template.HTML(common.UGCHtmlPolicy.SanitizeBytes(unsafe))
+}
+
+// handlePreviewVerifyPage shows the verify page as users will see it, from the
+// unsaved content when posted from the editor. The captcha is not loaded, so a
+// preview never counts against the reCAPTCHA quota.
+func (p *Plugin) handlePreviewVerifyPage(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	g, templateData := web.GetBaseCPContextData(ctx)
+
+	content := r.FormValue("PageContent")
+	if r.Method != http.MethodPost {
+		settings, err := findVerificationSettings(ctx, g.ID)
+		if err != nil {
+			return templateData, err
+		}
+		content = settings.PageContent
 	}
 
-	unsafe := blackfriday.MarkdownCommon([]byte(msg))
-	html := common.UGCHtmlPolicy.SanitizeBytes(unsafe)
-	templateData["RenderedPageContent"] = template.HTML(html)
+	templateData["Preview"] = true
+	templateData["GuildName"] = g.Name
+	templateData["RenderedPageContent"] = renderPageContent(content)
 
 	return templateData, nil
 }

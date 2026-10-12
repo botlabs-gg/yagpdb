@@ -43,6 +43,7 @@
                                 <p class="help-block">
                                     The verify page content in markdown format (similar to discord formatting)
                                 </p>
+                                <button type="button" class="btn btn-secondary" id="verification-preview">Preview page</button>
                             </div>
 
                             <div class="form-group">
@@ -105,6 +106,24 @@
     <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
+
+<script>
+    // Posts the unsaved content to the preview in a new tab, outside the main
+    // form so the async save does not pick it up.
+    $("#verification-preview").on("click", function () {
+        var form = $("<form>", {
+            method: "post",
+            action: "/manage/{{.ActiveGuild.ID}}/verification/preview",
+            target: "_blank",
+        });
+        form.append($("<input>", {
+            type: "hidden",
+            name: "PageContent",
+            value: $("textarea[name=PageContent]").val(),
+        }));
+        form.appendTo(document.body).submit().remove();
+    });
+</script>
 
 {{template "codemirror_assets" .}}
 {{template "cp_footer" .}}

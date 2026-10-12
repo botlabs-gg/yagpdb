@@ -5,7 +5,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Verification{{if .GuildName}} for {{.GuildName}}{{end}}</title>
-	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+	{{if not .Preview}}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{{end}}
 	<style>
 		:root {
 			--bg: #f2f3f5;
@@ -68,6 +68,20 @@
 			cursor: pointer;
 		}
 		.footer { margin-top: 24px; font-size: 0.8rem; color: var(--muted); }
+		.captcha-placeholder {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 304px;
+			max-width: 100%;
+			height: 78px;
+			margin: 0 auto 16px;
+			border: 1px dashed var(--muted);
+			border-radius: 4px;
+			color: var(--muted);
+			font-size: 0.85rem;
+		}
+		button:disabled { opacity: 0.6; cursor: not-allowed; }
 	</style>
 </head>
 <body>
@@ -78,6 +92,10 @@
 
 		{{if .REValid}}
 		<p>Success! You can now return to Discord.</p>
+		{{else if .Preview}}
+		<div class="content">{{.RenderedPageContent}}</div>
+		<div class="captcha-placeholder">reCAPTCHA appears here</div>
+		<button type="button" disabled>Continue</button>
 		{{else if .GoogleReCaptchaSiteKey}}
 		<div class="content">{{.RenderedPageContent}}</div>
 		<form method="POST">

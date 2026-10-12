@@ -3,6 +3,7 @@ package verification
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"strings"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 )
@@ -36,10 +37,25 @@ func RegisterPlugin() {
 }
 
 const (
-	DefaultPageContent = `## Verification
+	DefaultPageContent = `Please solve the following reCAPTCHA to make sure you're not a robot`
+
+	// legacyDefaultPageContent repeated the page's own heading. The control
+	// panel prefilled it, so many servers have it saved as their own content.
+	legacyDefaultPageContent = `## Verification
 
 Please solve the following reCAPTCHA to make sure you're not a robot`
 )
+
+// pageContentOrDefault is the verify page content to show for the saved
+// content, treating an untouched old default as the current one.
+func pageContentOrDefault(saved string) string {
+	normalized := strings.TrimSpace(strings.ReplaceAll(saved, "\r\n", "\n"))
+	if normalized == "" || normalized == legacyDefaultPageContent {
+		return DefaultPageContent
+	}
+
+	return saved
+}
 
 const DefaultDMMessage = `{{sendMessage nil (cembed
 "title" "Are you a bot?"
