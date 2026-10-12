@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
@@ -153,5 +154,42 @@ func TestDMComponentsRowIsLast(t *testing.T) {
 	}
 	if countComponents(got) > MaxComponentsV2Total {
 		t.Errorf("v2: %d components exceeds the limit", countComponents(got))
+	}
+}
+
+func TestOwnVerificationLinks(t *testing.T) {
+	common.ConfHost.LoadedValue = "yagpdb.xyz"
+
+	cases := []struct {
+		name    string
+		msg     *discordgo.Message
+		genuine bool
+	}{
+		{"short link in embed", &discordgo.Message{Embeds: []*discordgo.MessageEmbed{{Description: "Verify: https://yagpdb.xyz/v/AbCdEfGhIjKlMnOp"}}}, true},
+		{"long link in content", &discordgo.Message{Content: "https://yagpdb.xyz/public/1/verify/2/AbCdEfGhIjKlMnOpQrStUvWxYzAbCdEf"}, true},
+		{"link button", &discordgo.Message{Components: []discordgo.TopLevelComponent{&discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{
+			&discordgo.Button{Style: discordgo.LinkButton, URL: "https://yagpdb.xyz/v/AbCdEfGhIjKlMnOp", Label: "Verify"},
+		}}}}, true},
+		{"scam beside a genuine link", &discordgo.Message{Content: "https://yagpdb.xyz/v/AbCdEfGhIjKlMnOp and https://free-nitro.example"}, false},
+		{"scam in a container", &discordgo.Message{
+			Content: "https://yagpdb.xyz/v/AbCdEfGhIjKlMnOp",
+			Components: []discordgo.TopLevelComponent{&discordgo.Container{Components: []discordgo.TopLevelComponent{
+				&discordgo.TextDisplay{Content: "https://free-nitro.example"},
+			}}},
+		}, false},
+		{"look-alike host", &discordgo.Message{Content: "https://yagpdb.xyz.example/v/AbCdEfGhIjKlMnOp"}, false},
+		{"other page on our host", &discordgo.Message{Content: "https://yagpdb.xyz/manage/1"}, false},
+		{"no links", &discordgo.Message{Content: "hello"}, false},
+	}
+
+	for _, c := range cases {
+		genuine, err := onlyVerificationLinks(c.msg)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+
+		if genuine != c.genuine {
+			t.Errorf("%s: got genuine %t, want %t", c.name, genuine, c.genuine)
+		}
 	}
 }

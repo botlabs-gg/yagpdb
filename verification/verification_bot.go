@@ -2,9 +2,10 @@ package verification
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"slices"
 	"strconv"
 	"strings"
@@ -24,7 +25,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/verification/models"
-	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -79,10 +79,16 @@ func addMemberToVerificationPendingSet(guildID int64, userID int64) {
 	}
 }
 
+// RandStringRunes returns a random string of letters, from a cryptographically
+// secure source as it is used for verification tokens.
 func RandStringRunes(n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(letterRunes))))
+		if err != nil {
+			panic(err)
+		}
+		b[i] = letterRunes[idx.Int64()]
 	}
 	return string(b)
 }
@@ -172,7 +178,8 @@ func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
 
 func (p *Plugin) createVerificationSession(userID, guildID int64) (string, error) {
 	for {
-		token := RandStringRunes(32)
+		// 16 letters is about 91 bits, plenty for a link that is only valid until solved.
+		token := RandStringRunes(16)
 		model := &models.VerificationSession{
 			Token:     token,
 			UserID:    userID,
@@ -480,7 +487,7 @@ func (p *Plugin) sendVerificationDM(conf *models.VerificationConfig, gs *dstate.
 	newContext := func() *templates.Context {
 		tmplCTX := templates.NewContext(gs, &cs, ms)
 		tmplCTX.Name = name
-		tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
+		tmplCTX.Data["Link"] = VerifyPageURL(token)
 		return tmplCTX
 	}
 

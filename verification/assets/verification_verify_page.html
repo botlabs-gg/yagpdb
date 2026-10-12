@@ -1,28 +1,93 @@
 {{define "verification_verify_page"}}
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Verification{{if .GuildName}} for {{.GuildName}}{{end}}</title>
+	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+	<style>
+		:root {
+			--bg: #f2f3f5;
+			--card: #ffffff;
+			--text: #2e3338;
+			--muted: #5c5e66;
+			--accent: #5865f2;
+			--danger-bg: #fde8e8;
+			--danger-text: #a12d2f;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg: #1e1f22;
+				--card: #2b2d31;
+				--text: #f2f3f5;
+				--muted: #b5bac1;
+				--danger-bg: #3d2224;
+				--danger-text: #f6a5a7;
+			}
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 16px;
+			background: var(--bg);
+			color: var(--text);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		}
+		main {
+			width: 100%;
+			max-width: 440px;
+			padding: 32px 24px;
+			border-radius: 8px;
+			background: var(--card);
+			text-align: center;
+		}
+		h1 { margin: 0 0 24px; font-size: 1.4rem; }
+		.content { margin-bottom: 24px; text-align: left; }
+		.content > :first-child { margin-top: 0; }
+		.alert {
+			margin-bottom: 16px;
+			padding: 12px;
+			border-radius: 4px;
+			background: var(--danger-bg);
+			color: var(--danger-text);
+		}
+		.g-recaptcha { display: inline-block; margin-bottom: 16px; }
+		button {
+			width: 100%;
+			padding: 10px;
+			border: 0;
+			border-radius: 4px;
+			background: var(--accent);
+			color: #fff;
+			font-size: 1rem;
+			cursor: pointer;
+		}
+		.footer { margin-top: 24px; font-size: 0.8rem; color: var(--muted); }
+	</style>
+</head>
+<body>
+	<main>
+		<h1>Verification{{if .GuildName}} for {{.GuildName}}{{end}}</h1>
 
-{{template "cp_head" .}}
+		{{range .Alerts}}<div class="alert">{{.Message}}</div>{{end}}
 
-<header class="page-header">
-    <h2>Verification - {{.ActiveGuild.Name}}</h2>
-</header>
-
-{{template "cp_alerts" .}}
-
-<div class="row justify-content-center">
-	<div class="col-md-6">
 		{{if .REValid}}
-		<h2>Success! you can now return to Discord.</h2>
+		<p>Success! You can now return to Discord.</p>
 		{{else if .GoogleReCaptchaSiteKey}}
-		{{.RenderedPageContent}}
+		<div class="content">{{.RenderedPageContent}}</div>
 		<form method="POST">
-		  <div class="g-recaptcha" data-sitekey="{{.GoogleReCaptchaSiteKey}}"></div>
-		  <br/>
-		  <input type="submit" class="btn btn-success" value="Continue">
+			<div class="g-recaptcha" data-sitekey="{{.GoogleReCaptchaSiteKey}}"></div>
+			<button type="submit">Continue</button>
 		</form>
 		{{end}}
-	</div>
-</div>
 
-{{template "cp_footer"}}
-
+		<p class="footer">Verification by {{.Host}}</p>
+	</main>
+</body>
+</html>
 {{end}}
