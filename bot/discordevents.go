@@ -1,13 +1,17 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
@@ -456,16 +460,16 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
 		Data: &discordgo.InteractionResponseData{
-			Title:    "Report DM to YAGPDB Staff",
+			Title:    withBotNameLimit("Report DM to {bot} Staff", modalTextLimit),
 			CustomID: fmt.Sprintf("%s%d_%d", DMReportModalCustomIDPrefix, guildID, ic.Message.ID),
 			Components: []discordgo.TopLevelComponent{
 				discordgo.TextDisplay{
-					Content: "### This does NOT go to the server's moderators\n" +
-						"Reports go to **YAGPDB staff**, the team behind the bot. The moderators of the server this DM came from " +
-						"will **not** see it, and YAGPDB staff cannot act on how a server is run, only on abuse of the bot itself.",
+					Content: withBotName("### This does NOT go to the server's moderators\n" +
+						"Reports go to **{bot} staff**, the team behind the bot. The moderators of the server this DM came from " +
+						"will **not** see it, and {bot} staff cannot act on how a server is run, only on abuse of the bot itself."),
 				},
 				discordgo.Label{
-					Label: "What are you reporting to YAGPDB staff?",
+					Label: withBotNameLimit("What are you reporting to {bot} staff?", modalTextLimit),
 					Component: discordgo.SelectMenu{
 						MenuType:    discordgo.StringSelectMenu,
 						CustomID:    "category",
@@ -477,11 +481,11 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 					},
 				},
 				discordgo.Label{
-					Label:       "Details for YAGPDB staff",
+					Label:       withBotNameLimit("Details for {bot} staff", modalTextLimit),
 					Description: "At least 20 characters. Server moderators will not see this.",
 					Component: discordgo.TextInput{
 						CustomID:    "reason",
-						Placeholder: "Describe what happened, so YAGPDB staff can act on it",
+						Placeholder: withBotName("Describe what happened, so {bot} staff can act on it"),
 						Style:       discordgo.TextInputParagraph,
 						Required:    true,
 						// Long enough that a report carries an actual description.
@@ -541,6 +545,13 @@ func handleDMReportModalSubmit(evt *eventsystem.EventData) {
 	}
 
 	response := category.response
+	if category.value == "scam" && isOwnVerificationDM(evt.Session, ic.ChannelID, messageID) {
+		category.forward = false
+		response = fmt.Sprintf("This is a genuine verification link from {bot}, sent on behalf of the server you joined. "+
+			"It leads to **%s**, {bot}'s own site, where you only need to solve a captcha.", common.ConfHost.GetString())
+	}
+	response = withBotName(response)
+
 	if category.forward {
 		if err := forwardDMReport(evt, reportChannel, guildID, messageID, category, values.reason); err != nil {
 			logger.WithError(err).Error("failed forwarding reported dm")
@@ -604,7 +615,7 @@ func forwardDMReport(evt *eventsystem.EventData, reportChannel, guildID, message
 
 	meta := &discordgo.MessageSend{
 		Content: fmt.Sprintf("[Reported DM](%s) reported by **%s** `%d`, sent from server %s\n**Category:** %s\n**Details:**\n%s",
-			forwarded.Link(), ic.User.String(), ic.User.ID, server, category.label, reason),
+			forwarded.Link(), ic.User.String(), ic.User.ID, server, withBotName(category.label), reason),
 		AllowedMentions: discordgo.AllowedMentions{},
 	}
 	if _, err := common.BotSession.ChannelMessageSendComplex(reportChannel, meta); err != nil {
@@ -732,28 +743,39 @@ type dmReportCategory struct {
 	response    string
 }
 
-const dmReportForwardedResponse = "Reported to YAGPDB staff. Thank you."
+const dmReportForwardedResponse = "Reported to {bot} staff. Thank you."
 
 // Ordered with the categories that are not forwarded first, as those are what
 // most reports are about.
 var dmReportCategories = []dmReportCategory{
 	{
+		value:       "hacked",
+		label:       "My account was hacked",
+		description: "You were punished for something sent from your account while it was hacked",
+		response: "{bot} staff cannot undo punishments, but you should secure your account first:\n" +
+			"1. Change your Discord password and turn on two-factor authentication.\n" +
+			"2. In **User Settings > Devices**, log out of all known devices.\n" +
+			"3. In **User Settings > Authorized Apps**, remove any app you do not recognise.\n" +
+			"4. Scan your computer for malware, accounts are usually taken over by programs that steal your login.\n\n" +
+			"Once your account is secure, contact the server's staff to appeal.",
+	},
+	{
 		value:       "punishment",
 		label:       "I disagree with a punishment",
 		description: "You were warned, muted, kicked or banned and want to appeal",
-		response:    "YAGPDB staff cannot review or undo punishments, those are decided by the server's own moderators. Contact the server's staff to appeal.",
+		response:    "{bot} staff cannot review or undo punishments, those are decided by the server's own moderators. Contact the server's staff to appeal.",
 	},
 	{
 		value:       "mod_abuse",
 		label:       "A moderator is abusing their powers",
 		description: "A server's staff are treating members unfairly",
-		response:    "YAGPDB staff do not moderate servers and cannot act on how one is run. Raise it with the server's owner, or leave the server if you prefer.",
+		response:    "{bot} staff do not moderate servers and cannot act on how one is run. Raise it with the server's owner, or leave the server if you prefer.",
 	},
 	{
 		value:       "unwanted",
 		label:       "I don't want these DMs",
 		description: "The DMs are not abusive, you just don't want them",
-		response:    "These DMs are set up by the server, not by YAGPDB staff. Ask the server's staff to stop them, leave the server, or use **Delete** to remove them.",
+		response:    "These DMs are set up by the server, not by {bot} staff. Ask the server's staff to stop them, leave the server, or use **Delete** to remove them.",
 	},
 	{
 		value:    "scam",
@@ -775,7 +797,7 @@ var dmReportCategories = []dmReportCategory{
 	},
 	{
 		value:    "impersonation",
-		label:    "Pretending to be Discord or YAGPDB staff",
+		label:    "Pretending to be Discord or {bot} staff",
 		forward:  true,
 		response: dmReportForwardedResponse,
 	},
@@ -784,13 +806,105 @@ var dmReportCategories = []dmReportCategory{
 // A select menu needs its bounds by pointer, and a report has one category.
 var dmReportCategoriesPerReport = 1
 
+// isOwnVerificationDM reports whether every link in the dm leads to this
+// instance's verification page. Servers write their own verification message,
+// so the links are checked rather than trusting where the dm came from.
+func isOwnVerificationDM(session *discordgo.Session, channelID, messageID int64) bool {
+	msg, err := session.ChannelMessage(channelID, messageID)
+	if err != nil {
+		logger.WithError(err).Error("failed fetching reported dm")
+		return false
+	}
+
+	genuine, err := onlyVerificationLinks(msg)
+	if err != nil {
+		logger.WithError(err).Error("failed reading links in reported dm")
+	}
+
+	return genuine
+}
+
+func onlyVerificationLinks(msg *discordgo.Message) (bool, error) {
+	links, err := dmMessageLinks(msg)
+	if err != nil || len(links) == 0 {
+		return false, err
+	}
+
+	for _, link := range links {
+		if !isVerificationLink(link) {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+var (
+	linkRegex             = regexp.MustCompile(`https?://[^\s<>()\[\]"'\\]+`)
+	verificationPathRegex = regexp.MustCompile(`^/(v/[A-Za-z]+|public/\d+/verify/\d+/[A-Za-z]+)/?$`)
+)
+
+func isVerificationLink(link string) bool {
+	parsed, err := url.Parse(link)
+	if err != nil {
+		return false
+	}
+
+	return strings.EqualFold(parsed.Host, common.ConfHost.GetString()) && verificationPathRegex.MatchString(parsed.Path)
+}
+
+// dmMessageLinks finds the links anywhere in the message. The message is
+// searched as json so no field can be missed, as a missed link would make a
+// scam pass as genuine. Links that are not really in it, like attachment urls,
+// only lead to the report being forwarded.
+func dmMessageLinks(msg *discordgo.Message) ([]string, error) {
+	encodedMessage, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	// A message leaves its components out of its own json.
+	encodedComponents, err := json.Marshal(msg.Components)
+	if err != nil {
+		return nil, err
+	}
+
+	links := linkRegex.FindAllString(string(encodedMessage), -1)
+	links = append(links, linkRegex.FindAllString(string(encodedComponents), -1)...)
+	return links, nil
+}
+
+// Discord's limit on modal titles and component labels.
+const modalTextLimit = 45
+
+// withBotName fills in the bot's name for {bot}, so an instance shows its own
+// name rather than YAGPDB's.
+func withBotName(text string) string {
+	name := "the bot"
+	if common.BotUser != nil && common.BotUser.Username != "" {
+		name = common.BotUser.Username
+	}
+
+	return strings.ReplaceAll(text, "{bot}", name)
+}
+
+// withBotNameLimit is withBotName for text with a length limit, where a long
+// name is swapped for a generic one rather than the text being cut off.
+func withBotNameLimit(text string, limit int) string {
+	if named := withBotName(text); utf8.RuneCountInString(named) <= limit {
+		return named
+	}
+
+	return strings.ReplaceAll(text, "{bot}", "Bot")
+}
+
 func dmReportCategoryOptions() []discordgo.SelectMenuOption {
 	options := make([]discordgo.SelectMenuOption, 0, len(dmReportCategories))
 	for _, category := range dmReportCategories {
 		options = append(options, discordgo.SelectMenuOption{
 			Value:       category.value,
-			Label:       category.label,
-			Description: category.description,
+			Label:       withBotName(category.label),
+			Description: withBotName(category.description),
 		})
 	}
 
