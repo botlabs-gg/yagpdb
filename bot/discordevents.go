@@ -761,9 +761,16 @@ var dmReportCategories = []dmReportCategory{
 	},
 	{
 		value:       "punishment",
-		label:       "I disagree with a punishment",
-		description: "You were warned, muted, kicked or banned and want to appeal",
-		response:    "{bot} staff cannot review or undo punishments, those are decided by the server's own moderators. Contact the server's staff to appeal.",
+		label:       "A moderation action against me",
+		description: "A warning, mute, kick or ban you disagree with or want to appeal",
+		response:    "{bot} staff cannot review or undo moderation actions, those are decided by the server's own moderators. Contact the server's staff to appeal.",
+	},
+	{
+		value:       "broken",
+		label:       "Something isn't working",
+		description: "A role menu, command or other feature gave an error or did nothing",
+		response: "Features like role menus and commands are set up by each server, and {bot} staff cannot fix a server's setup. " +
+			"Let the server's staff know what went wrong, as they can see and change how it is configured.",
 	},
 	{
 		value:       "mod_abuse",
@@ -796,10 +803,11 @@ var dmReportCategories = []dmReportCategory{
 		response: dmReportForwardedResponse,
 	},
 	{
-		value:    "impersonation",
-		label:    "Pretending to be Discord or {bot} staff",
-		forward:  true,
-		response: dmReportForwardedResponse,
+		value:       "fake_official",
+		label:       "Fake official notice",
+		description: "Pretends to be from Discord or another official service, like a fake account warning",
+		forward:     true,
+		response:    dmReportForwardedResponse,
 	},
 }
 
