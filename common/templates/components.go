@@ -434,6 +434,10 @@ func CreateSection(values ...any) (*discordgo.Section, error) {
 }
 
 func CreateTextDisplay(value any) (*discordgo.TextDisplay, error) {
+	if display, ok := value.(*discordgo.TextDisplay); ok {
+		return display, nil
+	}
+
 	var display discordgo.TextDisplay
 	d, err := CreateComponent(discordgo.TextDisplayComponent, map[string]any{
 		"content": ToString(value),
@@ -530,6 +534,10 @@ func createGalleryItem(values ...any) (item discordgo.MediaGalleryItem, err erro
 }
 
 func CreateGallery(values any) (*discordgo.MediaGallery, error) {
+	if gallery, ok := values.(*discordgo.MediaGallery); ok {
+		return gallery, nil
+	}
+
 	convertedGallery := &discordgo.MediaGallery{}
 	val, _ := indirect(reflect.ValueOf(values))
 	if val.Kind() == reflect.Slice {
@@ -608,6 +616,10 @@ func CreateFile(msgFiles *[]*discordgo.File, values ...any) (*discordgo.Componen
 }
 
 func CreateSeparator(large any) *discordgo.Separator {
+	if separator, ok := large.(*discordgo.Separator); ok {
+		return separator
+	}
+
 	spacing := discordgo.SeparatorSpacingSmall
 	if large != nil && large != false {
 		spacing = discordgo.SeparatorSpacingLarge
@@ -791,6 +803,8 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...any) ([]discord
 					return nil, err
 				}
 				components = append(components, distributedComponents...)
+			} else if row, ok := val.(*discordgo.ActionsRow); ok {
+				components = append(components, row)
 			} else {
 				var component discordgo.InteractiveComponent
 				switch comp := val.(type) {

@@ -129,6 +129,12 @@ func CreateComponentBuilder(values ...interface{}) (compBuilder *ComponentBuilde
 			return typed, nil
 		case ComponentBuilder:
 			return &typed, nil
+		case discordgo.Message:
+			return componentBuilderFromMessage(&typed)
+		}
+
+		if m, ok := asStringMap(val.Interface()); ok && isLegacyComponentBuilder(m) {
+			return componentBuilderFromLegacy(m, 0)
 		}
 
 		switch val.Kind() {
