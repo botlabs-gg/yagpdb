@@ -216,6 +216,8 @@ func init() {
 	msgpack.RegisterExt(1, (*SDict)(nil))
 	msgpack.RegisterExt(2, (*Dict)(nil))
 	msgpack.RegisterExt(3, (*Slice)(nil))
+	msgpack.RegisterExt(4, (*ComponentBuilder)(nil))
+	msgpack.RegisterExt(5, (*storedComponent)(nil))
 }
 
 // set by the premium package to return wether this guild is premium or not
