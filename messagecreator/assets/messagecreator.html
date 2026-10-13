@@ -187,6 +187,13 @@
                                 <div id="components-error" class="text-danger small mt-1"></div>
                             </div>
 
+                            <div class="form-group">
+                                <label class="d-block text-muted small text-uppercase font-weight-bold mc-section-label">Mentions</label>
+                                <small class="form-text text-muted mb-2">User mentions are always allowed.</small>
+                                {{checkbox "allow_role_mentions" "mc-allow-role-mentions" "Allow role mentions" false}}
+                                {{checkbox "allow_everyone_mentions" "mc-allow-everyone-mentions" "Allow <code>@everyone</code> and <code>@here</code> mentions" false}}
+                            </div>
+
                             <div id="mc-errors" class="alert alert-danger mt-3" style="display:none;"></div>
 
                             <button type="submit" id="mc-submit" class="btn btn-success btn-block btn-lg mt-3">

@@ -24,16 +24,35 @@ const (
 
 const v2Flag = discordgo.MessageFlagsIsComponentsV2
 
+type MentionSettings struct {
+	AllowRoleMentions     bool `json:"allow_role_mentions"`
+	AllowEveryoneMentions bool `json:"allow_everyone_mentions"`
+}
+
+func (m MentionSettings) allowedMentions() discordgo.AllowedMentions {
+	parse := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if m.AllowRoleMentions {
+		parse = append(parse, discordgo.AllowedMentionTypeRoles)
+	}
+	// "everyone" covers both @everyone and @here
+	if m.AllowEveryoneMentions {
+		parse = append(parse, discordgo.AllowedMentionTypeEveryone)
+	}
+	return discordgo.AllowedMentions{Parse: parse}
+}
+
 type SendRequest struct {
 	ChannelID int64           `json:"channel_id,string"`
 	Mode      string          `json:"mode"`
 	Payload   json.RawMessage `json:"payload"`
+	Mentions  MentionSettings `json:"mentions"`
 }
 type EditRequest struct {
 	ChannelID int64           `json:"channel_id,string"`
 	MessageID int64           `json:"message_id,string"`
 	Mode      string          `json:"mode"`
 	Payload   json.RawMessage `json:"payload"`
+	Mentions  MentionSettings `json:"mentions"`
 }
 type LoadResponse struct {
 	AuthorIsBot bool            `json:"author_is_bot"`
