@@ -57,6 +57,8 @@ func handleBotSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	msg.AllowedMentions = req.Mentions.allowedMentions()
+
 	sent, err := common.BotSession.ChannelMessageSendComplex(req.ChannelID, msg)
 	if err != nil {
 		internalapi.ServerError(w, r, errors.WithMessage(err, "failed to send message"))
@@ -101,12 +103,13 @@ func handleBotEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
-		Content:    &msg.Content,
-		Embeds:     msg.Embeds,
-		Components: msg.Components,
-		Flags:      msg.Flags,
-		ID:         req.MessageID,
-		Channel:    req.ChannelID,
+		Content:         &msg.Content,
+		Embeds:          msg.Embeds,
+		Components:      msg.Components,
+		Flags:           msg.Flags,
+		AllowedMentions: req.Mentions.allowedMentions(),
+		ID:              req.MessageID,
+		Channel:         req.ChannelID,
 	})
 	if err != nil {
 		internalapi.ServerError(w, r, errors.WithMessage(err, "failed to edit message"))
