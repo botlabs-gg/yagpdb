@@ -31,9 +31,9 @@ func initQueuedSchemas() {
 	}
 }
 
-func initSchema(schema string, name string) {
+func initSchema(schema string, name string) error {
 	if confNoSchemaInit.GetBool() {
-		return
+		return nil
 	}
 
 	skip, err := checkSkipSchemaInit(schema)
@@ -42,16 +42,13 @@ func initSchema(schema string, name string) {
 	}
 
 	if skip {
-		return
+		return nil
 	}
 
 	logger.Info("Schema initialization: ", name, ": not skipped")
 
 	_, err = PQ.Exec(schema)
-	if err != nil {
-		UnlockRedisKey("schema_init")
-		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
-	}
+	return err
 }
 
 func checkSkipSchemaInit(schema string) (exists bool, err error) {
@@ -145,14 +142,20 @@ func InitSchemas(name string, schemas ...string) {
 		return
 	}
 
-	if err := BlockingLockRedisKey("schema_init", time.Minute*10, 60*60); err != nil {
+	// Leased so that a node killed mid migration does not keep others from starting.
+	lock, err := BlockingLeasedLockRedisKey("schema_init", time.Minute*10, time.Second*30)
+	if err != nil {
 		panic(err)
 	}
 
-	defer UnlockRedisKey("schema_init")
+	defer lock.Unlock()
 
 	for i, v := range schemas {
 		actualName := fmt.Sprintf("%s[%d]", name, i)
-		initSchema(v, actualName)
+		if err := initSchema(v, actualName); err != nil {
+			// Fatal exits without running defers.
+			lock.Unlock()
+			logger.WithError(err).Fatal("failed initializing postgres db schema for ", actualName)
+		}
 	}
 }

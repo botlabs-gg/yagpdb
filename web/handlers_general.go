@@ -302,6 +302,11 @@ func HandleGuildStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
 		return err
 	}
 
+	// No shard count is known until a bot node reports in.
+	if status.TotalShards < 1 {
+		return GuildStatus{ShardOnline: false}
+	}
+
 	shard := int(g.ID>>22) % status.TotalShards
 	isOffline := slices.Contains(status.OfflineShards, shard)
 	return GuildStatus{ShardOnline: !isOffline}
