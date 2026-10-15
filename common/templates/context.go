@@ -70,6 +70,7 @@ var (
 		"abs":        tmplAbs,
 		"add":        add,
 		"cbrt":       tmplCbrt,
+		"cos":        tmplCos,
 		"div":        tmplDiv,
 		"fdiv":       tmplFDiv,
 		"log":        tmplLog,
@@ -83,8 +84,10 @@ var (
 		"roundCeil":  tmplRoundCeil,
 		"roundEven":  tmplRoundEven,
 		"roundFloor": tmplRoundFloor,
+		"sin":        tmplSin,
 		"sqrt":       tmplSqrt,
 		"sub":        tmplSub,
+		"tan":        tmplTan,
 
 		// bitwise ops
 		"bitwiseAnd":        tmplBitwiseAnd,
