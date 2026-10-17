@@ -423,6 +423,14 @@ const (
 	MaxOpsEvalNormal  = 200000
 	MaxOpsEvalPremium = 500000
 	MaxSliceLength    = 10000
+
+	MaxAllocNormal      = 200 << 20
+	MaxAllocPremium     = 500 << 20
+	MaxAllocEvalNormal  = 40 << 20
+	MaxAllocEvalPremium = 100 << 20
+
+	// Runs allocating more than this are logged so the caps above can be tightened from real usage.
+	LogAllocAbove = 25 << 20
 )
 
 func (c *Context) Execute(source string) (string, error) {
@@ -488,14 +496,14 @@ func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
 
 	if c.IsPremium {
-		parsed = parsed.MaxOps(MaxOpsPremium)
+		parsed = parsed.MaxOps(MaxOpsPremium).MaxAllocBytes(MaxAllocPremium)
 		if c.ExecutedFrom == ExecutedFromEvalCC {
-			parsed = parsed.MaxOps(MaxOpsEvalPremium)
+			parsed = parsed.MaxOps(MaxOpsEvalPremium).MaxAllocBytes(MaxAllocEvalPremium)
 		}
 	} else {
-		parsed = parsed.MaxOps(MaxOpsNormal)
+		parsed = parsed.MaxOps(MaxOpsNormal).MaxAllocBytes(MaxAllocNormal)
 		if c.ExecutedFrom == ExecutedFromEvalCC {
-			parsed = parsed.MaxOps(MaxOpsEvalNormal)
+			parsed = parsed.MaxOps(MaxOpsEvalNormal).MaxAllocBytes(MaxAllocEvalNormal)
 		}
 	}
 
@@ -531,7 +539,16 @@ func (c *Context) executeParsed() (string, error) {
 		}
 	}()
 
-	err = parsed.Execute(w, c.Data)
+	allocated, err := parsed.ExecuteCountingAlloc(w, c.Data)
+	if allocated > LogAllocAbove {
+		logger.WithFields(logrus.Fields{
+			"guild_id":      c.GS.ID,
+			"executed_from": c.ExecutedFrom,
+			"cc_id":         c.Data["CCID"],
+			"allocated_mb":  allocated >> 20,
+			"success":       err == nil,
+		}).Warn("Template allocated a lot of memory")
+	}
 
 	if c.FixedOutput != "" {
 		return c.FixedOutput, nil
@@ -1595,6 +1612,9 @@ func (s *ComponentBuilder) ToComplexMessageEdit() (*discordgo.MessageEdit, error
 
 func withOutputLimit(f func(...interface{}) string, limit int) func(...interface{}) (string, error) {
 	return func(args ...interface{}) (string, error) {
+		if exceedsSerializedSize(sizeModeFormat, limit, args...) {
+			return "", fmt.Errorf("string grew too long (max %d)", limit)
+		}
 		out := f(args...)
 		if len(out) > limit {
 			return "", fmt.Errorf("string grew too long: length %d (max %d)", len(out), limit)
@@ -1605,6 +1625,9 @@ func withOutputLimit(f func(...interface{}) string, limit int) func(...interface
 
 func withOutputLimitF(f func(string, ...interface{}) string, limit int) func(string, ...interface{}) (string, error) {
 	return func(format string, args ...interface{}) (string, error) {
+		if exceedsSerializedSize(sizeModeFormat, limit-len(format), args...) {
+			return "", fmt.Errorf("string grew too long (max %d)", limit)
+		}
 		out := f(format, args...)
 		if len(out) > limit {
 			return "", fmt.Errorf("string grew too long: length %d (max %d)", len(out), limit)

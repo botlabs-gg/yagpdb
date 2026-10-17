@@ -37,6 +37,10 @@ func CreateComponent(expectedType discordgo.ComponentType, values ...any) (disco
 		m = dict
 	}
 
+	if exceedsSerializedSize(sizeModeEncode, MaxStringLength, m) {
+		return nil, ErrValueTooLarge
+	}
+
 	encoded, err := json.Marshal(m)
 	if err != nil {
 		return nil, err

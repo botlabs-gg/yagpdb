@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unsafe"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/template/parse"
 )
@@ -44,6 +45,8 @@ type state struct {
 	tryDepth    int        // depth of try actions.
 	operations  int
 	returnValue reflect.Value
+
+	allocatedBytes int
 
 	parent *state
 }
@@ -258,7 +261,18 @@ func (t *Template) Execute(wr io.Writer, data interface{}) error {
 	return t.execute(wr, data)
 }
 
-func (t *Template) execute(wr io.Writer, data interface{}) (err error) {
+// ExecuteCountingAlloc is Execute that also reports the bytes charged against MaxAllocBytes,
+// including when execution stopped with an error.
+func (t *Template) ExecuteCountingAlloc(wr io.Writer, data interface{}) (allocatedBytes int, err error) {
+	return t.executeCountingAlloc(wr, data)
+}
+
+func (t *Template) execute(wr io.Writer, data interface{}) error {
+	_, err := t.executeCountingAlloc(wr, data)
+	return err
+}
+
+func (t *Template) executeCountingAlloc(wr io.Writer, data interface{}) (allocatedBytes int, err error) {
 	defer errRecover(&err)
 	value, ok := data.(reflect.Value)
 	if !ok {
@@ -269,6 +283,7 @@ func (t *Template) execute(wr io.Writer, data interface{}) (err error) {
 		wr:   wr,
 		vars: []variable{{"$", value}},
 	}
+	defer func() { allocatedBytes = state.allocatedBytes }()
 	if t.Tree == nil || t.Root == nil {
 		state.errorf("%q is an incomplete or empty template", t.Name())
 	}
@@ -616,6 +631,7 @@ func (s *state) walkTemplate(dot reflect.Value, t *parse.TemplateNode) {
 	newState.depth++
 	newState.tmpl = tmpl
 	newState.tmpl.maxOps = s.tmpl.maxOps
+	newState.tmpl.maxAllocBytes = s.tmpl.maxAllocBytes
 	// No dynamic scoping: template invocations inherit no variables.
 	newState.vars = []variable{{"$", dot}}
 
@@ -970,6 +986,7 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	// Special case for builtin execTemplate.
 	if fun == builtinExecTemplate {
 		v := s.callExecTemplate(dot, node, argv)
+		s.chargeAlloc(name, v, nil)
 		putArgv(argvp)
 		if v.Kind() == reflect.String && v.Len() > maxStringLength {
 			s.errorf("function response %s exceeds maximum allowed size", name)
@@ -978,6 +995,9 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	}
 
 	v, panicked, err := safeCall(fun, argv)
+	if err == nil {
+		s.chargeAlloc(name, v, argv)
+	}
 	putArgv(argvp)
 	// If we have an error that is not nil, stop execution and return that
 	// error to the caller.
@@ -1032,6 +1052,7 @@ func (s *state) callExecTemplate(dot reflect.Value, node parse.Node, args []refl
 	newState.depth++
 	newState.tmpl = tmpl
 	newState.tmpl.maxOps = s.tmpl.maxOps
+	newState.tmpl.maxAllocBytes = s.tmpl.maxAllocBytes
 	newState.vars = []variable{{"$", newDot}}
 
 	if newState.walk(newDot, tmpl.Root) == controlFlowReturnValue {
@@ -1281,6 +1302,70 @@ func (s *state) printValue(n parse.Node, v reflect.Value) {
 	_, err := fmt.Fprint(s.wr, iface)
 	if err != nil {
 		s.writeError(err)
+	}
+}
+
+// Accessors hand back values already held by the template rather than allocating new ones.
+var nonAllocatingFuncs = map[string]bool{
+	"index": true,
+	"Get":   true,
+}
+
+func (s *state) chargeAlloc(name string, result reflect.Value, args []reflect.Value) {
+	if s.tmpl.maxAllocBytes == 0 || nonAllocatingFuncs[name] {
+		return
+	}
+
+	if result.Kind() == reflect.Interface && !result.IsNil() {
+		result = result.Elem()
+	}
+
+	var size int
+	switch {
+	case result.Kind() == reflect.String:
+		size = result.Len()
+		if size > 0 && sharesStringArg(result.String(), args) {
+			return
+		}
+	case result.Kind() == reflect.Slice && result.Type().Elem().Kind() == reflect.Uint8:
+		size = result.Len()
+	}
+
+	if size > 0 {
+		s.incrAlloc(size)
+	}
+}
+
+// sharesStringArg reports whether out points into one of the string arguments, as substrings and
+// unchanged results from functions like slice, trimSpace or lower do.
+func sharesStringArg(out string, args []reflect.Value) bool {
+	outStart := uintptr(unsafe.Pointer(unsafe.StringData(out)))
+	for _, arg := range args {
+		if arg.Kind() == reflect.Interface && !arg.IsNil() {
+			arg = arg.Elem()
+		}
+		if arg.Kind() != reflect.String || arg.Len() == 0 {
+			continue
+		}
+
+		argStr := arg.String()
+		argStart := uintptr(unsafe.Pointer(unsafe.StringData(argStr)))
+		if outStart >= argStart && outStart < argStart+uintptr(len(argStr)) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *state) incrAlloc(size int) {
+	if s.parent != nil {
+		s.parent.incrAlloc(size)
+		return
+	}
+
+	s.allocatedBytes += size
+	if s.allocatedBytes > s.tmpl.maxAllocBytes {
+		s.errorf("exceeded max memory allocation (%dMB)", s.tmpl.maxAllocBytes>>20)
 	}
 }
 
