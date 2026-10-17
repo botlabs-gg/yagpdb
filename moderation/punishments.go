@@ -213,6 +213,12 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		dmMsg = DefaultDMMessage
 	}
 
+	isBan := action.Prefix == MABanned.Prefix
+	var extraButtons []discordgo.InteractiveComponent
+	if isBan && banAppealDMButtonAvailable(config, gs.ID) {
+		extraButtons = append(extraButtons, banAppealDMButton(gs.ID))
+	}
+
 	executeDM := func(source string) (string, error) {
 		ctx := templates.NewContext(gs, channel, member)
 		if executedFromCommandTemplate {
@@ -231,6 +237,9 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		ctx.Data["Author"] = author
 		ctx.Data["ModAction"] = action
 		ctx.Data["Message"] = message
+		if isBan {
+			ctx.Data["AppealLink"] = banAppealLinkIfOpen(config, gs.ID)
+		}
 
 		if warningID != -1 {
 			ctx.Data["WarningID"] = warningID
@@ -262,7 +271,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 					Description: executed,
 				},
 			},
-			Components: bot.DMComponents(gs.ID, nil, 0),
+			Components: bot.DMComponents(gs.ID, nil, 0, extraButtons...),
 		}
 
 		err = bot.SendDMComplexMessage(member.User.ID, msgSend)

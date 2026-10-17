@@ -10,6 +10,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
@@ -25,6 +26,7 @@ var (
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("moderation/assets/moderation.html", PageHTML)
+	initBanAppealWeb()
 
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
 		Name: "Moderation",
@@ -56,6 +58,7 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
 	templateData["DefaultTimeoutDuration"] = int(DefaultTimeoutDuration.Minutes())
+	templateData["BanAppealLink"] = BanAppealLink(activeGuild.ID)
 
 	if _, ok := templateData["ModConfig"]; !ok {
 		config, err := FetchConfig(activeGuild.ID)
@@ -78,9 +81,18 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	templateData["ModConfig"] = newConfig
 
 	newConfig.GuildID = activeGuild.ID
-	err := SaveConfig(newConfig)
-
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["BanAppealLink"] = BanAppealLink(activeGuild.ID)
+
+	if newConfig.BanAppealsEnabled && newConfig.BanAppealsReviewChannel() == 0 {
+		return templateData.AddAlerts(web.ErrorAlert("Ban appeals need a channel to be posted in, set either an appeals channel or a modlog channel.")), nil
+	}
+
+	if !premium.ContextPremium(ctx) {
+		newConfig.BanAppealsDMButton = false
+	}
+
+	err := SaveConfig(newConfig)
 
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))

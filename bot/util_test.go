@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
@@ -191,5 +192,48 @@ func TestOwnVerificationLinks(t *testing.T) {
 		if genuine != c.genuine {
 			t.Errorf("%s: got genuine %t, want %t", c.name, genuine, c.genuine)
 		}
+	}
+}
+
+func TestDMComponentsExtraButtons(t *testing.T) {
+	extra := discordgo.Button{Label: "Appeal", Style: discordgo.SuccessButton, CustomID: "DM_EXTRA_1"}
+
+	got := DMComponents(1, nil, 0, extra)
+	row := got[len(got)-1].(discordgo.ActionsRow)
+
+	if row.Components[0].(discordgo.Button).CustomID != fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, 1) {
+		t.Error("info button is no longer first")
+	}
+	if last := row.Components[len(row.Components)-1].(discordgo.Button); last.CustomID != extra.CustomID {
+		t.Errorf("extra button not appended, last button is %q", last.CustomID)
+	}
+}
+
+func TestRegisteredDMInteractionHandler(t *testing.T) {
+	defer func(saved []dmInteractionHandler) { dmInteractionHandlers = saved }(dmInteractionHandlers)
+	dmInteractionHandlers = nil
+
+	called := ""
+	RegisterDMInteractionHandler("DM_TEST_", func(evt *eventsystem.EventData) { called = "test" })
+
+	button := &discordgo.InteractionCreate{Interaction: discordgo.Interaction{
+		Type: discordgo.InteractionMessageComponent,
+		Data: discordgo.MessageComponentInteractionData{CustomID: "DM_TEST_123"},
+	}}
+	handler, ok := registeredDMInteractionHandler(button)
+	if !ok {
+		t.Fatal("registered prefix was not matched")
+	}
+	handler(nil)
+	if called != "test" {
+		t.Error("wrong handler returned")
+	}
+
+	other := &discordgo.InteractionCreate{Interaction: discordgo.Interaction{
+		Type: discordgo.InteractionMessageComponent,
+		Data: discordgo.MessageComponentInteractionData{CustomID: "DM_123"},
+	}}
+	if _, ok := registeredDMInteractionHandler(other); ok {
+		t.Error("unregistered prefix was matched")
 	}
 }

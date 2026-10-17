@@ -39,6 +39,11 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
                             Ban <span
                                 class="indicator indicator-{{if .ModConfig.BanEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
+                    <li class="nav-item"><a class="nav-link" href="#ban-appeals" aria-controls="ban-appeals" role="tab"
+                            data-toggle="tab">
+                            Ban Appeals <span
+                                class="indicator indicator-{{if .ModConfig.BanAppealsEnabled}}success{{else}}danger{{end}}"></span>
+                        </a></li>
                     <li class="nav-item"><a class="nav-link" href="#warn" aria-controls="warnings" role="tab"
                             data-toggle="tab">
                             Warnings <span
@@ -52,6 +57,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
                     <div role="tabpanel" class="tab-pane" id="timeout">{{template "moderation_timeout" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="kick">{{template "moderation_kick" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="ban">{{template "moderation_ban" .}}</div>
+                    <div role="tabpanel" class="tab-pane" id="ban-appeals">{{template "moderation_ban_appeals" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="warn">{{template "moderation_warn" .}}</div>
                 </div>
             </div>
@@ -446,8 +452,44 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
                 <code>{{"{{.Duration}}"}}</code> - The duration<br>
                 <code>{{"{{.HumanDuration}}"}}</code> - The duration in a human friendly format
                 (<code>1 hour and 3 minutes</code> for example)<br>
+                <code>{{"{{.AppealLink}}"}}</code> - The link to appeal the ban, empty when ban
+                appeals are disabled<br>
             </p>
         </div>
+    </div>
+</div>
+{{end}}
+
+{{define "moderation_ban_appeals"}}
+<p>Lets banned users ask to be unbanned. Each appeal is posted for your moderators to review, and to accept one you
+    unban the user with the unban command. A user can appeal each ban only once.</p>
+<div class="row">
+    <div class="col-sm">
+        {{checkbox "BanAppealsEnabled" "BanAppealsEnabled" "Enable ban appeals" .ModConfig.BanAppealsEnabled}}
+        <hr />
+
+        <div class="form-group">
+            <label>Channel to post appeals in</label>
+            <select class="form-control" name="BanAppealsChannel" data-requireperms-embed>
+                {{textOnlyChannelOptions .ActiveGuild.Channels .ModConfig.BanAppealsChannel true "Same as the modlog channel"}}
+            </select>
+            <p class="help-block">Appeals go to the modlog channel unless you pick another one here.</p>
+        </div>
+        <hr />
+
+        <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
+            {{checkbox "BanAppealsDMButton" "BanAppealsDMButton" "Add an <b>Appeal Ban</b> button to ban DMs" .ModConfig.BanAppealsDMButton}}
+            <p class="help-block">Banned users can appeal straight from the DM they get when banned, without leaving
+                Discord. Once they appeal, the button changes to <b>Ban Appealed</b>.</p>
+            {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "The Appeal Ban button is a premium feature.")}}
+        </fieldset>
+    </div>
+    <div class="col-sm">
+        <h5>Appeal page</h5>
+        <p>Banned users can appeal on this page after logging in with Discord. Add it to your
+            Ban DM with <code>{{"{{.AppealLink}}"}}</code>, or share it
+            however you like.</p>
+        <pre><code>{{.BanAppealLink}}</code></pre>
     </div>
 </div>
 {{end}}

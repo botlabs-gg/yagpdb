@@ -66,6 +66,11 @@ type Config struct {
 	BanMessage           string     `valid:"template,5000"`
 	DefaultBanDeleteDays null.Int64 `valid:"0,7"`
 
+	// Ban appeals
+	BanAppealsEnabled  bool
+	BanAppealsChannel  int64 `valid:"channel,true"`
+	BanAppealsDMButton bool
+
 	// Timeout
 	TimeoutEnabled              bool
 	TimeoutCmdRoles             types.Int64Array `valid:"role,true"`
@@ -131,6 +136,10 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		BanReasonOptional:    null.BoolFrom(c.BanReasonOptional),
 		BanMessage:           null.StringFrom(c.BanMessage),
 		DefaultBanDeleteDays: c.DefaultBanDeleteDays,
+
+		BanAppealsEnabled:  c.BanAppealsEnabled,
+		BanAppealsChannel:  c.BanAppealsChannel,
+		BanAppealsDMButton: c.BanAppealsDMButton,
 
 		TimeoutEnabled:              null.BoolFrom(c.TimeoutEnabled),
 		TimeoutCmdRoles:             c.TimeoutCmdRoles,
@@ -200,6 +209,10 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		BanMessage:           model.BanMessage.String,
 		DefaultBanDeleteDays: model.DefaultBanDeleteDays,
 
+		BanAppealsEnabled:  model.BanAppealsEnabled,
+		BanAppealsChannel:  model.BanAppealsChannel,
+		BanAppealsDMButton: model.BanAppealsDMButton,
+
 		TimeoutEnabled:              model.TimeoutEnabled.Bool,
 		TimeoutCmdRoles:             model.TimeoutCmdRoles,
 		TimeoutReasonOptional:       model.TimeoutReasonOptional.Bool,
@@ -243,4 +256,12 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		GiveRoleCmdModlog:  model.GiveRoleCmdModlog.Bool,
 		GiveRoleCmdRoles:   model.GiveRoleCmdRoles,
 	}
+}
+
+func (c *Config) BanAppealsReviewChannel() int64 {
+	if c.BanAppealsChannel != 0 {
+		return c.BanAppealsChannel
+	}
+
+	return c.ActionChannel
 }
