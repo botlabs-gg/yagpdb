@@ -761,8 +761,8 @@ var dmReportCategories = []dmReportCategory{
 	},
 	{
 		value:       "punishment",
-		label:       "A moderation action against me",
-		description: "A warning, mute, kick or ban you disagree with or want to appeal",
+		label:       "I was warned, muted, timed out, kicked or banned",
+		description: "You disagree with it, want to appeal, or did nothing wrong",
 		response:    "{bot} staff cannot review or undo moderation actions, those are decided by the server's own moderators. Contact the server's staff to appeal.",
 	},
 	{
@@ -785,10 +785,11 @@ var dmReportCategories = []dmReportCategory{
 		response:    "These DMs are set up by the server, not by {bot} staff. Ask the server's staff to stop them, leave the server, or use **Delete** to remove them.",
 	},
 	{
-		value:    "scam",
-		label:    "Scam, phishing or malicious links",
-		forward:  true,
-		response: dmReportForwardedResponse,
+		value:       "scam",
+		label:       "Scam or phishing",
+		description: "Malicious links, asks for your login or payment, or pretends to be Discord staff",
+		forward:     true,
+		response:    dmReportForwardedResponse,
 	},
 	{
 		value:    "harassment",
@@ -801,13 +802,6 @@ var dmReportCategories = []dmReportCategory{
 		label:    "Sexual or illegal content",
 		forward:  true,
 		response: dmReportForwardedResponse,
-	},
-	{
-		value:       "fake_official",
-		label:       "Fake official notice",
-		description: "Pretends to be from Discord or another official service, like a fake account warning",
-		forward:     true,
-		response:    dmReportForwardedResponse,
 	},
 }
 
