@@ -252,6 +252,10 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 		m = dict
 	}
 
+	if exceedsSerializedSize(sizeModeEncode, MaxStringLength, m) {
+		return nil, ErrValueTooLarge
+	}
+
 	encoded, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
@@ -1352,6 +1356,10 @@ func ToByte(from interface{}) []byte {
 }
 
 func tmplJson(v interface{}, flags ...bool) (string, error) {
+	if exceedsSerializedSize(sizeModeEncode, MaxStringLength, v) {
+		return "", ErrValueTooLarge
+	}
+
 	var b []byte
 	var err error
 

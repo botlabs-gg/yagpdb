@@ -262,6 +262,9 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		// embed data using msgpack to include type information
 		if data != nil {
+			if templates.ExceedsEncodedSize(data, templates.MaxStringLength) {
+				return "", templates.ErrValueTooLarge
+			}
 			encoded, err := msgpack.Marshal(data)
 			if err != nil {
 				return "", err
@@ -348,6 +351,9 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		// embed data using msgpack to include type information
 		if data != nil {
+			if templates.ExceedsEncodedSize(data, templates.MaxStringLength) {
+				return "", templates.ErrValueTooLarge
+			}
 			encoded, err := msgpack.Marshal(data)
 			if err != nil {
 				return "", err

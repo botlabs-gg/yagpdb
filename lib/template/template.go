@@ -54,6 +54,8 @@ type Template struct {
 	leftDelim  string
 	rightDelim string
 	maxOps     int
+
+	maxAllocBytes int
 }
 
 // New allocates a new, undefined template with the given name.
@@ -183,6 +185,14 @@ func (t *Template) Delims(left, right string) *Template {
 func (t *Template) MaxOps(ops int) *Template {
 	t.init()
 	t.maxOps = ops
+	return t
+}
+
+// MaxAllocBytes caps the total bytes of strings that function calls may produce in one execution,
+// so a template cannot churn through memory faster than the garbage collector can reclaim it.
+func (t *Template) MaxAllocBytes(n int) *Template {
+	t.init()
+	t.maxAllocBytes = n
 	return t
 }
 
