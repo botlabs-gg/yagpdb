@@ -32,9 +32,11 @@ func TestDumpIfHeapGrew(t *testing.T) {
 
 	start := time.Now()
 	mw := &MemWatcher{startedAt: start, dumpMultipliers: []float64{2, 3}}
+	var gcCycles uint64
 	tick := func(at time.Duration, liveGB uint64, times int) {
 		for i := 0; i < times; i++ {
-			mw.dumpIfHeapGrew(heapStats{live: liveGB << 30}, start.Add(at))
+			gcCycles++
+			mw.dumpIfHeapGrew(heapStats{live: liveGB << 30, gcCycles: gcCycles}, start.Add(at))
 		}
 	}
 
@@ -89,6 +91,35 @@ func TestDumpIfHeapGrew(t *testing.T) {
 	}
 }
 
+func TestDumpIfHeapGrewIgnoresReadingsWithoutANewGC(t *testing.T) {
+	dir := t.TempDir()
+	confHeapDumpDir.LoadedValue = dir
+	confHeapDumpMaxFiles.LoadedValue = 20
+	confHeapDumpWarmup.LoadedValue = 15
+
+	start := time.Now()
+	mw := &MemWatcher{startedAt: start, dumpMultipliers: []float64{2, 3}}
+	at := start.Add(time.Hour)
+
+	mw.dumpIfHeapGrew(heapStats{live: 15 << 20, gcCycles: 100}, at)
+
+	// An idle node: a spike was measured by the last GC, then no GC ran while it became garbage.
+	for i := 0; i < HeapDumpSustainedChecks*5; i++ {
+		mw.dumpIfHeapGrew(heapStats{live: 510 << 20, gcCycles: 101}, at)
+	}
+	assertFileCount(t, dir, 0)
+
+	// The next GC finds the spike gone, so nothing was sustained.
+	mw.dumpIfHeapGrew(heapStats{live: 15 << 20, gcCycles: 102}, at)
+	assertFileCount(t, dir, 0)
+
+	// Memory that stays live across fresh GCs still dumps after the sustained checks.
+	for i := uint64(0); i < HeapDumpSustainedChecks; i++ {
+		mw.dumpIfHeapGrew(heapStats{live: 510 << 20, gcCycles: 103 + i}, at)
+	}
+	assertFileCount(t, dir, 2)
+}
+
 func TestPruneOldestFiles(t *testing.T) {
 	dir := t.TempDir()
 	base := time.Now().Add(-time.Hour)
@@ -136,7 +167,7 @@ func readGzip(r io.Reader) ([]byte, error) {
 func TestReadHeapStatsResolvesAllMetrics(t *testing.T) {
 	runtime.GC()
 	stats := readHeapStats()
-	if stats.live == 0 || stats.objects == 0 || stats.total == 0 || stats.goroutines == 0 {
+	if stats.live == 0 || stats.objects == 0 || stats.total == 0 || stats.goroutines == 0 || stats.gcCycles == 0 {
 		t.Fatalf("expected every runtime metric to resolve, got %+v", stats)
 	}
 }

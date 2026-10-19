@@ -25,7 +25,8 @@ const (
 	// Forcing a full GC while the host is swapping pages the whole heap back in and stalls every node.
 	SwapBusyThreshold = 25
 
-	// Consecutive 10 second checks the heap must stay over a dump threshold, so a single spike does not trigger one.
+	// Consecutive fresh checks the heap must stay over a dump threshold, so a single spike does not trigger one.
+	// A check is fresh only if a GC finished since the previous one, as live heap is only measured by GC.
 	HeapDumpSustainedChecks = 3
 )
 
@@ -52,6 +53,7 @@ type MemWatcher struct {
 	dumpMultipliers     []float64
 	nextDump            int
 	checksOverThreshold int
+	lastGCCycles        uint64
 }
 
 func watchMemusage() {
@@ -112,6 +114,7 @@ type heapStats struct {
 	objects    uint64
 	total      uint64
 	goroutines uint64
+	gcCycles   uint64
 }
 
 var heapStatsMetricNames = []string{
@@ -119,6 +122,7 @@ var heapStatsMetricNames = []string{
 	"/memory/classes/heap/objects:bytes",
 	"/memory/classes/total:bytes",
 	"/sched/goroutines:goroutines",
+	"/gc/cycles/total:gc-cycles",
 }
 
 func readHeapStats() heapStats {
@@ -140,6 +144,7 @@ func readHeapStats() heapStats {
 		objects:    value(1),
 		total:      value(2),
 		goroutines: value(3),
+		gcCycles:   value(4),
 	}
 }
 
@@ -169,8 +174,17 @@ func (mw *MemWatcher) dumpIfHeapGrew(stats heapStats, now time.Time) {
 		mw.baselineLive = stats.live
 	}
 
+	freshReading := stats.gcCycles != mw.lastGCCycles
+	mw.lastGCCycles = stats.gcCycles
+
 	if mw.nextDump >= len(mw.dumpMultipliers) || stats.live < mw.dumpThreshold(mw.nextDump) {
 		mw.checksOverThreshold = 0
+		return
+	}
+
+	// Without a GC since the last check this is the same measurement again, possibly of memory that
+	// has since become garbage on an idle node, so it says nothing about the heap staying high.
+	if !freshReading {
 		return
 	}
 
@@ -199,7 +213,7 @@ func writeMemDumps(stats heapStats, baselineLive uint64) {
 	}
 
 	growth := float64(stats.live) / float64(baselineLive)
-	name := fmt.Sprintf("%s_%s_%.0fgb_%.1fx", NodeID(), time.Now().UTC().Format("2006-01-02T15-04-05"), gigabytes(stats.live), growth)
+	name := fmt.Sprintf("%s_%s_%.1fgb_%.1fx", NodeID(), time.Now().UTC().Format("2006-01-02T15-04-05"), gigabytes(stats.live), growth)
 	prefix := filepath.Join(dir, name)
 
 	memLogger.WithFields(logrus.Fields{
