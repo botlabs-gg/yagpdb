@@ -11,6 +11,7 @@ cmd/yagpdb/yagpdb
 cmd/yagpdb/templates/plugins/*.html
 cmd/yagpdb/soundboard
 cmd/yagpdb/shutdown_logs
+cmd/yagpdb/heap_dumps
 cmd/yagpdb/safebrowsing_db
 cmd/yagpdb/static/video/*
 
