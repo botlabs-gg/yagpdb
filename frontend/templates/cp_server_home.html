@@ -8,6 +8,23 @@
 
 {{template "cp_alerts" .}}
 
+{{if .QuickSetupPending}}
+<section class="card card-featured card-featured-primary mb-4">
+	<div class="card-body d-flex flex-wrap align-items-center">
+		<div class="mr-3">
+			<h2 class="card-title">Get started in a few clicks</h2>
+			<p class="mb-0">Quick Setup walks you through moderation, auto moderation, welcome messages and more, with defaults that work for most servers.</p>
+		</div>
+		<div class="ml-auto mt-2 d-flex align-items-center">
+			<form method="post" action="/manage/{{.ActiveGuild.ID}}/setup/skip" class="mr-2">
+				<button type="submit" class="btn btn-link text-muted">Dismiss</button>
+			</form>
+			<a class="btn btn-primary" href="/manage/{{.ActiveGuild.ID}}/setup" data-partial-load="true">Start Quick Setup</a>
+		</div>
+	</div>
+</section>
+{{end}}
+
 {{range .PluginContainers}}
 <h2>{{.Category.Name}}</h2>
 <div class="row">

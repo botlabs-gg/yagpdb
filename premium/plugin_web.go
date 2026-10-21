@@ -49,8 +49,8 @@ func (p *Plugin) InitWeb() {
 	submux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/premium"), submux)
 	web.RootMux.Handle(pat.New("/premium/*"), submux)
-	web.RootMux.Handle(pat.New("/premium-perks"), web.RenderHandler(nil, "premium_perks"))
-	web.RootMux.Handle(pat.New("/premium-perks/*"), web.ControllerHandler(nil, "premium_perks"))
+	web.RootMux.Handle(pat.New("/premium-perks"), web.ControllerHandler(HandleGetPremiumPerks, "premium_perks"))
+	web.RootMux.Handle(pat.New("/premium-perks/*"), web.ControllerHandler(HandleGetPremiumPerks, "premium_perks"))
 
 	submux.Use(web.RequireSessionMiddleware)
 
@@ -98,6 +98,13 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(mw)
+}
+
+func HandleGetPremiumPerks(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, tmpl := web.GetCreateTemplateData(r.Context())
+	tmpl["PremiumPerks"] = AvailablePerks()
+	tmpl["PremiumLimits"] = AvailableLimits()
+	return tmpl, nil
 }
 
 func HandleGetPremiumMainPage(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {

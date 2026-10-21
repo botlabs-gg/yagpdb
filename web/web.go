@@ -70,10 +70,6 @@ var (
 	ConfAdsTxt = config.RegisterOption("yagpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 
 	confDisableRequestLogging = config.RegisterOption("yagpdb.disable_request_logging", "Disable logging of http requests to web server", false)
-
-	// can be overriden by plugins
-	// main prurpose is to plug in a onboarding process through a properietary plugin
-	SelectServerHomePageHandler http.Handler = RenderHandler(HandleSelectServer, "cp_selectserver")
 )
 
 type Advertisement struct {
@@ -305,8 +301,9 @@ func setupRoutes() *goji.Mux {
 	ServerPublicAPIMux.Handle(pat.Get("/status.json"), RequireActiveServer(APIHandler(HandleGuildStatusJSON)))
 
 	// Server selection has its own handler
-	RootMux.Handle(pat.Get("/manage"), SelectServerHomePageHandler)
-	RootMux.Handle(pat.Get("/manage/"), SelectServerHomePageHandler)
+	selectServerHandler := SendAddedServerToSetup(RenderHandler(HandleSelectServer, "cp_selectserver"))
+	RootMux.Handle(pat.Get("/manage"), selectServerHandler)
+	RootMux.Handle(pat.Get("/manage/"), selectServerHandler)
 	RootMux.Handle(pat.Get("/status"), ControllerHandler(HandleStatusHTML, "cp_status"))
 	RootMux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatusHTML, "cp_status"))
 	RootMux.Handle(pat.Get("/status.json"), APIHandler(HandleStatusJSON))
@@ -443,6 +440,7 @@ func loadCoreHTMLTemplate(path string) {
 
 const (
 	SidebarCategoryTopLevel       = "Top"
+	SidebarCategoryBelowHome      = "BelowHome"
 	SidebarCategoryFeeds          = "Feeds"
 	SidebarCategoryRoles          = "Roles"
 	SidebarCategoryTools          = "Tools"

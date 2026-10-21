@@ -21,6 +21,8 @@ func SaveConfig(config *Config) error {
 		return err
 	}
 	pubsub.Publish("invalidate_moderation_config_cache", config.GuildID, nil)
+	// The feature flags are worked out from the cached config, which only the bot clears through pubsub.
+	configCache.Delete(cacheKey(config.GuildID))
 
 	if err := featureflags.UpdatePluginFeatureFlags(config.GuildID, &Plugin{}); err != nil {
 		return err
