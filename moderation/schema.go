@@ -174,4 +174,9 @@ CREATE TABLE IF NOT EXISTS moderation_ban_appeals (
 `, `
 -- One open appeal per ban: an appeal closes when the user is unbanned.
 CREATE UNIQUE INDEX IF NOT EXISTS moderation_ban_appeals_open_idx ON moderation_ban_appeals(guild_id, user_id) WHERE closed_at IS NULL;
+`, `
+-- A rejected appeal stays open, so the ban cannot be appealed again until the user is unbanned.
+ALTER TABLE moderation_ban_appeals ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP WITH TIME ZONE;
+`, `
+ALTER TABLE moderation_ban_appeals ADD COLUMN IF NOT EXISTS resolved_by BIGINT NOT NULL DEFAULT 0;
 `}

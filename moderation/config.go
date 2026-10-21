@@ -9,6 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -258,10 +259,20 @@ func configFromModel(model *models.ModerationConfig) *Config {
 	}
 }
 
+// BanAppealsReviewChannel is the modlog channel unless a premium server picked its own.
 func (c *Config) BanAppealsReviewChannel() int64 {
-	if c.BanAppealsChannel != 0 {
+	if c.BanAppealsChannel != 0 && isPremiumGuild(c.GuildID) {
 		return c.BanAppealsChannel
 	}
 
 	return c.ActionChannel
+}
+
+var isPremiumGuild = func(guildID int64) bool {
+	isPremium, err := premium.IsGuildPremium(guildID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed checking premium status")
+	}
+
+	return isPremium
 }

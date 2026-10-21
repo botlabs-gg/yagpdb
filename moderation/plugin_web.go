@@ -57,8 +57,8 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["DefaultBanDMMessage"] = DefaultBanDMMessage
 	templateData["DefaultTimeoutDuration"] = int(DefaultTimeoutDuration.Minutes())
-	templateData["BanAppealLink"] = BanAppealLink(activeGuild.ID)
 
 	if _, ok := templateData["ModConfig"]; !ok {
 		config, err := FetchConfig(activeGuild.ID)
@@ -82,14 +82,23 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 
 	newConfig.GuildID = activeGuild.ID
 	templateData["DefaultDMMessage"] = DefaultDMMessage
-	templateData["BanAppealLink"] = BanAppealLink(activeGuild.ID)
+	templateData["DefaultBanDMMessage"] = DefaultBanDMMessage
 
-	if newConfig.BanAppealsEnabled && newConfig.BanAppealsReviewChannel() == 0 {
-		return templateData.AddAlerts(web.ErrorAlert("Ban appeals need a channel to be posted in, set either an appeals channel or a modlog channel.")), nil
+	if !newConfig.BanAppealsEnabled {
+		// The options are disabled in the form while appeals are off, so they are not submitted.
+		if current, err := FetchConfig(activeGuild.ID); err == nil {
+			newConfig.BanAppealsChannel = current.BanAppealsChannel
+			newConfig.BanAppealsDMButton = current.BanAppealsDMButton
+		}
 	}
 
 	if !premium.ContextPremium(ctx) {
+		newConfig.BanAppealsChannel = 0
 		newConfig.BanAppealsDMButton = false
+	}
+
+	if newConfig.BanAppealsEnabled && newConfig.BanAppealsReviewChannel() == 0 {
+		return templateData.AddAlerts(web.ErrorAlert("Ban appeals are posted in the modlog channel, set one in the General tab first.")), nil
 	}
 
 	err := SaveConfig(newConfig)
@@ -110,6 +119,7 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 	numDeleted, _ := models.ModerationWarnings(models.ModerationWarningWhere.GuildID.EQ(activeGuild.ID)).DeleteAllG(r.Context())
 	templateData.AddAlerts(web.SucessAlert("Deleted ", numDeleted, " warnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["DefaultBanDMMessage"] = DefaultBanDMMessage
 
 	if numDeleted > 0 {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyClearWarnings, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: numDeleted}))

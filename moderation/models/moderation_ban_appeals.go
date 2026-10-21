@@ -35,6 +35,8 @@ type ModerationBanAppeal struct {
 	ReviewChannelID int64     `boil:"review_channel_id" json:"review_channel_id" toml:"review_channel_id" yaml:"review_channel_id"`
 	ReviewMessageID int64     `boil:"review_message_id" json:"review_message_id" toml:"review_message_id" yaml:"review_message_id"`
 	ClosedAt        null.Time `boil:"closed_at" json:"closed_at,omitempty" toml:"closed_at" yaml:"closed_at,omitempty"`
+	RejectedAt      null.Time `boil:"rejected_at" json:"rejected_at,omitempty" toml:"rejected_at" yaml:"rejected_at,omitempty"`
+	ResolvedBy      int64     `boil:"resolved_by" json:"resolved_by" toml:"resolved_by" yaml:"resolved_by"`
 
 	R *moderationBanAppealR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L moderationBanAppealL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -52,6 +54,8 @@ var ModerationBanAppealColumns = struct {
 	ReviewChannelID string
 	ReviewMessageID string
 	ClosedAt        string
+	RejectedAt      string
+	ResolvedBy      string
 }{
 	ID:              "id",
 	CreatedAt:       "created_at",
@@ -64,6 +68,8 @@ var ModerationBanAppealColumns = struct {
 	ReviewChannelID: "review_channel_id",
 	ReviewMessageID: "review_message_id",
 	ClosedAt:        "closed_at",
+	RejectedAt:      "rejected_at",
+	ResolvedBy:      "resolved_by",
 }
 
 var ModerationBanAppealTableColumns = struct {
@@ -78,6 +84,8 @@ var ModerationBanAppealTableColumns = struct {
 	ReviewChannelID string
 	ReviewMessageID string
 	ClosedAt        string
+	RejectedAt      string
+	ResolvedBy      string
 }{
 	ID:              "moderation_ban_appeals.id",
 	CreatedAt:       "moderation_ban_appeals.created_at",
@@ -90,6 +98,8 @@ var ModerationBanAppealTableColumns = struct {
 	ReviewChannelID: "moderation_ban_appeals.review_channel_id",
 	ReviewMessageID: "moderation_ban_appeals.review_message_id",
 	ClosedAt:        "moderation_ban_appeals.closed_at",
+	RejectedAt:      "moderation_ban_appeals.rejected_at",
+	ResolvedBy:      "moderation_ban_appeals.resolved_by",
 }
 
 // Generated where
@@ -161,6 +171,61 @@ func (w whereHelperint16) NIN(slice []int16) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+type whereHelperstring struct{ field string }
+
+func (w whereHelperstring) EQ(x string) qm.QueryMod      { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperstring) NEQ(x string) qm.QueryMod     { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperstring) LT(x string) qm.QueryMod      { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperstring) LTE(x string) qm.QueryMod     { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperstring) GT(x string) qm.QueryMod      { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperstring) GTE(x string) qm.QueryMod     { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperstring) LIKE(x string) qm.QueryMod    { return qm.Where(w.field+" LIKE ?", x) }
+func (w whereHelperstring) NLIKE(x string) qm.QueryMod   { return qm.Where(w.field+" NOT LIKE ?", x) }
+func (w whereHelperstring) ILIKE(x string) qm.QueryMod   { return qm.Where(w.field+" ILIKE ?", x) }
+func (w whereHelperstring) NILIKE(x string) qm.QueryMod  { return qm.Where(w.field+" NOT ILIKE ?", x) }
+func (w whereHelperstring) SIMILAR(x string) qm.QueryMod { return qm.Where(w.field+" SIMILAR TO ?", x) }
+func (w whereHelperstring) NSIMILAR(x string) qm.QueryMod {
+	return qm.Where(w.field+" NOT SIMILAR TO ?", x)
+}
+func (w whereHelperstring) IN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+type whereHelpernull_Time struct{ field string }
+
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var ModerationBanAppealWhere = struct {
 	ID              whereHelperint64
 	CreatedAt       whereHelpertime_Time
@@ -173,6 +238,8 @@ var ModerationBanAppealWhere = struct {
 	ReviewChannelID whereHelperint64
 	ReviewMessageID whereHelperint64
 	ClosedAt        whereHelpernull_Time
+	RejectedAt      whereHelpernull_Time
+	ResolvedBy      whereHelperint64
 }{
 	ID:              whereHelperint64{field: "\"moderation_ban_appeals\".\"id\""},
 	CreatedAt:       whereHelpertime_Time{field: "\"moderation_ban_appeals\".\"created_at\""},
@@ -185,6 +252,8 @@ var ModerationBanAppealWhere = struct {
 	ReviewChannelID: whereHelperint64{field: "\"moderation_ban_appeals\".\"review_channel_id\""},
 	ReviewMessageID: whereHelperint64{field: "\"moderation_ban_appeals\".\"review_message_id\""},
 	ClosedAt:        whereHelpernull_Time{field: "\"moderation_ban_appeals\".\"closed_at\""},
+	RejectedAt:      whereHelpernull_Time{field: "\"moderation_ban_appeals\".\"rejected_at\""},
+	ResolvedBy:      whereHelperint64{field: "\"moderation_ban_appeals\".\"resolved_by\""},
 }
 
 // ModerationBanAppealRels is where relationship names are stored.
@@ -204,9 +273,9 @@ func (*moderationBanAppealR) NewStruct() *moderationBanAppealR {
 type moderationBanAppealL struct{}
 
 var (
-	moderationBanAppealAllColumns            = []string{"id", "created_at", "updated_at", "guild_id", "user_id", "source", "appeal", "ban_reason", "review_channel_id", "review_message_id", "closed_at"}
+	moderationBanAppealAllColumns            = []string{"id", "created_at", "updated_at", "guild_id", "user_id", "source", "appeal", "ban_reason", "review_channel_id", "review_message_id", "closed_at", "rejected_at", "resolved_by"}
 	moderationBanAppealColumnsWithoutDefault = []string{"created_at", "updated_at", "guild_id", "user_id", "source", "appeal", "ban_reason"}
-	moderationBanAppealColumnsWithDefault    = []string{"id", "review_channel_id", "review_message_id", "closed_at"}
+	moderationBanAppealColumnsWithDefault    = []string{"id", "review_channel_id", "review_message_id", "closed_at", "rejected_at", "resolved_by"}
 	moderationBanAppealPrimaryKeyColumns     = []string{"id"}
 	moderationBanAppealGeneratedColumns      = []string{}
 )

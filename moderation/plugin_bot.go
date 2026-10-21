@@ -87,6 +87,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildAuditLogEntryCreate, eventsystem.EventGuildAuditLogEntryCreate)
 	eventsystem.AddHandlerAsyncLast(p, handleGuildBanRemoveCloseAppeal, eventsystem.EventGuildBanRemove)
 	bot.RegisterDMInteractionHandler(banAppealButtonCustomIDPrefix, handleBanAppealDMInteraction)
+	eventsystem.AddHandlerAsyncLast(p, handleBanAppealReviewInteraction, eventsystem.EventInteractionCreate)
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Ban Appeal{{if .GuildName}} for {{.GuildName}}{{end}}</title>
+	<title>Ban Appeal{{if .GuildName}} - {{.GuildName}}{{end}}</title>
 	<style>
 		:root {
 			--bg: #f2f3f5;
@@ -12,7 +12,9 @@
 			--text: #2e3338;
 			--muted: #5c5e66;
 			--accent: #5865f2;
+			--accent-hover: #4752c4;
 			--field: #ebedef;
+			--border: #e3e5e8;
 			--danger-bg: #fde8e8;
 			--danger-text: #a12d2f;
 		}
@@ -23,6 +25,7 @@
 				--text: #f2f3f5;
 				--muted: #b5bac1;
 				--field: #1e1f22;
+				--border: #3f4147;
 				--danger-bg: #3d2224;
 				--danger-text: #f6a5a7;
 			}
@@ -38,88 +41,120 @@
 			background: var(--bg);
 			color: var(--text);
 			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			line-height: 1.5;
 		}
 		main {
 			width: 100%;
-			max-width: 520px;
-			padding: 32px 24px;
-			border-radius: 8px;
+			max-width: 460px;
+			padding: 32px 28px;
+			border-radius: 12px;
 			background: var(--card);
 		}
-		h1 { margin: 0 0 24px; font-size: 1.4rem; text-align: center; }
-		.alert {
-			margin-bottom: 16px;
-			padding: 12px;
-			border-radius: 4px;
-			background: var(--danger-bg);
-			color: var(--danger-text);
+		header { margin-bottom: 20px; text-align: center; }
+		header img { width: 72px; height: 72px; border-radius: 50%; }
+		h1 { margin: 12px 0 0; font-size: 1.35rem; }
+		h2 { margin: 0 0 8px; font-size: 1.1rem; }
+		p { margin: 0 0 16px; }
+		.intro { color: var(--muted); text-align: center; }
+		.reason {
+			margin-bottom: 24px;
+			padding: 4px 0 4px 12px;
+			border-left: 3px solid var(--border);
 		}
-		.muted { color: var(--muted); }
-		.ban-reason {
-			margin: 0 0 16px;
-			padding: 12px;
-			border-radius: 4px;
-			background: var(--field);
-			white-space: pre-wrap;
-			overflow-wrap: anywhere;
+		.reason-label {
+			display: block;
+			color: var(--muted);
+			font-size: 0.75rem;
+			font-weight: 600;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
 		}
-		label { display: block; margin-bottom: 8px; font-weight: 600; }
+		.reason p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+		label { display: block; margin-bottom: 6px; font-weight: 600; }
 		textarea {
 			width: 100%;
-			min-height: 160px;
-			margin-bottom: 8px;
-			padding: 10px;
-			border: 0;
-			border-radius: 4px;
+			min-height: 150px;
+			padding: 10px 12px;
+			border: 1px solid transparent;
+			border-radius: 6px;
 			background: var(--field);
 			color: var(--text);
 			font: inherit;
 			resize: vertical;
 		}
+		textarea:focus { outline: none; border-color: var(--accent); }
 		button {
 			width: 100%;
 			margin-top: 16px;
-			padding: 10px;
+			padding: 11px;
 			border: 0;
-			border-radius: 4px;
+			border-radius: 6px;
 			background: var(--accent);
 			color: #fff;
 			font-size: 1rem;
+			font-weight: 600;
 			cursor: pointer;
 		}
-		.footer { margin-top: 24px; font-size: 0.8rem; color: var(--muted); text-align: center; }
+		button:hover { background: var(--accent-hover); }
+		.signed-in { margin: 12px 0 0; color: var(--muted); font-size: 0.85rem; text-align: center; }
+		.alert {
+			margin-bottom: 16px;
+			padding: 12px;
+			border-radius: 6px;
+			background: var(--danger-bg);
+			color: var(--danger-text);
+		}
+		.status { text-align: center; }
+		.status p { margin: 0; color: var(--muted); }
 	</style>
 </head>
 <body>
 	<main>
-		<h1>Ban Appeal{{if .GuildName}} for {{.GuildName}}{{end}}</h1>
+		<header>
+			{{if .GuildIcon}}<img src="{{.GuildIcon}}" alt="">{{end}}
+			<h1>{{or .GuildName "Ban Appeal"}}</h1>
+		</header>
 
 		{{range .Alerts}}{{if eq .Style "danger"}}<div class="alert">{{.Message}}</div>{{end}}{{end}}
 
 		{{$state := or .AppealState ""}}
-		{{if eq $state "disabled"}}
-		<p>This server does not accept ban appeals.</p>
-		{{else if eq $state "not_banned"}}
-		<p>You are not banned from this server, so there is nothing to appeal.</p>
+		{{if eq $state "invalid"}}
+		<div class="status"><p>This appeal link isn't valid.</p></div>
+		{{else if eq $state "disabled"}}
+		<div class="status"><p>This server isn't accepting ban appeals.</p></div>
 		{{else if eq $state "pending"}}
-		<p>You appealed this ban on {{.AppealedAt.UTC.Format "January 2, 2006 at 15:04 UTC"}}. The server's moderators will
-			review it, and you can only appeal a ban once.</p>
+		<div class="status">
+			<h2>Your appeal has been received</h2>
+			<p>You sent it on {{.AppealedAt.UTC.Format "January 2, 2006"}}. The moderators will review it.</p>
+		</div>
+		{{else if eq $state "rejected"}}
+		<div class="status">
+			<h2>Your appeal wasn't accepted</h2>
+			<p>The moderators reviewed your appeal and decided to keep the ban in place.</p>
+		</div>
 		{{else if eq $state "submitted"}}
-		<p>Your appeal has been sent to the server's moderators. If they accept it, you will be unbanned.</p>
+		<div class="status">
+			<h2>Appeal sent</h2>
+			<p>The moderators will review your appeal. If they accept it, you'll be unbanned.</p>
+		</div>
 		{{else if eq $state "form"}}
-		<p class="muted">Logged in as <strong>{{.User.Username}}</strong></p>
-		<p>Reason given for your ban:</p>
-		<p class="ban-reason">{{or .BanReason "No reason given"}}</p>
+		<p class="intro">You've been banned from this server. If you think the ban should be lifted, let the
+			moderators know why.</p>
+		{{if .BanReason}}
+		<div class="reason">
+			<span class="reason-label">Reason</span>
+			<p>{{.BanReason}}</p>
+		</div>
+		{{end}}
 		<form method="POST">
-			<label for="appeal">Why should you be unbanned?</label>
+			<label for="appeal">Your appeal</label>
 			<textarea id="appeal" name="Appeal" required minlength="{{.BanAppealMinLength}}"
-				maxlength="{{.BanAppealMaxLength}}">{{.AppealDraft}}</textarea>
-			<p class="muted">You can only appeal a ban once, so include everything you want the moderators to know.</p>
+				maxlength="{{.BanAppealMaxLength}}"
+				placeholder="Explain what happened and why you'd like to be unbanned.">{{.AppealDraft}}</textarea>
 			<button type="submit">Send Appeal</button>
 		</form>
+		<p class="signed-in">Signed in as {{.User.Username}}</p>
 		{{end}}
-
-		<p class="footer">Ban appeals by {{.Host}}</p>
 	</main>
 </body>
 </html>

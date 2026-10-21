@@ -16,7 +16,6 @@ import (
 	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -28,14 +27,6 @@ const (
 	BanAppealSourceDMButton BanAppealSource = iota
 	BanAppealSourceWeb
 )
-
-func (s BanAppealSource) String() string {
-	if s == BanAppealSourceDMButton {
-		return "Appeal button in the ban DM"
-	}
-
-	return "Appeal page on the dashboard"
-}
 
 const (
 	BanAppealMinLength = 20
@@ -51,11 +42,11 @@ const (
 var (
 	ErrBanAppealsDisabled = errors.New("This server does not accept ban appeals.")
 	ErrNotBanned          = errors.New("You are not banned from this server.")
-	ErrAlreadyAppealed    = errors.New("You have already appealed this ban. You can only appeal a ban once.")
+	ErrAlreadyAppealed    = errors.New("You have already appealed this ban.")
 )
 
 func BanAppealLink(guildID int64) string {
-	return fmt.Sprintf("%s/public/%d/appeal", web.BaseURL(), guildID)
+	return fmt.Sprintf("%s/%d/appeal", web.BaseURL(), guildID)
 }
 
 func banAppealLinkIfOpen(config *Config, guildID int64) string {
@@ -75,12 +66,7 @@ func banAppealDMButtonAvailable(config *Config, guildID int64) bool {
 		return false
 	}
 
-	isPremium, err := premium.IsGuildPremium(guildID)
-	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("failed checking premium for ban appeal button")
-	}
-
-	return isPremium
+	return isPremiumGuild(guildID)
 }
 
 func banAppealDMButton(guildID int64) discordgo.Button {
@@ -146,51 +132,6 @@ func FileBanAppeal(ctx context.Context, config *Config, guildID, userID int64, s
 	return model, err
 }
 
-// postBanAppealForReview withdraws the appeal when it cannot be posted, so the
-// user is free to try again rather than waiting on an appeal nobody can see.
-func postBanAppealForReview(ctx context.Context, config *Config, appeal *models.ModerationBanAppeal, user *discordgo.User) error {
-	channelID := config.BanAppealsReviewChannel()
-
-	msg, err := common.BotSession.ChannelMessageSendEmbed(channelID, banAppealEmbed(appeal, user))
-	if err != nil {
-		if _, deleteErr := appeal.DeleteG(ctx); deleteErr != nil {
-			logger.WithError(deleteErr).WithField("guild", appeal.GuildID).Error("failed withdrawing undelivered ban appeal")
-		}
-
-		sendFailedDMError(appeal.GuildID, config.ErrorChannel, fmt.Sprintf("Failed posting a ban appeal from <@%d> to <#%d>, the user was asked to try again.\nError: `%v`", appeal.UserID, channelID, err))
-		return err
-	}
-
-	appeal.ReviewChannelID = channelID
-	appeal.ReviewMessageID = msg.ID
-	_, err = appeal.UpdateG(ctx, boil.Whitelist("review_channel_id", "review_message_id", "updated_at"))
-	return err
-}
-
-func banAppealEmbed(appeal *models.ModerationBanAppeal, user *discordgo.User) *discordgo.MessageEmbed {
-	banReason := appeal.BanReason
-	if banReason == "" {
-		banReason = "*No reason given*"
-	}
-
-	return &discordgo.MessageEmbed{
-		Title: "Ban Appeal",
-		Author: &discordgo.MessageEmbedAuthor{
-			Name:    fmt.Sprintf("%s (ID %d)", user.String(), user.ID),
-			IconURL: user.AvatarURL("256"),
-		},
-		Description: appeal.Appeal,
-		Color:       0xfaa61a,
-		Fields: []*discordgo.MessageEmbedField{
-			{Name: "User", Value: fmt.Sprintf("<@%d>", user.ID), Inline: true},
-			{Name: "Submitted Through", Value: BanAppealSource(appeal.Source).String(), Inline: true},
-			{Name: "Ban Reason", Value: common.CutStringShort(banReason, 1024)},
-		},
-		Footer:    &discordgo.MessageEmbedFooter{Text: "To accept this appeal, unban the user with the unban command."},
-		Timestamp: appeal.CreatedAt.Format(time.RFC3339),
-	}
-}
-
 type BanAppealFiledData struct {
 	AppealID int64 `json:"appeal_id"`
 }
@@ -244,32 +185,15 @@ func handleGuildBanRemoveCloseAppeal(evt *eventsystem.EventData) (retry bool, er
 		return true, err
 	}
 
-	if appeal.ReviewMessageID != 0 {
+	if appeal.ReviewMessageID != 0 && !appeal.RejectedAt.Valid {
 		markBanAppealReviewClosed(appeal)
 	}
 
 	return false, nil
 }
 
-func markBanAppealReviewClosed(appeal *models.ModerationBanAppeal) {
-	msg, err := common.BotSession.ChannelMessage(appeal.ReviewChannelID, appeal.ReviewMessageID)
-	if err != nil || len(msg.Embeds) == 0 {
-		return
-	}
-
-	embed := msg.Embeds[0]
-	embed.Color = 0x43b581
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:  "Status",
-		Value: fmt.Sprintf("Closed, the user was unbanned <t:%d:R>", appeal.ClosedAt.Time.Unix()),
-	})
-	embed.Footer = nil
-
-	if _, err := common.BotSession.ChannelMessageEditEmbed(appeal.ReviewChannelID, appeal.ReviewMessageID, embed); err != nil {
-		logger.WithError(err).WithField("guild", appeal.GuildID).Error("failed marking ban appeal as closed")
-	}
-}
-
+// DMs are handled on whichever node receives them, where the cached config of
+// the server may be stale, so these read the config directly.
 func handleBanAppealDMInteraction(evt *eventsystem.EventData) {
 	switch evt.InteractionCreate().Type {
 	case discordgo.InteractionMessageComponent:
@@ -288,7 +212,7 @@ func openBanAppealModal(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := BotCachedGetConfig(guildID)
+	config, err := FetchConfig(guildID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed fetching config for ban appeal")
 		bot.RespondDMInteraction(evt, "Something went wrong opening your appeal.")
@@ -319,8 +243,7 @@ func openBanAppealModal(evt *eventsystem.EventData) {
 			CustomID: fmt.Sprintf("%s%d_%d", banAppealModalCustomIDPrefix, guildID, ic.Message.ID),
 			Components: []discordgo.TopLevelComponent{
 				discordgo.TextDisplay{
-					Content: "Your appeal goes to the moderators of the server that banned you. " +
-						"**You can only appeal a ban once**, so include everything you want them to know.",
+					Content: "Your appeal will be sent to the moderators of the server that banned you.",
 				},
 				discordgo.Label{
 					Label: "Why should you be unbanned?",
@@ -355,7 +278,7 @@ func submitBanAppealModal(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := BotCachedGetConfig(guildID)
+	config, err := FetchConfig(guildID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed fetching config for ban appeal")
 		reply("Something went wrong sending your appeal.")
@@ -394,8 +317,8 @@ func submitBanAppealModal(evt *eventsystem.EventData) {
 }
 
 func banAppealButtonUnavailableMessage(config *Config, guildID int64) string {
-	if config.BanAppealsOpen() {
-		return "This server no longer accepts appeals through this button. You can appeal here instead: " + BanAppealLink(guildID)
+	if link := banAppealLinkIfOpen(config, guildID); link != "" {
+		return "This server no longer accepts appeals through this button. You can appeal here instead: " + link
 	}
 
 	return ErrBanAppealsDisabled.Error()

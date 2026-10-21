@@ -201,8 +201,17 @@ func TestDMComponentsExtraButtons(t *testing.T) {
 	got := DMComponents(1, nil, 0, extra)
 	row := got[len(got)-1].(discordgo.ActionsRow)
 
-	if row.Components[0].(discordgo.Button).CustomID != fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, 1) {
+	info := row.Components[0].(discordgo.Button)
+	if info.CustomID != fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, 1) {
 		t.Error("info button is no longer first")
+	}
+	if info.Emoji == nil || info.Emoji.Name != "ℹ️" {
+		t.Error("info button should show ℹ️")
+	}
+	for _, c := range row.Components[:len(row.Components)-1] {
+		if label := c.(discordgo.Button).Label; label != "" {
+			t.Errorf("dm buttons should only show their emoji, got label %q", label)
+		}
 	}
 	if last := row.Components[len(row.Components)-1].(discordgo.Button); last.CustomID != extra.CustomID {
 		t.Errorf("extra button not appended, last button is %q", last.CustomID)
