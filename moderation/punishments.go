@@ -38,6 +38,18 @@ const MinTimeOutDuration = time.Minute
 const DefaultTimeoutDuration = 10 * time.Minute
 const DefaultDMMessage = "You have been {{.ModAction}}\n**Reason:** {{.Reason}}"
 
+const DefaultBanDMMessage = DefaultDMMessage + "{{if .AppealLink}}\n\nYou can appeal your ban on {{.AppealLink}}{{end}}"
+
+// withBanAppealLink adds the appeal link to a ban dm that does not show it
+// already, leaving a dm that renders empty unsent.
+func withBanAppealLink(executedDM, appealLink string) string {
+	if appealLink == "" || strings.TrimSpace(executedDM) == "" || strings.Contains(executedDM, appealLink) {
+		return executedDM
+	}
+
+	return executedDM + "\n\nYou can appeal your ban on " + appealLink
+}
+
 func getMemberWithFallback(gs *dstate.GuildSet, user *discordgo.User) (ms *dstate.MemberState, notFound bool) {
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
@@ -209,8 +221,23 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		}
 	}()
 
+	var appealLink string
+	var extraButtons []discordgo.InteractiveComponent
+	isBan := action.Prefix == MABanned.Prefix
+	if isBan {
+		appealLink = banAppealLinkIfOpen(config, gs.ID)
+		if banAppealDMButtonAvailable(config, gs.ID) {
+			extraButtons = append(extraButtons, banAppealDMButton(gs.ID))
+		}
+	}
+
+	defaultDMMessage := DefaultDMMessage
+	if isBan {
+		defaultDMMessage = DefaultBanDMMessage
+	}
+
 	if dmMsg == "" {
-		dmMsg = DefaultDMMessage
+		dmMsg = defaultDMMessage
 	}
 
 	executeDM := func(source string) (string, error) {
@@ -231,6 +258,9 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		ctx.Data["Author"] = author
 		ctx.Data["ModAction"] = action
 		ctx.Data["Message"] = message
+		if isBan {
+			ctx.Data["AppealLink"] = appealLink
+		}
 
 		if warningID != -1 {
 			ctx.Data["WarningID"] = warningID
@@ -248,12 +278,14 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing punishment DM")
 		sendFailedDMError(gs.ID, config.ErrorChannel, fmt.Sprintf("Failed executing punishment DM (Action: `%s`), sent the default DM instead.\nError: `%v`", ActionMap[action.Prefix], err))
 
-		executed, err = executeDM(DefaultDMMessage)
+		executed, err = executeDM(defaultDMMessage)
 		if err != nil {
 			logger.WithError(err).WithField("guild", gs.ID).Error("Failed executing default punishment DM")
 			executed = "Failed executing template."
 		}
 	}
+
+	executed = withBanAppealLink(executed, appealLink)
 
 	if strings.TrimSpace(executed) != "" {
 		msgSend := &discordgo.MessageSend{
@@ -262,7 +294,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 					Description: executed,
 				},
 			},
-			Components: bot.DMComponents(gs.ID, nil, 0),
+			Components: bot.DMComponents(gs.ID, nil, 0, extraButtons...),
 		}
 
 		err = bot.SendDMComplexMessage(member.User.ID, msgSend)

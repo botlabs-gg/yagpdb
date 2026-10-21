@@ -1,0 +1,161 @@
+{{define "moderation_ban_appeal"}}
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Ban Appeal{{if .GuildName}} - {{.GuildName}}{{end}}</title>
+	<style>
+		:root {
+			--bg: #f2f3f5;
+			--card: #ffffff;
+			--text: #2e3338;
+			--muted: #5c5e66;
+			--accent: #5865f2;
+			--accent-hover: #4752c4;
+			--field: #ebedef;
+			--border: #e3e5e8;
+			--danger-bg: #fde8e8;
+			--danger-text: #a12d2f;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg: #1e1f22;
+				--card: #2b2d31;
+				--text: #f2f3f5;
+				--muted: #b5bac1;
+				--field: #1e1f22;
+				--border: #3f4147;
+				--danger-bg: #3d2224;
+				--danger-text: #f6a5a7;
+			}
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 16px;
+			background: var(--bg);
+			color: var(--text);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			line-height: 1.5;
+		}
+		main {
+			width: 100%;
+			max-width: 460px;
+			padding: 32px 28px;
+			border-radius: 12px;
+			background: var(--card);
+		}
+		header { margin-bottom: 20px; text-align: center; }
+		header img { width: 72px; height: 72px; border-radius: 50%; }
+		h1 { margin: 12px 0 0; font-size: 1.35rem; }
+		h2 { margin: 0 0 8px; font-size: 1.1rem; }
+		p { margin: 0 0 16px; }
+		.intro { color: var(--muted); text-align: center; }
+		.reason {
+			margin-bottom: 24px;
+			padding: 4px 0 4px 12px;
+			border-left: 3px solid var(--border);
+		}
+		.reason-label {
+			display: block;
+			color: var(--muted);
+			font-size: 0.75rem;
+			font-weight: 600;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+		}
+		.reason p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+		label { display: block; margin-bottom: 6px; font-weight: 600; }
+		textarea {
+			width: 100%;
+			min-height: 150px;
+			padding: 10px 12px;
+			border: 1px solid transparent;
+			border-radius: 6px;
+			background: var(--field);
+			color: var(--text);
+			font: inherit;
+			resize: vertical;
+		}
+		textarea:focus { outline: none; border-color: var(--accent); }
+		button {
+			width: 100%;
+			margin-top: 16px;
+			padding: 11px;
+			border: 0;
+			border-radius: 6px;
+			background: var(--accent);
+			color: #fff;
+			font-size: 1rem;
+			font-weight: 600;
+			cursor: pointer;
+		}
+		button:hover { background: var(--accent-hover); }
+		.signed-in { margin: 12px 0 0; color: var(--muted); font-size: 0.85rem; text-align: center; }
+		.alert {
+			margin-bottom: 16px;
+			padding: 12px;
+			border-radius: 6px;
+			background: var(--danger-bg);
+			color: var(--danger-text);
+		}
+		.status { text-align: center; }
+		.status p { margin: 0; color: var(--muted); }
+	</style>
+</head>
+<body>
+	<main>
+		<header>
+			{{if .GuildIcon}}<img src="{{.GuildIcon}}" alt="">{{end}}
+			<h1>{{or .GuildName "Ban Appeal"}}</h1>
+		</header>
+
+		{{range .Alerts}}{{if eq .Style "danger"}}<div class="alert">{{.Message}}</div>{{end}}{{end}}
+
+		{{$state := or .AppealState ""}}
+		{{if eq $state "invalid"}}
+		<div class="status"><p>This appeal link isn't valid.</p></div>
+		{{else if eq $state "disabled"}}
+		<div class="status"><p>This server isn't accepting ban appeals.</p></div>
+		{{else if eq $state "pending"}}
+		<div class="status">
+			<h2>Your appeal has been received</h2>
+			<p>You sent it on {{.AppealedAt.UTC.Format "January 2, 2006"}}. The moderators will review it.</p>
+		</div>
+		{{else if eq $state "rejected"}}
+		<div class="status">
+			<h2>Your appeal wasn't accepted</h2>
+			<p>The moderators reviewed your appeal and decided to keep the ban in place.</p>
+		</div>
+		{{else if eq $state "submitted"}}
+		<div class="status">
+			<h2>Appeal sent</h2>
+			<p>The moderators will review your appeal. If they accept it, you'll be unbanned.</p>
+		</div>
+		{{else if eq $state "form"}}
+		<p class="intro">You've been banned from this server. If you think the ban should be lifted, let the
+			moderators know why.</p>
+		{{if .BanReason}}
+		<div class="reason">
+			<span class="reason-label">Reason</span>
+			<p>{{.BanReason}}</p>
+		</div>
+		{{end}}
+		<form method="POST">
+			<label for="appeal">Your appeal</label>
+			<textarea id="appeal" name="Appeal" required minlength="{{.BanAppealMinLength}}"
+				maxlength="{{.BanAppealMaxLength}}"
+				placeholder="Explain what happened and why you'd like to be unbanned.">{{.AppealDraft}}</textarea>
+			<button type="submit">Send Appeal</button>
+		</form>
+		<p class="signed-in">Signed in as {{.User.Username}}</p>
+		{{end}}
+	</main>
+</body>
+</html>
+{{end}}

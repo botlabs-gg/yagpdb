@@ -229,16 +229,14 @@ const (
 // dmButtonRow is the row appended to every dm the bot sends on a server's
 // behalf. It is always last and always present, so a recipient can always see
 // where a dm came from, and report it when reporting is configured.
-func dmButtonRow(guildID int64) discordgo.ActionsRow {
+func dmButtonRow(guildID int64, extraButtons ...discordgo.InteractiveComponent) discordgo.ActionsRow {
 	buttons := []discordgo.InteractiveComponent{
 		discordgo.Button{
-			Label:    "Info",
-			Style:    discordgo.PrimaryButton,
-			Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
+			Style:    discordgo.SecondaryButton,
+			Emoji:    &discordgo.ComponentEmoji{Name: "ℹ️"},
 			CustomID: fmt.Sprintf("%s%d", DMServerInfoCustomIDPrefix, guildID),
 		},
 		discordgo.Button{
-			Label:    "Delete",
 			Style:    discordgo.DangerButton,
 			Emoji:    &discordgo.ComponentEmoji{Name: "🗑️"},
 			CustomID: fmt.Sprintf("%s%d", DMDeleteCustomIDPrefix, guildID),
@@ -247,14 +245,13 @@ func dmButtonRow(guildID int64) discordgo.ActionsRow {
 
 	if confDMReportChannel.GetInt() != 0 {
 		buttons = append(buttons, discordgo.Button{
-			Label:    "Report Message",
 			Style:    discordgo.SecondaryButton,
 			Emoji:    &discordgo.ComponentEmoji{Name: "⚠️"},
 			CustomID: fmt.Sprintf("%s%d", DMReportCustomIDPrefix, guildID),
 		})
 	}
 
-	return discordgo.ActionsRow{Components: buttons}
+	return discordgo.ActionsRow{Components: append(buttons, extraButtons...)}
 }
 
 // GenerateDMButtons returns just the dm button row, for callers that build a
@@ -288,9 +285,10 @@ func ValidateDMComponents(components []discordgo.TopLevelComponent) error {
 
 // Adds Info, Delete and Report to a sent DM from the bot, always as the last
 // action row. When there is no room, the message's own action rows are clipped
-// from the end to make some.
-func DMComponents(guildID int64, components []discordgo.TopLevelComponent, flags discordgo.MessageFlags) []discordgo.TopLevelComponent {
-	row := dmButtonRow(guildID)
+// from the end to make some. Extra buttons are the bot's own, so they are
+// exempt from ValidateDMComponents.
+func DMComponents(guildID int64, components []discordgo.TopLevelComponent, flags discordgo.MessageFlags, extraButtons ...discordgo.InteractiveComponent) []discordgo.TopLevelComponent {
+	row := dmButtonRow(guildID, extraButtons...)
 
 	if flags&discordgo.MessageFlagsIsComponentsV2 != 0 {
 		// The body is carried in components too, so action rows go before it does.

@@ -8,7 +8,7 @@ host = "localhost"
 user="yagpdb"
 pass="ihateducks"
 sslmode = "disable"
-whitelist = ["moderation_configs", "moderation_warnings", "muted_users"]
+whitelist = ["moderation_configs", "moderation_warnings", "muted_users", "moderation_ban_appeals"]
 
 [auto-columns]
 created = "created_at"

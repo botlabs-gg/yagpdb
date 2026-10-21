@@ -405,7 +405,7 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	}
 }
 
-func respondDMInteraction(evt *eventsystem.EventData, content string) {
+func RespondDMInteraction(evt *eventsystem.EventData, content string) {
 	ic := evt.InteractionCreate()
 	err := evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -416,10 +416,10 @@ func respondDMInteraction(evt *eventsystem.EventData, content string) {
 	}
 }
 
-// deferDMInteraction acknowledges the interaction straight away, for handlers
+// DeferDMInteraction acknowledges the interaction straight away, for handlers
 // that may outlast the time discord allows before one must be answered. The
 // returned reply fills in the response once the work is done.
-func deferDMInteraction(evt *eventsystem.EventData) (reply func(content string), ok bool) {
+func DeferDMInteraction(evt *eventsystem.EventData) (reply func(content string), ok bool) {
 	ic := evt.InteractionCreate()
 	err := evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -445,7 +445,7 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 
 	if confDMReportChannel.GetInt() == 0 {
-		respondDMInteraction(evt, "Reporting is not configured on this instance.")
+		RespondDMInteraction(evt, "Reporting is not configured on this instance.")
 		return
 	}
 
@@ -453,7 +453,7 @@ func handleDMReportInteraction(evt *eventsystem.EventData) {
 	guildID, err := strconv.ParseInt(strings.TrimPrefix(customID, DMReportCustomIDPrefix), 10, 64)
 	if err != nil || ic.Message == nil {
 		logger.Errorf("DM report with malformed customID: %s from user %d", customID, ic.User.ID)
-		respondDMInteraction(evt, "Something went wrong reporting this DM.")
+		RespondDMInteraction(evt, "Something went wrong reporting this DM.")
 		return
 	}
 
@@ -518,20 +518,20 @@ func handleDMReportModalSubmit(evt *eventsystem.EventData) {
 
 	reportChannel := int64(confDMReportChannel.GetInt())
 	if reportChannel == 0 {
-		respondDMInteraction(evt, "Reporting is not configured on this instance.")
+		RespondDMInteraction(evt, "Reporting is not configured on this instance.")
 		return
 	}
 
 	guildID, messageID, err := parseDMReportModalCustomID(data.CustomID)
 	if err != nil {
 		logger.Errorf("DM report modal with malformed customID: %s from user %d", data.CustomID, ic.User.ID)
-		respondDMInteraction(evt, "Something went wrong reporting this DM.")
+		RespondDMInteraction(evt, "Something went wrong reporting this DM.")
 		return
 	}
 
 	// Reporting takes several requests, more than fits in the time discord
 	// allows before an interaction must be answered.
-	reply, ok := deferDMInteraction(evt)
+	reply, ok := DeferDMInteraction(evt)
 	if !ok {
 		return
 	}
@@ -628,10 +628,17 @@ func forwardDMReport(evt *eventsystem.EventData, reportChannel, guildID, message
 // disableDMReportButton keeps a dm that was reported but kept from being
 // reported again.
 func disableDMReportButton(session *discordgo.Session, channelID, messageID int64) {
+	if err := DisableDMButton(session, channelID, messageID, DMReportCustomIDPrefix, "Message Reported"); err != nil {
+		logger.WithError(err).Error("failed disabling report button on reported dm")
+	}
+}
+
+// DisableDMButton disables and relabels the buttons in a dm whose custom id
+// starts with the prefix.
+func DisableDMButton(session *discordgo.Session, channelID, messageID int64, customIDPrefix, label string) error {
 	msg, err := session.ChannelMessage(channelID, messageID)
 	if err != nil {
-		logger.WithError(err).Error("failed fetching reported dm")
-		return
+		return err
 	}
 
 	for _, component := range msg.Components {
@@ -641,8 +648,8 @@ func disableDMReportButton(session *discordgo.Session, channelID, messageID int6
 		}
 
 		for _, c := range row.Components {
-			if button, ok := c.(*discordgo.Button); ok && strings.HasPrefix(button.CustomID, DMReportCustomIDPrefix) {
-				button.Label = "Message Reported"
+			if button, ok := c.(*discordgo.Button); ok && strings.HasPrefix(button.CustomID, customIDPrefix) {
+				button.Label = label
 				button.Disabled = true
 			}
 		}
@@ -655,9 +662,7 @@ func disableDMReportButton(session *discordgo.Session, channelID, messageID int6
 		// Flags are always sent on an edit, these are the only ones it may carry.
 		Flags: msg.Flags & (discordgo.MessageFlagsSuppressEmbeds | discordgo.MessageFlagsIsComponentsV2),
 	})
-	if err != nil {
-		logger.WithError(err).Error("failed disabling report button on reported dm")
-	}
+	return err
 }
 
 var (
@@ -927,11 +932,11 @@ func handleDMDeleteInteraction(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 
 	if ic.Message == nil {
-		respondDMInteraction(evt, "Something went wrong deleting this DM.")
+		RespondDMInteraction(evt, "Something went wrong deleting this DM.")
 		return
 	}
 
-	reply, ok := deferDMInteraction(evt)
+	reply, ok := DeferDMInteraction(evt)
 	if !ok {
 		return
 	}
@@ -956,7 +961,10 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.User.ID == common.BotUser.ID {
 		return
 	}
-	//handle dm message guild info interaction
+	if handler, ok := registeredDMInteractionHandler(ic); ok {
+		handler(evt)
+		return
+	}
 
 	if ic.Type == discordgo.InteractionModalSubmit &&
 		strings.HasPrefix(ic.ModalSubmitData().CustomID, DMReportModalCustomIDPrefix) {
@@ -976,6 +984,40 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	} else {
 		publishDMInteraction(ic)
 	}
+}
+
+type dmInteractionHandler struct {
+	customIDPrefix string
+	handle         func(evt *eventsystem.EventData)
+}
+
+var dmInteractionHandlers []dmInteractionHandler
+
+// RegisterDMInteractionHandler claims dm buttons and modals whose custom id
+// starts with the prefix, so they are handled once on the node that receives
+// them rather than broadcast to every node. Call it from BotInit.
+func RegisterDMInteractionHandler(customIDPrefix string, handle func(evt *eventsystem.EventData)) {
+	dmInteractionHandlers = append(dmInteractionHandlers, dmInteractionHandler{customIDPrefix: customIDPrefix, handle: handle})
+}
+
+func registeredDMInteractionHandler(ic *discordgo.InteractionCreate) (func(evt *eventsystem.EventData), bool) {
+	var customID string
+	switch ic.Type {
+	case discordgo.InteractionMessageComponent:
+		customID = ic.MessageComponentData().CustomID
+	case discordgo.InteractionModalSubmit:
+		customID = ic.ModalSubmitData().CustomID
+	default:
+		return nil, false
+	}
+
+	for _, handler := range dmInteractionHandlers {
+		if strings.HasPrefix(customID, handler.customIDPrefix) {
+			return handler.handle, true
+		}
+	}
+
+	return nil, false
 }
 
 func publishDMInteraction(ic *discordgo.InteractionCreate) {

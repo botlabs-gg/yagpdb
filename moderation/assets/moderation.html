@@ -438,7 +438,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
         <div class="form-group">
             <label>Ban DM (Leave empty for default)</label>
             <textarea rows="5" class="form-control template-editor" name="BanMessage"
-                placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
+                placeholder="{{.DefaultBanDMMessage}}">{{or .ModConfig.BanMessage .DefaultBanDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being banned/kicked<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br />
@@ -446,10 +446,61 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
                 <code>{{"{{.Duration}}"}}</code> - The duration<br>
                 <code>{{"{{.HumanDuration}}"}}</code> - The duration in a human friendly format
                 (<code>1 hour and 3 minutes</code> for example)<br>
+                <code>{{"{{.AppealLink}}"}}</code> - The link to appeal the ban, empty when ban
+                appeals are disabled<br>
             </p>
         </div>
     </div>
 </div>
+<hr />
+<h4>Ban Appeals</h4>
+<p>Lets banned users ask to be unbanned. Appeals are posted for your moderators with <b>Unban</b> and <b>Reject</b>
+    buttons, which anyone allowed to use the ban and unban commands can use. A user can appeal each ban only once.</p>
+<div class="row">
+    <div class="col-sm">
+        {{checkbox "BanAppealsEnabled" "BanAppealsEnabled" "Enable ban appeals" .ModConfig.BanAppealsEnabled}}
+        <p class="help-block">The Ban DM includes a link to appeal the ban. Use <code>{{"{{.AppealLink}}"}}</code> to
+            place it yourself, otherwise it is added at the end.</p>
+    </div>
+    <div class="col-sm">
+        <fieldset class="ban-appeals-option">
+            <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
+                <div class="form-group">
+                    <label>Channel to post appeals in</label>
+                    <select class="form-control" name="BanAppealsChannel" data-requireperms-embed>
+                        {{textOnlyChannelOptions .ActiveGuild.Channels .ModConfig.BanAppealsChannel true "Same as the modlog channel"}}
+                    </select>
+                    <p class="help-block">Appeals go to the modlog channel unless you pick another one.</p>
+                    {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "A separate ban appeals channel is a premium feature.")}}
+                </div>
+            </fieldset>
+        </fieldset>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <fieldset class="ban-appeals-option">
+            <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
+                {{checkbox "BanAppealsDMButton" "BanAppealsDMButton" "Add an <b>Appeal Ban</b> button to ban DMs" .ModConfig.BanAppealsDMButton}}
+                <p class="help-block">Banned users can appeal from a form in Discord, opened by the button in their ban DM.
+                    Once they appeal, the button changes to <b>Ban Appealed</b>. Discord may not let buttons in DMs work
+                    when the user no longer shares a server with the bot, so the appeal link stays in the DM as well.</p>
+                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "The Appeal Ban button is a premium feature.")}}
+            </fieldset>
+        </fieldset>
+    </div>
+</div>
+<script>
+    (function () {
+        var toggle = document.getElementById("BanAppealsEnabled");
+        var options = document.querySelectorAll(".ban-appeals-option");
+        function syncBanAppealOptions() {
+            options.forEach(function (option) { option.disabled = !toggle.checked; });
+        }
+        toggle.addEventListener("change", syncBanAppealOptions);
+        syncBanAppealOptions();
+    })();
+</script>
 {{end}}
 
 {{define "moderation_warn"}}

@@ -10,6 +10,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
@@ -25,6 +26,7 @@ var (
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("moderation/assets/moderation.html", PageHTML)
+	initBanAppealWeb()
 
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
 		Name: "Moderation",
@@ -55,6 +57,7 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["DefaultBanDMMessage"] = DefaultBanDMMessage
 	templateData["DefaultTimeoutDuration"] = int(DefaultTimeoutDuration.Minutes())
 
 	if _, ok := templateData["ModConfig"]; !ok {
@@ -78,9 +81,27 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	templateData["ModConfig"] = newConfig
 
 	newConfig.GuildID = activeGuild.ID
-	err := SaveConfig(newConfig)
-
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["DefaultBanDMMessage"] = DefaultBanDMMessage
+
+	if !newConfig.BanAppealsEnabled {
+		// The options are disabled in the form while appeals are off, so they are not submitted.
+		if current, err := FetchConfig(activeGuild.ID); err == nil {
+			newConfig.BanAppealsChannel = current.BanAppealsChannel
+			newConfig.BanAppealsDMButton = current.BanAppealsDMButton
+		}
+	}
+
+	if !premium.ContextPremium(ctx) {
+		newConfig.BanAppealsChannel = 0
+		newConfig.BanAppealsDMButton = false
+	}
+
+	if newConfig.BanAppealsEnabled && newConfig.BanAppealsReviewChannel() == 0 {
+		return templateData.AddAlerts(web.ErrorAlert("Ban appeals are posted in the modlog channel, set one in the General tab first.")), nil
+	}
+
+	err := SaveConfig(newConfig)
 
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
@@ -98,6 +119,7 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 	numDeleted, _ := models.ModerationWarnings(models.ModerationWarningWhere.GuildID.EQ(activeGuild.ID)).DeleteAllG(r.Context())
 	templateData.AddAlerts(web.SucessAlert("Deleted ", numDeleted, " warnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["DefaultBanDMMessage"] = DefaultBanDMMessage
 
 	if numDeleted > 0 {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyClearWarnings, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: numDeleted}))

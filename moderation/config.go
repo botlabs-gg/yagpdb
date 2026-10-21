@@ -9,6 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -65,6 +66,11 @@ type Config struct {
 	BanReasonOptional    bool
 	BanMessage           string     `valid:"template,5000"`
 	DefaultBanDeleteDays null.Int64 `valid:"0,7"`
+
+	// Ban appeals
+	BanAppealsEnabled  bool
+	BanAppealsChannel  int64 `valid:"channel,true"`
+	BanAppealsDMButton bool
 
 	// Timeout
 	TimeoutEnabled              bool
@@ -131,6 +137,10 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		BanReasonOptional:    null.BoolFrom(c.BanReasonOptional),
 		BanMessage:           null.StringFrom(c.BanMessage),
 		DefaultBanDeleteDays: c.DefaultBanDeleteDays,
+
+		BanAppealsEnabled:  c.BanAppealsEnabled,
+		BanAppealsChannel:  c.BanAppealsChannel,
+		BanAppealsDMButton: c.BanAppealsDMButton,
 
 		TimeoutEnabled:              null.BoolFrom(c.TimeoutEnabled),
 		TimeoutCmdRoles:             c.TimeoutCmdRoles,
@@ -200,6 +210,10 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		BanMessage:           model.BanMessage.String,
 		DefaultBanDeleteDays: model.DefaultBanDeleteDays,
 
+		BanAppealsEnabled:  model.BanAppealsEnabled,
+		BanAppealsChannel:  model.BanAppealsChannel,
+		BanAppealsDMButton: model.BanAppealsDMButton,
+
 		TimeoutEnabled:              model.TimeoutEnabled.Bool,
 		TimeoutCmdRoles:             model.TimeoutCmdRoles,
 		TimeoutReasonOptional:       model.TimeoutReasonOptional.Bool,
@@ -243,4 +257,22 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		GiveRoleCmdModlog:  model.GiveRoleCmdModlog.Bool,
 		GiveRoleCmdRoles:   model.GiveRoleCmdRoles,
 	}
+}
+
+// BanAppealsReviewChannel is the modlog channel unless a premium server picked its own.
+func (c *Config) BanAppealsReviewChannel() int64 {
+	if c.BanAppealsChannel != 0 && isPremiumGuild(c.GuildID) {
+		return c.BanAppealsChannel
+	}
+
+	return c.ActionChannel
+}
+
+var isPremiumGuild = func(guildID int64) bool {
+	isPremium, err := premium.IsGuildPremium(guildID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed checking premium status")
+	}
+
+	return isPremium
 }

@@ -146,4 +146,37 @@ ALTER TABLE muted_users ALTER COLUMN user_id SET NOT NULL;
 ALTER TABLE muted_users ALTER COLUMN author_id SET NOT NULL;
 `, `
 ALTER TABLE muted_users ALTER COLUMN reason SET NOT NULL;
+`, `
+ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS ban_appeals_enabled BOOLEAN NOT NULL DEFAULT false;
+`, `
+ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS ban_appeals_channel BIGINT NOT NULL DEFAULT 0;
+`, `
+ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS ban_appeals_dm_button BOOLEAN NOT NULL DEFAULT false;
+`, `
+
+CREATE TABLE IF NOT EXISTS moderation_ban_appeals (
+	id BIGSERIAL PRIMARY KEY,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+	guild_id BIGINT NOT NULL,
+	user_id BIGINT NOT NULL,
+
+	source SMALLINT NOT NULL,
+	appeal TEXT NOT NULL,
+	ban_reason TEXT NOT NULL,
+
+	review_channel_id BIGINT NOT NULL DEFAULT 0,
+	review_message_id BIGINT NOT NULL DEFAULT 0,
+
+	closed_at TIMESTAMP WITH TIME ZONE
+);
+`, `
+-- One open appeal per ban: an appeal closes when the user is unbanned.
+CREATE UNIQUE INDEX IF NOT EXISTS moderation_ban_appeals_open_idx ON moderation_ban_appeals(guild_id, user_id) WHERE closed_at IS NULL;
+`, `
+-- A rejected appeal stays open, so the ban cannot be appealed again until the user is unbanned.
+ALTER TABLE moderation_ban_appeals ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP WITH TIME ZONE;
+`, `
+ALTER TABLE moderation_ban_appeals ADD COLUMN IF NOT EXISTS resolved_by BIGINT NOT NULL DEFAULT 0;
 `}
