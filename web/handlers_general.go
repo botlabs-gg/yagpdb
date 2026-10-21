@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"slices"
 	"sort"
 	"strconv"
@@ -113,18 +114,28 @@ func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 	return templateData
 }
 
+// SendAddedServerToSetup takes someone who just added the bot, which Discord
+// sends back here with the server's id, to its Quick Setup. Servers that were
+// set up before are passed on to their home page from there.
+func SendAddedServerToSetup(inner http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		guildID, _ := strconv.ParseInt(r.FormValue("guild_id"), 10, 64)
+		if guildID == 0 {
+			inner.ServeHTTP(w, r)
+			return
+		}
+
+		setupPath := "/manage/" + discordgo.StrID(guildID) + "/setup?from=invite"
+		if r.Context().Value(common.ContextKeyUser) == nil {
+			setupPath = "/login?goto=" + url.QueryEscape(setupPath)
+		}
+
+		http.Redirect(w, r, setupPath, http.StatusSeeOther)
+	})
+}
+
 func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 	_, tmpl := GetCreateTemplateData(r.Context())
-
-	joinedGuildParsed, _ := strconv.ParseInt(r.FormValue("guild_id"), 10, 64)
-	if joinedGuildParsed != 0 {
-		guild, err := common.BotSession.Guild(joinedGuildParsed)
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed fetching guild")
-		} else {
-			tmpl["JoinedGuild"] = guild
-		}
-	}
 
 	if patreon.ActivePoller != nil {
 		patrons := patreon.ActivePoller.GetPatrons()

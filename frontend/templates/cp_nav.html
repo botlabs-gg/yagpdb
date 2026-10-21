@@ -172,6 +172,9 @@
                             <span>Home</span>
                         </a>
                     </li>
+                    {{range (index .SidebarItems "BelowHome")}}
+                    {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
+                    {{end}}
                     <li>
                         <a class="nav-link premium-color" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/personalizer">
                             <i class="fas fa-user" aria-hidden="true"></i>

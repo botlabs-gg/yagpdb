@@ -36,6 +36,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/premium/discordpremiumsource"
 	"github.com/botlabs-gg/yagpdb/v2/premium/patreonpremiumsource"
+	"github.com/botlabs-gg/yagpdb/v2/quicksetup"
 	"github.com/botlabs-gg/yagpdb/v2/reddit"
 	"github.com/botlabs-gg/yagpdb/v2/reminders"
 	"github.com/botlabs-gg/yagpdb/v2/reputation"
@@ -89,6 +90,7 @@ func main() {
 	messagecreator.RegisterPlugin()
 	verification.RegisterPlugin()
 	premium.RegisterPlugin()
+	quicksetup.RegisterPlugin()
 	patreonpremiumsource.RegisterPlugin()
 	discordpremiumsource.RegisterPlugin()
 	scheduledevents2.RegisterPlugin()
