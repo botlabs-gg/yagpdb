@@ -192,7 +192,7 @@ func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*
 var cachedCommandsComponentTrigger = common.CacheSet.RegisterSlot("custom_commands_component_trigger", nil, int64(0))
 
 func BotCachedGetCommandsWithComponentTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsComponentTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedCommandsComponentTrigger.GetCustomFetch(guildID, func(key any) (any, error) {
 		var cmds []*models.CustomCommand
 		var err error
 		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {

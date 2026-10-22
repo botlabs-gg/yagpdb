@@ -138,7 +138,7 @@ type BanAppealFiledData struct {
 
 // handleBanAppealFiled posts appeals filed on the dashboard, as only the bot
 // can post them.
-func handleBanAppealFiled(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleBanAppealFiled(evt *seventsmodels.ScheduledEvent, data any) (retry bool, err error) {
 	ctx := context.Background()
 	appealID := data.(*BanAppealFiledData).AppealID
 

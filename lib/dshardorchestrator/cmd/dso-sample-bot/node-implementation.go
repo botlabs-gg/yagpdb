@@ -105,7 +105,7 @@ func (b *Bot) StartShardTransferFrom(shard int) (numEventsSent int) {
 	return 0
 }
 
-func (b *Bot) HandleUserEvent(evt dshardorchestrator.EventType, data interface{}) {
+func (b *Bot) HandleUserEvent(evt dshardorchestrator.EventType, data any) {
 
 }
 

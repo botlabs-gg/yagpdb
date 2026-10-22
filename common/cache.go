@@ -37,7 +37,7 @@ func SetCacheDataSimple(key string, data []byte) error {
 }
 
 // Helper methods
-func SetCacheDataJson(key string, expire int, data interface{}) error {
+func SetCacheDataJson(key string, expire int, data any) error {
 	encoded, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -46,11 +46,11 @@ func SetCacheDataJson(key string, expire int, data interface{}) error {
 	return SetCacheData(key, expire, encoded)
 }
 
-func SetCacheDataJsonSimple(key string, data interface{}) error {
+func SetCacheDataJsonSimple(key string, data any) error {
 	return SetCacheDataJson(key, 60, data)
 }
 
-func GetCacheDataJson(key string, dest interface{}) error {
+func GetCacheDataJson(key string, dest any) error {
 	data, err := GetCacheData(key)
 	if err != nil {
 		return err

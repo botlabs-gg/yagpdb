@@ -34,7 +34,7 @@ func TestDumpIfHeapGrew(t *testing.T) {
 	mw := &MemWatcher{startedAt: start, dumpMultipliers: []float64{2, 3}}
 	var gcCycles uint64
 	tick := func(at time.Duration, liveGB uint64, times int) {
-		for i := 0; i < times; i++ {
+		for range times {
 			gcCycles++
 			mw.dumpIfHeapGrew(heapStats{live: liveGB << 30, gcCycles: gcCycles}, start.Add(at))
 		}
@@ -104,7 +104,7 @@ func TestDumpIfHeapGrewIgnoresReadingsWithoutANewGC(t *testing.T) {
 	mw.dumpIfHeapGrew(heapStats{live: 15 << 20, gcCycles: 100}, at)
 
 	// An idle node: a spike was measured by the last GC, then no GC ran while it became garbage.
-	for i := 0; i < HeapDumpSustainedChecks*5; i++ {
+	for range HeapDumpSustainedChecks * 5 {
 		mw.dumpIfHeapGrew(heapStats{live: 510 << 20, gcCycles: 101}, at)
 	}
 	assertFileCount(t, dir, 0)
@@ -114,7 +114,7 @@ func TestDumpIfHeapGrewIgnoresReadingsWithoutANewGC(t *testing.T) {
 	assertFileCount(t, dir, 0)
 
 	// Memory that stays live across fresh GCs still dumps after the sustained checks.
-	for i := uint64(0); i < HeapDumpSustainedChecks; i++ {
+	for i := range uint64(HeapDumpSustainedChecks) {
 		mw.dumpIfHeapGrew(heapStats{live: 510 << 20, gcCycles: 103 + i}, at)
 	}
 	assertFileCount(t, dir, 2)

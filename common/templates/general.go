@@ -20,7 +20,7 @@ import (
 // dictionary creates a map[string]interface{} from the given parameters by
 // walking the parameters and treating them as key-value pairs.  The number
 // of parameters must be even.
-func Dictionary(values ...interface{}) (Dict, error) {
+func Dictionary(values ...any) (Dict, error) {
 
 	if len(values) == 1 {
 		val, isNil := indirect(reflect.ValueOf(values[0]))
@@ -35,7 +35,7 @@ func Dictionary(values ...interface{}) (Dict, error) {
 		switch val.Kind() {
 		case reflect.Map:
 			iter := val.MapRange()
-			mapCopy := make(map[interface{}]interface{})
+			mapCopy := make(map[any]any)
 			for iter.Next() {
 				mapCopy[iter.Key().Interface()] = iter.Value().Interface()
 			}
@@ -50,7 +50,7 @@ func Dictionary(values ...interface{}) (Dict, error) {
 		return nil, errors.New("invalid dict call")
 	}
 
-	dict := make(map[interface{}]interface{}, len(values)/2)
+	dict := make(map[any]any, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
 		key := values[i]
 		dict[key] = values[i+1]
@@ -59,7 +59,7 @@ func Dictionary(values ...interface{}) (Dict, error) {
 	return Dict(dict), nil
 }
 
-func StringKeyDictionary(values ...interface{}) (SDict, error) {
+func StringKeyDictionary(values ...any) (SDict, error) {
 
 	if len(values) == 1 {
 		val, isNil := indirect(reflect.ValueOf(values[0]))
@@ -74,7 +74,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 		switch val.Kind() {
 		case reflect.Map:
 			iter := val.MapRange()
-			mapCopy := make(map[string]interface{})
+			mapCopy := make(map[string]any)
 			for iter.Next() {
 
 				key, isNil := indirect(iter.Key())
@@ -97,7 +97,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
-	dict := make(map[string]interface{}, len(values)/2)
+	dict := make(map[string]any, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
 		key := values[i]
 		s, ok := key.(string)
@@ -114,7 +114,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 // CreateComponentBuilder parses given input of key-value pairs but returns the
 // keys and the values as separate slices. this is used when you need to have
 // duplicate keys and therefore cannot use a map.
-func CreateComponentBuilder(values ...interface{}) (compBuilder *ComponentBuilder, err error) {
+func CreateComponentBuilder(values ...any) (compBuilder *ComponentBuilder, err error) {
 	compBuilder = &ComponentBuilder{}
 
 	if len(values) == 1 {
@@ -181,7 +181,7 @@ func CreateComponentBuilder(values ...interface{}) (compBuilder *ComponentBuilde
 	return
 }
 
-func KindOf(input interface{}, flag ...bool) (string, error) { //flag used only for indirect vs direct for now.
+func KindOf(input any, flag ...bool) (string, error) { //flag used only for indirect vs direct for now.
 
 	switch len(flag) {
 
@@ -201,7 +201,7 @@ func KindOf(input interface{}, flag ...bool) (string, error) { //flag used only 
 	}
 }
 
-func StructToSdict(value interface{}) (SDict, error) {
+func StructToSdict(value any) (SDict, error) {
 	val, isNil := indirect(reflect.ValueOf(value))
 	typeOfS := val.Type()
 	if isNil || value == nil {
@@ -212,7 +212,7 @@ func StructToSdict(value interface{}) (SDict, error) {
 		return nil, errors.New(fmt.Sprintf("Expected - struct, got - %s", val.Type().String()))
 	}
 
-	fields := make(map[string]interface{})
+	fields := make(map[string]any)
 	for i := 0; i < val.NumField(); i++ {
 		curr := val.Field(i)
 		if curr.CanInterface() {
@@ -223,24 +223,24 @@ func StructToSdict(value interface{}) (SDict, error) {
 
 }
 
-func CreateSlice(values ...interface{}) (Slice, error) {
-	slice := make([]interface{}, len(values))
+func CreateSlice(values ...any) (Slice, error) {
+	slice := make([]any, len(values))
 	copy(slice, values)
 	return Slice(slice), nil
 }
 
-func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
+func CreateEmbed(values ...any) (*discordgo.MessageEmbed, error) {
 	if len(values) < 1 {
 		return &discordgo.MessageEmbed{}, nil
 	}
 
-	var m map[string]interface{}
+	var m map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		m = t
 	case *SDict:
 		m = *t
-	case map[string]interface{}:
+	case map[string]any:
 		m = t
 	case *discordgo.MessageEmbed:
 		return t, nil
@@ -270,7 +270,7 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 	return embed, nil
 }
 
-func CreateComplexMessage(values ...interface{}) (*discordgo.MessageSend, error) {
+func CreateComplexMessage(values ...any) (*discordgo.MessageSend, error) {
 	if len(values) < 1 {
 		return &discordgo.MessageSend{}, nil
 	}
@@ -447,13 +447,13 @@ func CreateComplexMessage(values ...interface{}) (*discordgo.MessageSend, error)
 			if val == nil {
 				continue
 			}
-			var m map[string]interface{}
+			var m map[string]any
 			switch t := val.(type) {
 			case SDict:
 				m = t
 			case *SDict:
 				m = *t
-			case map[string]interface{}:
+			case map[string]any:
 				m = t
 			default:
 				return nil, errors.New("invalid value passed to forward; must be an sdict with channel and message")
@@ -519,7 +519,7 @@ func CreateComplexMessage(values ...interface{}) (*discordgo.MessageSend, error)
 	return msg, nil
 }
 
-func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) {
+func parseAllowedMentions(Data any) (*discordgo.AllowedMentions, error) {
 
 	if m, ok := Data.(discordgo.AllowedMentions); ok {
 		return &m, nil
@@ -601,7 +601,7 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 
 // indirect is taken from 'text/template/exec.go'
 func indirect(v reflect.Value) (rv reflect.Value, isNil bool) {
-	for ; v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface; v = v.Elem() {
+	for ; v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface; v = v.Elem() {
 		if v.IsNil() {
 			return v, true
 		}
@@ -613,7 +613,7 @@ func indirect(v reflect.Value) (rv reflect.Value, isNil bool) {
 }
 
 // in returns whether v is in the set l.  l may be an array or slice.
-func in(l interface{}, v interface{}) bool {
+func in(l any, v any) bool {
 	lv, _ := indirect(reflect.ValueOf(l))
 	vv := reflect.ValueOf(v)
 
@@ -659,7 +659,7 @@ func in(l interface{}, v interface{}) bool {
 
 // in returns whether v is in the set l. l may only be a slice of strings, or a string, v may only be a string
 // it differs from "in" because its case insensitive
-func inFold(l interface{}, v string) bool {
+func inFold(l any, v string) bool {
 	lv, _ := indirect(reflect.ValueOf(l))
 	vv := reflect.ValueOf(v)
 
@@ -687,7 +687,7 @@ func inFold(l interface{}, v string) bool {
 	return false
 }
 
-func tmplAbs(arg interface{}) interface{} {
+func tmplAbs(arg any) any {
 	absF := math.Abs(ToFloat64(arg))
 
 	switch arg.(type) {
@@ -698,7 +698,7 @@ func tmplAbs(arg interface{}) interface{} {
 	}
 }
 
-func add(args ...interface{}) interface{} {
+func add(args ...any) any {
 	if len(args) < 1 {
 		return 0
 	}
@@ -719,7 +719,7 @@ func add(args ...interface{}) interface{} {
 	}
 }
 
-func tmplSub(args ...interface{}) interface{} {
+func tmplSub(args ...any) any {
 	if len(args) < 1 {
 		return 0
 	}
@@ -797,7 +797,7 @@ func tmplMathConstant(arg string) float64 {
 	return constant
 }
 
-func tmplMult(args ...interface{}) interface{} {
+func tmplMult(args ...any) any {
 	if len(args) < 1 {
 		return 0
 	}
@@ -826,7 +826,7 @@ func tmplMult(args ...interface{}) interface{} {
 	}
 }
 
-func tmplDiv(args ...interface{}) (interface{}, error) {
+func tmplDiv(args ...any) (any, error) {
 	if len(args) < 1 {
 		return 0, nil
 	}
@@ -858,7 +858,7 @@ func tmplDiv(args ...interface{}) (interface{}, error) {
 	}
 }
 
-func tmplMod(args ...interface{}) float64 {
+func tmplMod(args ...any) float64 {
 	if len(args) != 2 {
 		return math.NaN()
 	}
@@ -866,7 +866,7 @@ func tmplMod(args ...interface{}) float64 {
 	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
 }
 
-func tmplFDiv(args ...interface{}) interface{} {
+func tmplFDiv(args ...any) any {
 	if len(args) < 1 {
 		return 0
 	}
@@ -883,7 +883,7 @@ func tmplFDiv(args ...interface{}) interface{} {
 	return sumF
 }
 
-func tmplSqrt(arg interface{}) float64 {
+func tmplSqrt(arg any) float64 {
 	switch arg.(type) {
 	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
 		return math.Sqrt(ToFloat64(arg))
@@ -892,7 +892,7 @@ func tmplSqrt(arg interface{}) float64 {
 	}
 }
 
-func tmplCbrt(arg interface{}) float64 {
+func tmplCbrt(arg any) float64 {
 	switch arg.(type) {
 	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
 		return math.Cbrt(ToFloat64(arg))
@@ -901,11 +901,11 @@ func tmplCbrt(arg interface{}) float64 {
 	}
 }
 
-func tmplPow(argX, argY interface{}) float64 {
+func tmplPow(argX, argY any) float64 {
 	var xyValue float64
 	var xySlice []float64
 
-	switchSlice := []interface{}{argX, argY}
+	switchSlice := []any{argX, argY}
 
 	for _, v := range switchSlice {
 		switch v.(type) {
@@ -919,11 +919,11 @@ func tmplPow(argX, argY interface{}) float64 {
 	return math.Pow(xySlice[0], xySlice[1])
 }
 
-func tmplMax(argX, argY interface{}) float64 {
+func tmplMax(argX, argY any) float64 {
 	var xyValue float64
 	var xySlice []float64
 
-	switchSlice := []interface{}{argX, argY}
+	switchSlice := []any{argX, argY}
 
 	for _, v := range switchSlice {
 		switch v.(type) {
@@ -937,11 +937,11 @@ func tmplMax(argX, argY interface{}) float64 {
 	return math.Max(xySlice[0], xySlice[1])
 }
 
-func tmplMin(argX, argY interface{}) float64 {
+func tmplMin(argX, argY any) float64 {
 	var xyValue float64
 	var xySlice []float64
 
-	switchSlice := []interface{}{argX, argY}
+	switchSlice := []any{argX, argY}
 
 	for _, v := range switchSlice {
 		switch v.(type) {
@@ -959,7 +959,7 @@ func tmplMin(argX, argY interface{}) float64 {
 tmplLog is a function for templates using (log base of x = logarithm) as return value.
 It is using natural logarithm as default to change the base.
 */
-func tmplLog(arguments ...interface{}) (float64, error) {
+func tmplLog(arguments ...any) (float64, error) {
 	var x, base, logarithm float64
 
 	x = ToFloat64(arguments[0])
@@ -984,7 +984,7 @@ func tmplLog(arguments ...interface{}) (float64, error) {
 	return logarithm, nil
 }
 
-func tmplBitwiseAnd(arg0 interface{}, args ...interface{}) int {
+func tmplBitwiseAnd(arg0 any, args ...any) int {
 	res := tmplToInt(arg0)
 	for _, arg := range args {
 		res &= tmplToInt(arg)
@@ -992,35 +992,35 @@ func tmplBitwiseAnd(arg0 interface{}, args ...interface{}) int {
 	return res
 }
 
-func tmplBitwiseOr(args ...interface{}) (res int) {
+func tmplBitwiseOr(args ...any) (res int) {
 	for _, arg := range args {
 		res |= tmplToInt(arg)
 	}
 	return
 }
 
-func tmplBitwiseXor(arg1, arg2 interface{}) int {
+func tmplBitwiseXor(arg1, arg2 any) int {
 	return tmplToInt(arg1) ^ tmplToInt(arg2)
 }
 
-func tmplBitwiseNot(arg interface{}) int {
+func tmplBitwiseNot(arg any) int {
 	return ^tmplToInt(arg)
 }
 
-func tmplBitwiseAndNot(arg1, arg2 interface{}) int {
+func tmplBitwiseAndNot(arg1, arg2 any) int {
 	return tmplToInt(arg1) &^ tmplToInt(arg2)
 }
 
-func tmplBitwiseLeftShift(arg1, arg2 interface{}) int {
+func tmplBitwiseLeftShift(arg1, arg2 any) int {
 	return tmplToInt(arg1) << tmplToInt(arg2)
 }
 
-func tmplBitwiseRightShift(arg1, arg2 interface{}) int {
+func tmplBitwiseRightShift(arg1, arg2 any) int {
 	return tmplToInt(arg1) >> tmplToInt(arg2)
 }
 
 // tmplHumanizeThousands comma separates thousands
-func tmplHumanizeThousands(input interface{}) string {
+func tmplHumanizeThousands(input any) string {
 	var f1, f2 string
 
 	i := tmplToInt(input)
@@ -1050,7 +1050,7 @@ func roleIsAbove(a, b *discordgo.Role) bool {
 	return common.IsRoleAbove(a, b)
 }
 
-func randInt(args ...interface{}) (int, error) {
+func randInt(args ...any) (int, error) {
 	min := int64(0)
 	max := int64(10)
 	if len(args) >= 2 {
@@ -1069,28 +1069,28 @@ func randInt(args ...interface{}) (int, error) {
 	return int(r + min), nil
 }
 
-func tmplRound(args ...interface{}) float64 {
+func tmplRound(args ...any) float64 {
 	if len(args) < 1 {
 		return 0
 	}
 	return math.Round(ToFloat64(args[0]))
 }
 
-func tmplRoundCeil(args ...interface{}) float64 {
+func tmplRoundCeil(args ...any) float64 {
 	if len(args) < 1 {
 		return 0
 	}
 	return math.Ceil(ToFloat64(args[0]))
 }
 
-func tmplRoundFloor(args ...interface{}) float64 {
+func tmplRoundFloor(args ...any) float64 {
 	if len(args) < 1 {
 		return 0
 	}
 	return math.Floor(ToFloat64(args[0]))
 }
 
-func tmplRoundEven(args ...interface{}) float64 {
+func tmplRoundEven(args ...any) float64 {
 	if len(args) < 1 {
 		return 0
 	}
@@ -1101,7 +1101,7 @@ var ErrStringTooLong = errors.NewPlain("String is too long (max 1MB)")
 
 const MaxStringLength = 1000000
 
-func joinStrings(sep string, args ...interface{}) (string, error) {
+func joinStrings(sep string, args ...any) (string, error) {
 
 	var builder strings.Builder
 
@@ -1151,7 +1151,7 @@ func joinStrings(sep string, args ...interface{}) (string, error) {
 	return builder.String(), nil
 }
 
-var stringSliceType = reflect.TypeOf([]string(nil))
+var stringSliceType = reflect.TypeFor[[]string]()
 
 func castToStringSlice(rv reflect.Value) ([]string, bool) {
 	rv, _ = indirect(rv)
@@ -1199,7 +1199,7 @@ func sequence(start, stop int) ([]int, error) {
 }
 
 // shuffle returns the given rangeable list in a randomised order.
-func shuffle(seq interface{}) (interface{}, error) {
+func shuffle(seq any) (any, error) {
 	if seq == nil {
 		return nil, errors.New("both count and seq must be provided")
 	}
@@ -1268,7 +1268,7 @@ func ToInt64(from any, base ...int) int64 {
 	}
 }
 
-func ToString(from interface{}) string {
+func ToString(from any) string {
 	switch t := from.(type) {
 	case int:
 		return strconv.Itoa(t)
@@ -1299,7 +1299,7 @@ func ToString(from interface{}) string {
 	}
 }
 
-func ToFloat64(from interface{}) float64 {
+func ToFloat64(from any) float64 {
 	t := reflect.ValueOf(from)
 	switch {
 	case t.CanInt():
@@ -1316,7 +1316,7 @@ func ToFloat64(from interface{}) float64 {
 	}
 }
 
-func ToDuration(from interface{}) time.Duration {
+func ToDuration(from any) time.Duration {
 	switch t := from.(type) {
 	case int, int32, int64, float32, float64, uint, uint32, uint64:
 		return time.Duration(ToInt64(t))
@@ -1333,7 +1333,7 @@ func ToDuration(from interface{}) time.Duration {
 	}
 }
 
-func ToRune(from interface{}) []rune {
+func ToRune(from any) []rune {
 	switch t := from.(type) {
 	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
 		return []rune(ToString(t))
@@ -1344,7 +1344,7 @@ func ToRune(from interface{}) []rune {
 	}
 }
 
-func ToByte(from interface{}) []byte {
+func ToByte(from any) []byte {
 	switch t := from.(type) {
 	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
 		return []byte(ToString(t))
@@ -1355,7 +1355,7 @@ func ToByte(from interface{}) []byte {
 	}
 }
 
-func tmplJson(v interface{}, flags ...bool) (string, error) {
+func tmplJson(v any, flags ...bool) (string, error) {
 	if exceedsSerializedSize(sizeModeEncode, MaxStringLength, v) {
 		return "", ErrValueTooLarge
 	}
@@ -1391,7 +1391,7 @@ func tmplJson(v interface{}, flags ...bool) (string, error) {
 	return string(b), nil
 }
 
-func tmplJSONToSDict(v interface{}) (SDict, error) {
+func tmplJSONToSDict(v any) (SDict, error) {
 	var toSDict SDict
 	err := json.Unmarshal([]byte(ToString(v)), &toSDict)
 	if err != nil {
@@ -1410,11 +1410,11 @@ func tmplFormatTime(t time.Time, args ...string) string {
 	return t.Format(layout)
 }
 
-func tmplSnowflakeToTime(v interface{}) time.Time {
+func tmplSnowflakeToTime(v any) time.Time {
 	return bot.SnowflakeToTime(ToInt64(v)).UTC()
 }
 
-func tmplTimestampToTime(v interface{}) time.Time {
+func tmplTimestampToTime(v any) time.Time {
 	return time.Unix(ToInt64(v), 0).UTC()
 }
 
@@ -1510,7 +1510,7 @@ func tmplCurrentTime() time.Time {
 	return time.Now().UTC()
 }
 
-func tmplParseTime(input string, layout interface{}, locations ...string) (time.Time, error) {
+func tmplParseTime(input string, layout any, locations ...string) (time.Time, error) {
 	loc := time.UTC
 
 	var err error
@@ -1573,15 +1573,15 @@ func tmplWeekNumber(t time.Time) (week int) {
 	return
 }
 
-func tmplHumanizeDurationHours(in interface{}) string {
+func tmplHumanizeDurationHours(in any) string {
 	return common.HumanizeDuration(common.DurationPrecisionHours, ToDuration(in))
 }
 
-func tmplHumanizeDurationMinutes(in interface{}) string {
+func tmplHumanizeDurationMinutes(in any) string {
 	return common.HumanizeDuration(common.DurationPrecisionMinutes, ToDuration(in))
 }
 
-func tmplHumanizeDurationSeconds(in interface{}) string {
+func tmplHumanizeDurationSeconds(in any) string {
 	return common.HumanizeDuration(common.DurationPrecisionSeconds, ToDuration(in))
 }
 

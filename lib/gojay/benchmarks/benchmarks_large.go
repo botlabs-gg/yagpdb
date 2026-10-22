@@ -151,7 +151,7 @@ var LargeFixture = []byte(`
 func NewLargePayload() *LargePayload {
 	dsUsers := DSUsers{}
 	dsTopics := DSTopics{}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		str := "test" + strconv.Itoa(i)
 		dsUsers = append(
 			dsUsers,

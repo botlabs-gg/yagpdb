@@ -3,6 +3,7 @@ package logs
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	context0 "context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,6 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -53,7 +53,7 @@ func RegisterPlugin() {
 }
 
 // Returns either stored config, err or a default config
-func GetConfig(exec boil.ContextExecutor, ctx context.Context, guildID int64) (*models.GuildLoggingConfig, error) {
+func GetConfig(exec boil.ContextExecutor, ctx context0.Context, guildID int64) (*models.GuildLoggingConfig, error) {
 
 	config, err := models.FindGuildLoggingConfig(ctx, exec, guildID)
 	if err == sql.ErrNoRows {
@@ -83,7 +83,7 @@ func isChannelBlacklisted(config *models.GuildLoggingConfig, channel *dstate.Cha
 	return slices.Contains(blacklist, idStr) || slices.Contains(blacklist, parentIDStr)
 }
 
-func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {
+func CreateChannelLog(ctx context0.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {
 	if config == nil {
 		var err error
 		config, err = GetConfig(common.PQ, ctx, guildID)
@@ -206,19 +206,19 @@ const (
 	SearchModeLegacy
 )
 
-func logsSearchNew(ctx context.Context, guildID, id int64) (*models.MessageLogs2, error) {
+func logsSearchNew(ctx context0.Context, guildID, id int64) (*models.MessageLogs2, error) {
 	return models.MessageLogs2s(
 		models.MessageLogs2Where.ID.EQ(int(id)),
 		models.MessageLogs2Where.GuildID.EQ(guildID)).OneG(ctx)
 }
 
-func logsSearchLegacy(ctx context.Context, guildID, id int64) (*models.MessageLogs2, error) {
+func logsSearchLegacy(ctx context0.Context, guildID, id int64) (*models.MessageLogs2, error) {
 	return models.MessageLogs2s(
 		models.MessageLogs2Where.LegacyID.EQ(int(id)),
 		models.MessageLogs2Where.GuildID.EQ(guildID)).OneG(ctx)
 }
 
-func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*models.MessageLogs2, []*models.Messages2, error) {
+func GetChannelLogs(ctx context0.Context, id, guildID int64, sm SearchMode) (*models.MessageLogs2, []*models.Messages2, error) {
 	var logs *models.MessageLogs2
 	var err error
 
@@ -253,7 +253,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 
 	}
 
-	args := []interface{}{}
+	args := []any{}
 	for _, v := range logs.Messages {
 		args = append(args, v)
 	}
@@ -266,7 +266,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 	return logs, messages, err
 }
 
-func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) ([]*models.MessageLogs2, error) {
+func GetGuilLogs(ctx context0.Context, guildID int64, before, after, limit int) ([]*models.MessageLogs2, error) {
 
 	qms := []qm.QueryMod{
 		qm.OrderBy("id desc"),
@@ -284,12 +284,12 @@ func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) (
 	return logs, err
 }
 
-func GetUsernames(ctx context.Context, userID int64, limit, offset int) ([]*models.UsernameListing, error) {
+func GetUsernames(ctx context0.Context, userID int64, limit, offset int) ([]*models.UsernameListing, error) {
 	result, err := models.UsernameListings(models.UsernameListingWhere.UserID.EQ(null.Int64From(userID)), qm.OrderBy("id desc"), qm.Limit(limit), qm.Offset(offset)).AllG(ctx)
 	return result, err
 }
 
-func GetNicknames(ctx context.Context, userID, guildID int64, limit, offset int) ([]*models.NicknameListing, error) {
+func GetNicknames(ctx context0.Context, userID, guildID int64, limit, offset int) ([]*models.NicknameListing, error) {
 
 	return models.NicknameListings(
 		models.NicknameListingWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),

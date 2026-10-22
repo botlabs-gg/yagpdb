@@ -5,7 +5,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var configCache = common.CacheSet.RegisterSlot("autorole_config", func(key interface{}) (interface{}, error) {
+var configCache = common.CacheSet.RegisterSlot("autorole_config", func(key any) (any, error) {
 	config, err := GetAutoroleConfig(key.(int64))
 	return config, err
 }, int64(0))

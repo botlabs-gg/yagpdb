@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -1158,18 +1159,19 @@ func (g *Game) presentWinners(winningPicks []*PickedResonse) {
 		}
 	}
 
-	standings := "```\n"
+	var standings strings.Builder
+	standings.WriteString("```\n")
 	for _, v := range g.Players {
-		standings += fmt.Sprintf("%-20s: %d\n", v.Username, v.Wins)
+		standings.WriteString(fmt.Sprintf("%-20s: %d\n", v.Username, v.Wins))
 	}
-	standings += "```"
+	standings.WriteString("```")
 
-	winnerCards := ""
+	var winnerCards strings.Builder
 	for i, v := range winningPicks {
 		if i != 0 {
-			winnerCards += "\n"
+			winnerCards.WriteString("\n")
 		}
-		winnerCards += g.CurrentPropmpt.WithCards(v.Selections)
+		winnerCards.WriteString(g.CurrentPropmpt.WithCards(v.Selections))
 	}
 
 	title := ""
@@ -1194,7 +1196,7 @@ func (g *Game) presentWinners(winningPicks []*PickedResonse) {
 		extraContent = fmt.Sprintf("Next round in %d seconds...", int(PreRoundDelayDuration.Seconds()))
 	}
 
-	content := fmt.Sprintf("%s\n\n**Standings:**\n%s\n\n%s", winnerCards, standings, extraContent)
+	content := fmt.Sprintf("%s\n\n**Standings:**\n%s\n\n%s", winnerCards.String(), standings.String(), extraContent)
 	embed := &discordgo.MessageEmbed{
 		Title:       title,
 		Description: content,
@@ -1239,11 +1241,9 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 		return
 	}
 
-	for _, selection := range player.SelectedCards {
-		if selection == emojiIndex {
-			// Already selected this card
-			return
-		}
+	if slices.Contains(player.SelectedCards, emojiIndex) {
+		// Already selected this card
+		return
 	}
 
 	card := player.Cards[emojiIndex]

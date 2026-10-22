@@ -16,7 +16,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "allocstat",
 	Description:          "Memory statistics. Bot Admin Only",
-	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (any, error) {
 		common.BotSession.ChannelTyping(data.ChannelID)
 		var memstatsStarted runtime.MemStats
 		runtime.ReadMemStats(&memstatsStarted)

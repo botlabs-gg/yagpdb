@@ -9,7 +9,7 @@ import (
 )
 
 var encoderTestCases = []struct {
-	v            interface{}
+	v            any
 	expectations func(t *testing.T, b string, err error)
 }{
 	{
@@ -114,7 +114,7 @@ var encoderTestCases = []struct {
 		v: &testObject{
 			"漢字", nil, 1, nil, 1, nil, 1, nil, 1, nil, 1, nil,
 			1, nil, 1, nil, 1, nil, 1, nil, 1.1, nil, 1.1, nil, true, nil,
-			&testObject{}, testSliceInts{}, []interface{}{"h", "o", "l", "a"},
+			&testObject{}, testSliceInts{}, []any{"h", "o", "l", "a"},
 		},
 		expectations: func(t *testing.T, b string, err error) {
 			assert.Nil(t, err, "err should be nil")

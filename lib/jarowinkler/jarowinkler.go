@@ -24,7 +24,7 @@ func Similarity(a, b []rune) float64 {
 	window := max(max(len(a), len(b))/2-1, 0)
 	matchedA, matchedB := make([]bool, len(a)), make([]bool, len(b))
 	common := 0
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		for j := max(i-window, 0); j < min(i+window+1, len(b)); j++ {
 			if matchedB[j] {
 				continue
@@ -45,7 +45,7 @@ func Similarity(a, b []rune) float64 {
 
 	halfTransposed := 0
 	k := 0
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		if !matchedA[i] {
 			continue
 		}
@@ -72,32 +72,18 @@ func Similarity(a, b []rune) float64 {
 	return weight + 0.1*float64(lcp)*(1-weight)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // Select selects items from the set of available choices based on similarity to
 // the target according to the Jaro-Winkler metric. The selections are sorted in
 // descending order with respect to their similarity to the target string.
 //
 // By default,
-//  - Choices that are not sufficiently similar to the string are discarded based
-//    on an adaptive threshold. If a custom threshold is desired, use the WithThreshold
-//    option.
-//  - The number of choices that are returned is unlimited; to limit the
-//    number of returned results, use the WithLimit option.
-//  - The selection process is case-insensitive; to change this, use the WithCaseInsensitivity
-//    option.
+//   - Choices that are not sufficiently similar to the string are discarded based
+//     on an adaptive threshold. If a custom threshold is desired, use the WithThreshold
+//     option.
+//   - The number of choices that are returned is unlimited; to limit the
+//     number of returned results, use the WithLimit option.
+//   - The selection process is case-insensitive; to change this, use the WithCaseInsensitivity
+//     option.
 func Select(choices []string, target string, setters ...SelectOpt) []string {
 	opts := selectOpts{threshold: AdaptiveThreshold, limit: -1, caseSensitive: false}
 	for _, setter := range setters {

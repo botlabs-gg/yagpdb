@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	Description:         "Dog Facts",
 	SlashCommandEnabled: true,
 	DefaultEnabled:      true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		df := dogfacts[rand.Intn(len(dogfacts))]
 		return df, nil
 	},

@@ -31,10 +31,7 @@ func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*ds
 
 	// Start fetching from the api
 	for len(msgBuf) < limit {
-		toFetch := limit - len(msgBuf)
-		if toFetch > 100 {
-			toFetch = 100
-		}
+		toFetch := min(limit-len(msgBuf), 100)
 		msgs, err := common.BotSession.ChannelMessages(channelID, toFetch, before, 0, 0)
 		if err != nil {
 			return nil, err

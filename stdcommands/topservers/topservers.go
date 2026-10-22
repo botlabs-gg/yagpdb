@@ -2,6 +2,7 @@ package topservers
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/models"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -24,7 +25,7 @@ var Command = &commands.YAGCommand{
 		{Name: "id", Type: dcmd.BigInt},
 		{Name: "shard", Help: "Shard to get top servers from", Type: dcmd.Int},
 	},
-	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (any, error) {
 		skip := data.Args[0].Int()
 
 		if data.Switches["id"].Value != nil {
@@ -54,10 +55,11 @@ var Command = &commands.YAGCommand{
 		if err != nil {
 			return nil, err
 		}
-		out := "```"
+		var out strings.Builder
+		out.WriteString("```")
 		for k, v := range results {
-			out += fmt.Sprintf("\n#%-2d: %-12d %-25s (%d members)", k+skip+1, v.ID, v.Name, v.MemberCount)
+			out.WriteString(fmt.Sprintf("\n#%-2d: %-12d %-25s (%d members)", k+skip+1, v.ID, v.Name, v.MemberCount))
 		}
-		return "Top servers the bot is on:\n" + out + "\n```", nil
+		return "Top servers the bot is on:\n" + out.String() + "\n```", nil
 	}),
 }

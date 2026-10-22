@@ -301,7 +301,7 @@ func (c *Conn) handleShutdown() {
 }
 
 // Send sends the message to the master, if the connection is closed it will queue the message if queueFailed is set
-func (c *Conn) Send(evtID dshardorchestrator.EventType, body interface{}, queueFailed bool) error {
+func (c *Conn) Send(evtID dshardorchestrator.EventType, body any, queueFailed bool) error {
 	encoded, err := dshardorchestrator.EncodeMessage(evtID, body)
 	if err != nil {
 		return err
@@ -323,7 +323,7 @@ func (c *Conn) Send(evtID dshardorchestrator.EventType, body interface{}, queueF
 	return err
 }
 
-func (c *Conn) SendLogErr(evtID dshardorchestrator.EventType, body interface{}, queueFailed bool) {
+func (c *Conn) SendLogErr(evtID dshardorchestrator.EventType, body any, queueFailed bool) {
 	err := c.Send(evtID, body, queueFailed)
 	if err != nil {
 		c.LogLock(dshardorchestrator.LogError, err, "failed sending message to orchestrator")

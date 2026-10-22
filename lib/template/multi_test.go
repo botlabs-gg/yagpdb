@@ -404,7 +404,7 @@ func TestIssue19294(t *testing.T) {
 		"xhtml":      `{{block "stylesheet" .}}{{end}}`,
 	}
 	all := []string{"stylesheet", "xhtml"}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		res, err := New("title.xhtml").Parse(`{{template "xhtml" .}}`)
 		if err != nil {
 			t.Fatal(err)

@@ -3,7 +3,8 @@ package safebrowsing
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
+
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -51,7 +52,7 @@ func returnNoMatches(w http.ResponseWriter) {
 
 func handleCheckMessage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		logrus.WithError(err).Error("[safebrowsing] failed reading request body")
 		return

@@ -69,7 +69,7 @@ type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess
 
 func publicHandler(inner publicHandlerFunc, public bool) web.ControllerHandlerFunc {
 	mw := func(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-		return inner(w, r.WithContext(web.SetContextTemplateData(r.Context(), map[string]interface{}{"Public": public})), public)
+		return inner(w, r.WithContext(web.SetContextTemplateData(r.Context(), map[string]any{"Public": public})), public)
 	}
 
 	return mw
@@ -98,7 +98,7 @@ func HandleSaveStatsSettings(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
 
-	stringedChannels := ""
+	var stringedChannels strings.Builder
 	alreadyAdded := make([]int64, 0, len(formData.IgnoreChannels))
 OUTER:
 	for i, v := range formData.IgnoreChannels {
@@ -123,17 +123,17 @@ OUTER:
 		}
 
 		if i != 0 {
-			stringedChannels += ","
+			stringedChannels.WriteString(",")
 		}
 
 		alreadyAdded = append(alreadyAdded, v)
-		stringedChannels += strconv.FormatInt(v, 10)
+		stringedChannels.WriteString(strconv.FormatInt(v, 10))
 	}
 
 	model := &models.ServerStatsConfig{
 		GuildID:        ag.ID,
 		Public:         null.BoolFrom(formData.Public),
-		IgnoreChannels: null.StringFrom(stringedChannels),
+		IgnoreChannels: null.StringFrom(stringedChannels.String()),
 		CreatedAt:      null.TimeFrom(time.Now()),
 	}
 
@@ -148,17 +148,17 @@ OUTER:
 	return templateData, err
 }
 
-type publicHandlerFuncJson func(w http.ResponseWriter, r *http.Request, publicAccess bool) interface{}
+type publicHandlerFuncJson func(w http.ResponseWriter, r *http.Request, publicAccess bool) any
 
 func publicHandlerJson(inner publicHandlerFuncJson, public bool) web.CustomHandlerFunc {
-	mw := func(w http.ResponseWriter, r *http.Request) interface{} {
-		return inner(w, r.WithContext(web.SetContextTemplateData(r.Context(), map[string]interface{}{"Public": public})), public)
+	mw := func(w http.ResponseWriter, r *http.Request) any {
+		return inner(w, r.WithContext(web.SetContextTemplateData(r.Context(), map[string]any{"Public": public})), public)
 	}
 
 	return mw
 }
 
-func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
+func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) any {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf := GetConfigWeb(activeGuild.ID)
@@ -196,7 +196,7 @@ type ChartResponse struct {
 	Data []*ChartDataPeriod `json:"data"`
 }
 
-func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
+func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) any {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf := GetConfigWeb(activeGuild.ID)
@@ -237,10 +237,7 @@ func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse
 		return emptyChartData()
 	}
 
-	fetchDays := days
-	if days < 7 {
-		fetchDays = 7
-	}
+	fetchDays := max(days, 7)
 
 	// default to full time stats
 	if days != 30 && days != 365 && days > 7 {
@@ -267,7 +264,7 @@ func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse
 	return &cop
 }
 
-func cacheChartFetcher(key string) interface{} {
+func cacheChartFetcher(key string) any {
 	split := strings.Split(key, ":")
 	if len(split) < 3 {
 		logger.Error("invalid cache key: ", key)
@@ -298,7 +295,7 @@ func GetConfigWeb(guildID int64) *ServerStatsConfig {
 	return config.(*ServerStatsConfig)
 }
 
-func cacheConfigFetcher(key int) interface{} {
+func cacheConfigFetcher(key int) any {
 	config, err := GetConfig(context.Background(), int64(key))
 	if err != nil {
 		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving stats config")

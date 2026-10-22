@@ -23,7 +23,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: util.RequireOwner(cmdFuncTopEvents),
 }
 
-func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
+func cmdFuncTopEvents(data *dcmd.Data) (any, error) {
 
 	shardsTotal, lastPeriod := bot.EventLogger.GetStats()
 

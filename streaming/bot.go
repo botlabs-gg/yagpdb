@@ -523,7 +523,7 @@ func DisableStreamingRole(guildID int64) {
 var cachedConfig = common.CacheSet.RegisterSlot("streaming_configs", nil, int64(0))
 
 func BotCachedGetConfig(guildID int64) (*Config, error) {
-	v, err := cachedConfig.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedConfig.GetCustomFetch(guildID, func(key any) (any, error) {
 		return GetConfig(guildID)
 	})
 

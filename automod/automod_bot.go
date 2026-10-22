@@ -559,7 +559,7 @@ var (
 )
 
 func (p *Plugin) FetchGuildRulesets(guildID int64) ([]*ParsedRuleset, error) {
-	v, err := cachedRulesets.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedRulesets.GetCustomFetch(guildID, func(key any) (any, error) {
 		rulesets, err := models.AutomodRulesets(qm.Where("guild_id=?", guildID),
 			qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).AllG(context.Background())
 
@@ -588,7 +588,7 @@ func (p *Plugin) FetchGuildRulesets(guildID int64) ([]*ParsedRuleset, error) {
 }
 
 func FetchGuildLists(guildID int64) ([]*models.AutomodList, error) {
-	v, err := cachedLists.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedLists.GetCustomFetch(guildID, func(key any) (any, error) {
 		lists, err := models.AutomodLists(qm.Where("guild_id = ?", guildID)).AllG(context.Background())
 		if err != nil {
 			return nil, err
@@ -622,7 +622,7 @@ func FindFetchGuildList(guildID int64, listID int64) (*models.AutomodList, error
 	return nil, ErrListNotFound
 }
 
-func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data any) (retry bool, err error) {
 	dataCast := data.(*ResetChannelRatelimitData)
 
 	rl := 0

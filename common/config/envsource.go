@@ -7,7 +7,7 @@ import (
 
 type EnvSource struct{}
 
-func (e *EnvSource) GetValue(key string) interface{} {
+func (e *EnvSource) GetValue(key string) any {
 	properKey := strings.ToUpper(key)
 	properKey = strings.Replace(properKey, ".", "_", -1)
 	v := os.Getenv(properKey)

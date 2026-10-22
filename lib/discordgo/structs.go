@@ -696,9 +696,9 @@ type GuildParams struct {
 
 // A Colors holds information about a Discord guild role's colors
 type Colors struct {
-  PrimaryColor int32 `json:"primary_color"`
-  SecondaryColor int32 `json:"secondary_color"`
-  TertiaryColor int32 `json:"tertiary_color"`
+	PrimaryColor   int32 `json:"primary_color"`
+	SecondaryColor int32 `json:"secondary_color"`
+	TertiaryColor  int32 `json:"tertiary_color"`
 }
 
 // A Role stores information about Discord guild member roles.
@@ -852,8 +852,8 @@ type Activity struct {
 	URL        string       `json:"url,omitempty"`
 	Details    string       `json:"details,omitempty"`
 	State      string       `json:"state,omitempty"`
-	TimeStamps TimeStamps   `json:"timestamps,omitempty"`
-	Assets     Assets       `json:"assets,omitempty"`
+	TimeStamps TimeStamps   `json:"timestamps"`
+	Assets     Assets       `json:"assets"`
 	Instance   int8         `json:"instance,omitempty"`
 }
 
@@ -1236,8 +1236,8 @@ const (
 
 // AuditLogChange for an AuditLogEntry
 type AuditLogChange struct {
-	NewValue interface{}        `json:"new_value"`
-	OldValue interface{}        `json:"old_value"`
+	NewValue any                `json:"new_value"`
+	OldValue any                `json:"old_value"`
 	Key      *AuditLogChangeKey `json:"key"`
 }
 
@@ -2041,7 +2041,7 @@ type Subscription struct {
 	CurrentPeriodEnd time.Time          `json:"current_period_end"`
 	Status           SubscriptionStatus `json:"status"`
 	// Only present if the subscription status is Ending or Inactive, represents the time when the subscription was cancelled
-	CancelledAt time.Time `json:"cancelled_at,omitempty"`
+	CancelledAt time.Time `json:"cancelled_at"`
 }
 
 // SubscriptionFilterOptions are the options for filtering Subscriptions for list subscriptions API

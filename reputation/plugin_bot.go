@@ -160,7 +160,7 @@ var cmds = []*commands.YAGCommand{
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		DefaultEnabled: false,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			if parsed.Args[1].Int() < 1 {
 				return "**rep amount should be greater than or equal to 1**", nil
 			}
@@ -178,7 +178,7 @@ var cmds = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			if parsed.Args[1].Int() < 1 {
 				return "**rep amount should be greater than or equal to 1**", nil
 			}
@@ -195,7 +195,7 @@ var cmds = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Num", Type: dcmd.Int},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occurred while finding the server config", err
@@ -241,7 +241,7 @@ var cmds = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occurred while finding the server config", err
@@ -275,7 +275,7 @@ var cmds = []*commands.YAGCommand{
 			{Name: "Page", Type: dcmd.Int, Default: 1},
 		},
 		ArgumentCombos: [][]int{{}, {0}, {1}, {0, 1}},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occurred while finding the server config", err
@@ -377,7 +377,7 @@ var cmds = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.User},
 		},
 		DefaultEnabled: false,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			target := parsed.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
@@ -417,7 +417,7 @@ var cmds = []*commands.YAGCommand{
 			{Name: "user", Help: "User to search for in the leaderboard", Type: dcmd.UserID},
 		},
 		DefaultEnabled: true,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			page := parsed.Args[0].Int()
 			if id := parsed.Switch("user").Int64(); id != 0 {
 				const query = `
@@ -478,23 +478,24 @@ func topRepPager(guildID int64, p *paginatedmessages.PaginatedMessage, page int)
 	}
 
 	leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(guildID) + "/reputation/leaderboard"
-	out := "```\n# -- Points -- User\n"
+	var out strings.Builder
+	out.WriteString("```\n# -- Points -- User\n")
 	for _, v := range detailed {
 		user := v.Username
 		if user == "" {
 			user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
 		}
-		out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
+		out.WriteString(fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user))
 	}
-	out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
+	out.WriteString("```\n" + "Full leaderboard: <" + leaderboardURL + ">")
 
-	embed.Description = out
+	embed.Description = out.String()
 
 	return embed, nil
 
 }
 
-func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
+func CmdGiveRep(parsed *dcmd.Data) (any, error) {
 	target := parsed.Args[0].Value.(*discordgo.User)
 
 	conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)

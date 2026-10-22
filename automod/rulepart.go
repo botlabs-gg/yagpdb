@@ -29,10 +29,10 @@ var RulePartMap = map[int]RulePart{
 	13: &MultiMsgMentionTrigger{ChannelBased: false},
 	14: &MultiMsgMentionTrigger{ChannelBased: true},
 	15: &MessageRegexTrigger{},
-	16: &MessageRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: true}},
+	16: &MessageRegexTrigger{Inverse: true},
 	17: &SpamTrigger{},
-	18: &NicknameRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: false}},
-	19: &NicknameRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: true}},
+	18: &NicknameRegexTrigger{Inverse: false},
+	19: &NicknameRegexTrigger{Inverse: true},
 	20: &NicknameWordlistTrigger{Blacklist: false},
 	21: &NicknameWordlistTrigger{Blacklist: true},
 	22: &SlowmodeTrigger{Attachments: true, ChannelBased: false},
@@ -135,8 +135,8 @@ type SettingDef struct {
 	Key         string
 	Kind        SettingType
 	Min, Max    int
-	Default     interface{} `json:",omitempty"`
-	Placeholder string      `json:",omitempty"`
+	Default     any    `json:",omitempty"`
+	Placeholder string `json:",omitempty"`
 }
 
 type RulePartType int
@@ -150,7 +150,7 @@ const (
 // RulePart represents a single condition, trigger or effect
 type RulePart interface {
 	// Datatype needs to return a new object to unmarshal the settings into, if there is none for this rule data entry then return nil
-	DataType() interface{}
+	DataType() any
 
 	// Returns the available user settings that can be changed (such as roles)
 	UserSettings() []*SettingDef
@@ -163,7 +163,7 @@ type RulePart interface {
 }
 
 type MergeableRulePart interface {
-	MergeDuplicates(data []interface{}) interface{}
+	MergeDuplicates(data []any) any
 }
 
 type TriggeredRuleData struct {
@@ -215,7 +215,9 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 
 		for _, p := range t.ActivatedTriggers {
 			if p.RuleModel.RuleID == t.CurrentRule.Model.ID {
-				builder.WriteString(" (`" + p.Part.Name() + "`)")
+				builder.WriteString(" (`")
+				builder.WriteString(p.Part.Name())
+				builder.WriteString("`)")
 				break
 			}
 		}
@@ -227,7 +229,7 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 type TriggerContext struct {
 	GS   *dstate.GuildSet
 	MS   *dstate.MemberState
-	Data interface{}
+	Data any
 }
 
 // MessageCondition is a active condition that needs to run on a message
@@ -241,7 +243,7 @@ type MessageTrigger interface {
 type ViolationListener interface {
 	RulePart
 
-	CheckUser(ctxData *TriggeredRuleData, violations []*models.AutomodViolation, data interface{}, triggeredOnHigher bool) (isAffected bool, err error)
+	CheckUser(ctxData *TriggeredRuleData, violations []*models.AutomodViolation, data any, triggeredOnHigher bool) (isAffected bool, err error)
 }
 
 // NicknameListener is a trigger that gets triggered on a nickname change

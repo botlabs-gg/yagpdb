@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 	RunFunc:      util.RequireOwner(cmdFuncStateInfo),
 }
 
-func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
+func cmdFuncStateInfo(data *dcmd.Data) (any, error) {
 	totalGuilds := 0
 	totalMembers := 0
 	guildChannel := 0

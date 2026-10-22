@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	Description:          "Tests the global ratelimit functionality. Bot Owner Only",
 	RequiredArgs:         1,
 	HideFromCommandsPage: true,
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 
 		rlEvt := &discordgo.RateLimit{
 			URL: "Wew",

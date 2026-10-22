@@ -444,7 +444,7 @@ func (p *Plugin) cleanupOldStats(t time.Time) error {
 func (c *Compressor) runCompression(t time.Time) error {
 	// check up to 5 days back
 	logger.Infof("Running compression, t is %d:%d: %s", t.Year(), t.YearDay(), t)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		newT := t.AddDate(0, 0, -i)
 		year := newT.Year()
 		day := newT.YearDay()

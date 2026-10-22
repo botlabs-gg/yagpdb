@@ -221,7 +221,7 @@ func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomComm
 }
 
 func matchRegexSplitArgs(pattern, msg string) (match bool, stripped string, args []string) {
-	item, err := RegexCache.Fetch(pattern, time.Minute*10, func() (interface{}, error) {
+	item, err := RegexCache.Fetch(pattern, time.Minute*10, func() (any, error) {
 		re, err := regexp.Compile(pattern)
 		if err != nil {
 			return nil, err
@@ -256,7 +256,7 @@ func matchRegexSplitArgs(pattern, msg string) (match bool, stripped string, args
 var cachedCommandsMessageTrigger = common.CacheSet.RegisterSlot("custom_commands_message_trigger", nil, int64(0))
 
 func BotCachedGetCommandsWithMessageTriggers(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsMessageTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedCommandsMessageTrigger.GetCustomFetch(guildID, func(key any) (any, error) {
 		var cmds []*models.CustomCommand
 		var err error
 

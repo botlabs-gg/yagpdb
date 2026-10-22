@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makePointer(v interface{}) interface{} {
+func makePointer(v any) any {
 	var ptr = reflect.New(reflect.TypeOf(v))
 	ptr.Elem().Set(reflect.ValueOf(v))
 	return ptr.Interface()
@@ -22,7 +22,7 @@ func TestDecodeObjectBasic(t *testing.T) {
 		json            string
 		expectedResult  testObject
 		err             bool
-		errType         interface{}
+		errType         any
 		skipCheckResult bool
 	}{
 		{
@@ -560,7 +560,7 @@ func TestDecodeObjectBasic0Keys(t *testing.T) {
 		json            string
 		expectedResult  testObject0Keys
 		err             bool
-		errType         interface{}
+		errType         any
 		skipCheckResult bool
 	}{
 		{
@@ -1300,7 +1300,7 @@ func TestDecodeObjectComplex(t *testing.T) {
 		json            string
 		expectedResult  testObjectComplex
 		err             bool
-		errType         interface{}
+		errType         any
 		skipCheckResult bool
 	}{
 		{

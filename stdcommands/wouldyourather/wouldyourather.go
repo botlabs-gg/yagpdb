@@ -29,7 +29,7 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "raw", Help: "Raw output"},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 
 		question := randomQuestion()
 

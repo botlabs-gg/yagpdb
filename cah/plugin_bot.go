@@ -136,7 +136,7 @@ OUTER:
 	return len(games)
 }
 
-func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
+func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data any) {
 	if evt != ShardMigrationEvtGame {
 		return
 	}

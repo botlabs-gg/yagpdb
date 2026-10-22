@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlekSi/pointer"
 	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
 	"github.com/pkg/errors"
 )
@@ -60,9 +59,9 @@ func Deadline(s rules.Strategy) rules.Rule {
 				case strings.Contains(exponent, "недел"):
 					c.Duration = time.Duration(num) * 7 * 24 * time.Hour
 				case strings.Contains(exponent, "месяц"):
-					c.Month = pointer.ToInt((int(ref.Month()) + num) % 12)
+					c.Month = new((int(ref.Month()) + num) % 12)
 				case strings.Contains(exponent, "год") || strings.Contains(exponent, "лет"):
-					c.Year = pointer.ToInt(ref.Year() + num)
+					c.Year = new(ref.Year() + num)
 				}
 			} else {
 				switch {
@@ -76,7 +75,7 @@ func Deadline(s rules.Strategy) rules.Rule {
 					// 2 weeks
 					c.Duration = 14 * 24 * time.Hour
 				case strings.Contains(exponent, "год") || strings.Contains(exponent, "лет"):
-					c.Month = pointer.ToInt((int(ref.Month()) + 6) % 12)
+					c.Month = new((int(ref.Month()) + 6) % 12)
 				}
 			}
 

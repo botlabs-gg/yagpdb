@@ -51,8 +51,8 @@ func (p *PromptCard) PlaceHolder() string {
 	return s
 }
 
-func (p *PromptCard) WithCards(cards interface{}) string {
-	args := make([]interface{}, p.NumPick)
+func (p *PromptCard) WithCards(cards any) string {
+	args := make([]any, p.NumPick)
 	switch t := cards.(type) {
 	case []string:
 		for i, v := range t {

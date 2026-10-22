@@ -39,9 +39,9 @@ var Command = &commands.YAGCommand{
 		{Name: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String},
 	},
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		// Helper function to return value of a switch + whether it was set.
-		getSwitch := func(key string) (value interface{}, set bool) {
+		getSwitch := func(key string) (value any, set bool) {
 			value = data.Switch(key).Value
 			set = value != nil
 			return

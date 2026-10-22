@@ -93,7 +93,7 @@ func setupPendingBannerMW(inner http.Handler) http.Handler {
 		if r.Method == http.MethodGet && strings.HasSuffix(path, "/home") && !web.GetIsReadOnly(r.Context()) {
 			if guild := web.ContextGuild(r.Context()); guild != nil {
 				if state, err := getSetupState(guild.ID); err == nil && state == setupStateNone {
-					r = r.WithContext(web.SetContextTemplateData(r.Context(), map[string]interface{}{"QuickSetupPending": true}))
+					r = r.WithContext(web.SetContextTemplateData(r.Context(), map[string]any{"QuickSetupPending": true}))
 				}
 			}
 		}

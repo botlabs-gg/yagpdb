@@ -6,22 +6,22 @@ import (
 )
 
 var encPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return NewEncoder(nil)
 	},
 }
 
 var streamEncPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return Stream.NewEncoder(nil)
 	},
 }
 
 func init() {
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		encPool.Put(NewEncoder(nil))
 	}
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		streamEncPool.Put(Stream.NewEncoder(nil))
 	}
 }

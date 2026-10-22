@@ -20,7 +20,7 @@ func BenchmarkJSONDecodeObjSmall(b *testing.B) {
 	}
 }
 
-func nothing(_ ...interface{}) {}
+func nothing(_ ...any) {}
 func BenchmarkJSONParserSmall(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

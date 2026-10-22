@@ -45,7 +45,7 @@ func (m *Manager) RunGCLoop() {
 	}
 }
 
-func (m *Manager) EvictSlotEntry(slot string, key interface{}) {
+func (m *Manager) EvictSlotEntry(slot string, key any) {
 	for _, v := range m.slots {
 		if v.name == slot {
 			v.Delete(key)
@@ -63,11 +63,11 @@ func (m *Manager) FindSlot(slot string) *Slot {
 	return nil
 }
 
-type FetcherFunc = func(key interface{}) (interface{}, error)
+type FetcherFunc = func(key any) (any, error)
 
 // RegisterSlot register a new cached "thing"
 // this is only safe to called during init() and friends
-func (m *Manager) RegisterSlot(name string, fetcher FetcherFunc, keyType interface{}) *Slot {
+func (m *Manager) RegisterSlot(name string, fetcher FetcherFunc, keyType any) *Slot {
 	if m.started {
 		panic("tried adding slots after manager had started")
 	}
@@ -82,8 +82,8 @@ func (m *Manager) RegisterSlot(name string, fetcher FetcherFunc, keyType interfa
 		manager:  m,
 		name:     name,
 		fetcher:  fetcher,
-		values:   make(map[interface{}]*cachedEntry),
-		fetching: make(map[interface{}]*sync.Cond),
+		values:   make(map[any]*cachedEntry),
+		fetching: make(map[any]*sync.Cond),
 		keyType:  reflect.TypeOf(keyType),
 	}
 
@@ -99,8 +99,8 @@ type Slot struct {
 	fetcher FetcherFunc
 
 	valuesmu sync.RWMutex
-	values   map[interface{}]*cachedEntry
-	fetching map[interface{}]*sync.Cond
+	values   map[any]*cachedEntry
+	fetching map[any]*sync.Cond
 
 	keyType reflect.Type
 }
@@ -110,16 +110,16 @@ func (s *Slot) Name() string {
 }
 
 type cachedEntry struct {
-	value         interface{}
+	value         any
 	expiresAt     time.Time
 	accessCounter *int64
 }
 
-func (s *Slot) Get(key interface{}) (interface{}, error) {
+func (s *Slot) Get(key any) (any, error) {
 	return s.GetCustomFetch(key, s.fetcher)
 }
 
-func (s *Slot) GetCustomFetch(key interface{}, fetcher FetcherFunc) (interface{}, error) {
+func (s *Slot) GetCustomFetch(key any, fetcher FetcherFunc) (any, error) {
 	// fast path
 	if v := s.getNoFetch(key); v != nil {
 		metricsCacheHits.Add(1)
@@ -172,14 +172,14 @@ func (s *Slot) GetCustomFetch(key interface{}, fetcher FetcherFunc) (interface{}
 	}
 }
 
-func (s *Slot) getNoFetch(key interface{}) interface{} {
+func (s *Slot) getNoFetch(key any) any {
 	s.valuesmu.RLock()
 	defer s.valuesmu.RUnlock()
 
 	return s.getValueLocked(key)
 }
 
-func (s *Slot) getValueLocked(key interface{}) interface{} {
+func (s *Slot) getValueLocked(key any) any {
 	if v, ok := s.values[key]; ok {
 		return v.value
 	}
@@ -187,14 +187,14 @@ func (s *Slot) getValueLocked(key interface{}) interface{} {
 	return nil
 }
 
-func (s *Slot) Delete(key interface{}) {
+func (s *Slot) Delete(key any) {
 	s.valuesmu.Lock()
 	defer s.valuesmu.Unlock()
 
 	delete(s.values, key)
 }
 
-func (s *Slot) DeleteFunc(f func(key interface{}, value interface{}) bool) int {
+func (s *Slot) DeleteFunc(f func(key any, value any) bool) int {
 	s.valuesmu.Lock()
 	defer s.valuesmu.Unlock()
 
@@ -209,7 +209,7 @@ func (s *Slot) DeleteFunc(f func(key interface{}, value interface{}) bool) int {
 	return n
 }
 
-func (s *Slot) fetch(fetcher FetcherFunc, key interface{}) (interface{}, error) {
+func (s *Slot) fetch(fetcher FetcherFunc, key any) (any, error) {
 	return fetcher(key)
 }
 
@@ -224,7 +224,7 @@ func (s *Slot) gc(t time.Time) {
 	}
 }
 
-func (s *Slot) NewKey() interface{} {
+func (s *Slot) NewKey() any {
 	return reflect.New(s.keyType).Interface()
 }
 

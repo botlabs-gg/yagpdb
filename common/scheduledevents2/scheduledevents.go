@@ -58,11 +58,11 @@ func RegisterPlugin() {
 	common.RegisterPlugin(newScheduledEventsPlugin())
 }
 
-type HandlerFunc func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error)
+type HandlerFunc func(evt *models.ScheduledEvent, data any) (retry bool, err error)
 
 type RegisteredHandler struct {
 	EvtName    string
-	DataFormat interface{}
+	DataFormat any
 	Handler    HandlerFunc
 }
 
@@ -74,7 +74,7 @@ var (
 
 // RegisterHandler registers a handler for the scpecified event name
 // dataFormat is optional and should not be a pointer, it should match the type you're passing into ScheduleEvent
-func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFunc) {
+func RegisterHandler(eventName string, dataFormat any, handler HandlerFunc) {
 	if running {
 		panic("tried adding handler when scheduledevents2 is running")
 	}
@@ -88,7 +88,7 @@ func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFu
 	logger.Debug("Registered handler for ", eventName)
 }
 
-func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interface{}) error {
+func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data any) error {
 	m := &models.ScheduledEvent{
 		TriggersAt: runAt,
 		EventName:  evtName,
@@ -305,7 +305,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		return
 	}
 
-	var decodedData interface{}
+	var decodedData any
 	if handler.DataFormat != nil {
 		typ := reflect.TypeOf(handler.DataFormat)
 
@@ -327,7 +327,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	}()
 
 	retryDelay := time.Second
-	for nRetry := 0; nRetry < 10; nRetry++ {
+	for range 10 {
 		var retry bool
 		retry, err = handler.Handler(item, decodedData)
 		if err != nil {

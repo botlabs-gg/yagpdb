@@ -217,7 +217,7 @@ func (l *lexer) acceptRun(valid string) {
 
 // errorf returns an error token and terminates the scan by passing
 // back a nil pointer that will be the next state, terminating l.nextItem.
-func (l *lexer) errorf(format string, args ...interface{}) stateFn {
+func (l *lexer) errorf(format string, args ...any) stateFn {
 	l.item = item{itemError, l.start, fmt.Sprintf(format, args...), l.line}
 	l.start = 0
 	l.pos = 0

@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -87,7 +89,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 		}
 
 		// set up the base template data
-		baseData := map[string]interface{}{
+		baseData := map[string]any{
 			"RequestURI":       r.RequestURI,
 			"StartedAtUnix":    StartedAt.Unix(),
 			"CurrentAd":        CurrentAd,
@@ -106,9 +108,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 
 		baseData["BaseURL"] = BaseURL()
 
-		for k, v := range globalTemplateData {
-			baseData[k] = v
-		}
+		maps.Copy(baseData, globalTemplateData)
 
 		inner.ServeHTTP(w, r.WithContext(SetContextTemplateData(r.Context(), baseData)))
 	}
@@ -215,7 +215,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			LogIgnoreErr(common.SetCacheDataJson(session.Token+":user", 3600, user))
 		}
 
-		templateData := map[string]interface{}{
+		templateData := map[string]any{
 			"User":       user,
 			"IsBotOwner": common.IsOwner(user.ID),
 		}
@@ -265,7 +265,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, guild)
 
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{
+		ctx = SetContextTemplateData(ctx, map[string]any{
 			"ActiveGuild":   guild,
 			"CommandPrefix": prfx.GetPrefixIgnoreError(guildID),
 		})
@@ -288,7 +288,7 @@ func LoadCoreConfigMiddleware(inner http.Handler) http.Handler {
 
 		coreConf := common.GetCoreServerConfCached(g.ID)
 
-		SetContextTemplateData(r.Context(), map[string]interface{}{"CoreConfig": coreConf})
+		SetContextTemplateData(r.Context(), map[string]any{"CoreConfig": coreConf})
 
 		r = r.WithContext(context.WithValue(r.Context(), common.ContextKeyCoreConfig, coreConf))
 
@@ -374,7 +374,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		ctx := SetContextTemplateData(r.Context(), map[string]interface{}{"BotMember": member})
+		ctx := SetContextTemplateData(r.Context(), map[string]any{"BotMember": member})
 		ctx = context.WithValue(ctx, common.ContextKeyBotMember, member)
 
 		defer func() {
@@ -399,11 +399,8 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			if role.ID == guildCast.ID {
 				found = true
 			} else {
-				for _, mr := range member.Roles {
-					if mr == role.ID {
-						found = true
-						break
-					}
+				if slices.Contains(member.Roles, role.ID) {
+					found = true
 				}
 			}
 
@@ -423,12 +420,12 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 
 		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, &highest)
 		ctx = context.WithValue(ctx, common.ContextKeyBotPermissions, combinedPerms)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": &highest, "BotPermissions": combinedPerms})
+		ctx = SetContextTemplateData(ctx, map[string]any{"HighestRole": &highest, "BotPermissions": combinedPerms})
 		r = r.WithContext(ctx)
 	})
 }
 
-type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) interface{}
+type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) any
 
 // A helper wrapper that renders a template
 func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
@@ -451,7 +448,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 
-		var out interface{}
+		var out any
 		if inner != nil {
 			out = inner(w, r)
 		}
@@ -499,12 +496,12 @@ func APIHandler(inner CustomHandlerFunc) http.Handler {
 		w.Header().Set("content-type", "application/json")
 		if cast, ok := out.(error); ok {
 			if cast == nil {
-				out = map[string]interface{}{"ok": true}
+				out = map[string]any{"ok": true}
 			} else {
 				if public, ok := cast.(*PublicError); ok {
-					out = map[string]interface{}{"ok": false, "error": public.msg}
+					out = map[string]any{"ok": false, "error": public.msg}
 				} else {
-					out = map[string]interface{}{"ok": false}
+					out = map[string]any{"ok": false}
 				}
 				CtxLogger(r.Context()).WithError(cast).Error("API Error")
 			}
@@ -531,7 +528,7 @@ func RequestLogger(logger io.Writer) func(http.Handler) http.Handler {
 				elapsed := time.Since(started)
 				dataSent := counter.Count()
 
-				addr := strings.SplitN(r.RemoteAddr, ":", 2)[0]
+				addr, _, _ := strings.Cut(r.RemoteAddr, ":")
 
 				reqLine := fmt.Sprintf("%s %s %s", r.Method, r.RequestURI, r.Proto)
 
@@ -556,7 +553,7 @@ func RequestLogger(logger io.Writer) func(http.Handler) http.Handler {
 }
 
 // Parses a form
-func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
+func FormParserMW(inner http.Handler, dst any) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		if strings.Contains(r.Header.Get("content-type"), "multipart/form-data") {
@@ -641,18 +638,18 @@ func (p *PublicError) Error() string {
 	return p.msg
 }
 
-func NewPublicError(a ...interface{}) error {
+func NewPublicError(a ...any) error {
 	return &PublicError{fmt.Sprint(a...)}
 }
 
 type ControllerHandlerFunc func(w http.ResponseWriter, r *http.Request) (TemplateData, error)
-type ControllerHandlerFuncJson func(w http.ResponseWriter, r *http.Request) (interface{}, error)
+type ControllerHandlerFuncJson func(w http.ResponseWriter, r *http.Request) (any, error)
 
 // Handlers can return templatedata and an erro.
 // If error is not nil and publicerror it will be added as an alert,
 // if error is not a publicerror it will render a error page
 func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handler {
-	return RenderHandler(func(w http.ResponseWriter, r *http.Request) interface{} {
+	return RenderHandler(func(w http.ResponseWriter, r *http.Request) any {
 		ctx := r.Context()
 
 		data, err := f(w, r)
@@ -668,7 +665,7 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}) http.Handler {
+func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData any) http.Handler {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -796,7 +793,7 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 		}
 
 		read, write := IsAdminRequest(ctx, r)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": read || write})
+		ctx = SetContextTemplateData(ctx, map[string]any{"IsAdmin": read || write})
 		ctx = context.WithValue(ctx, common.ContextKeyIsAdmin, read || write)
 
 		if read && !write {

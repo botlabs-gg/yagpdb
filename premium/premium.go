@@ -204,7 +204,7 @@ func FindSource(sourceID string) PremiumSource {
 	return nil
 }
 
-func handleNewPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleNewPremiumGuild(evt *schEventsModels.ScheduledEvent, data any) (retry bool, err error) {
 	for _, v := range common.Plugins {
 		if cast, ok := v.(NewPremiumGuildListener); ok {
 			cast.OnNewPremiumGuild(evt.GuildID)
@@ -214,7 +214,7 @@ func handleNewPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}
 	return false, nil
 }
 
-func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data any) (retry bool, err error) {
 	for _, v := range common.Plugins {
 		if cast, ok := v.(RemovedPremiumGuildListener); ok {
 			cast.OnRemovedPremiumGuild(evt.GuildID)

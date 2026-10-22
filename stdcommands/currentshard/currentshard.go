@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "serverid", Type: dcmd.BigInt, Default: int64(0)},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		gID := data.GuildData.GS.ID
 
 		if data.Args[0].Int64() != 0 {

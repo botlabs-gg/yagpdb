@@ -83,7 +83,7 @@ func (d *Data) WithContext(ctx context.Context) *Data {
 	return cop
 }
 
-func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.AllowedMentions) ([]*discordgo.Message, error) {
+func (d *Data) SendFollowupMessage(reply any, allowedMentions discordgo.AllowedMentions) ([]*discordgo.Message, error) {
 	switch t := reply.(type) {
 	case Response:
 		return t.Send(d)

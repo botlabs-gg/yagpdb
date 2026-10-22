@@ -1,20 +1,21 @@
 package config
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 )
 
 type ConfigSource interface {
-	GetValue(key string) interface{}
+	GetValue(key string) any
 	Name() string
 }
 
 type ConfigOption struct {
 	Name         string
 	Description  string
-	DefaultValue interface{}
-	LoadedValue  interface{}
+	DefaultValue any
+	LoadedValue  any
 	Manager      *ConfigManager
 
 	ConfigSource ConfigSource
@@ -24,8 +25,7 @@ func (opt *ConfigOption) LoadValue() {
 	newVal := opt.DefaultValue
 	opt.ConfigSource = nil
 
-	for i := len(opt.Manager.sources) - 1; i >= 0; i-- {
-		source := opt.Manager.sources[i]
+	for _, source := range slices.Backward(opt.Manager.sources) {
 
 		v := source.GetValue(opt.Name)
 		if v != nil {
@@ -38,9 +38,9 @@ func (opt *ConfigOption) LoadValue() {
 	// parse ahead of time
 	if opt.DefaultValue != nil {
 		if _, ok := opt.DefaultValue.(int); ok {
-			newVal = interface{}(intVal(newVal))
+			newVal = any(intVal(newVal))
 		} else if _, ok := opt.DefaultValue.(bool); ok {
-			newVal = interface{}(boolVal(newVal))
+			newVal = any(boolVal(newVal))
 		}
 	}
 
@@ -74,7 +74,7 @@ func (c *ConfigManager) AddSource(source ConfigSource) {
 	c.sources = append(c.sources, source)
 }
 
-func (c *ConfigManager) RegisterOption(name, desc string, defaultValue interface{}) *ConfigOption {
+func (c *ConfigManager) RegisterOption(name, desc string, defaultValue any) *ConfigOption {
 	opt := &ConfigOption{
 		Name:         name,
 		Description:  desc,
@@ -92,7 +92,7 @@ func (c *ConfigManager) Load() {
 	}
 }
 
-func strVal(i interface{}) string {
+func strVal(i any) string {
 	switch t := i.(type) {
 	case string:
 		return t
@@ -109,7 +109,7 @@ type Stringer interface {
 	String() string
 }
 
-func intVal(i interface{}) int {
+func intVal(i any) int {
 	switch t := i.(type) {
 	case string:
 		n, _ := strconv.ParseInt(t, 10, 64)
@@ -121,7 +121,7 @@ func intVal(i interface{}) int {
 	return 0
 }
 
-func boolVal(i interface{}) bool {
+func boolVal(i any) bool {
 	switch t := i.(type) {
 	case string:
 		lower := strings.ToLower(strings.TrimSpace(t))

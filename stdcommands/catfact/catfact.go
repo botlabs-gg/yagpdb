@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		cf := Catfacts[rand.Intn(len(Catfacts))]
 		return cf, nil
 	},

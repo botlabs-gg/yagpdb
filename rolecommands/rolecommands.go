@@ -102,7 +102,7 @@ func (s SimpleError) Error() string {
 	return string(s)
 }
 
-func NewSimpleError(format string, args ...interface{}) error {
+func NewSimpleError(format string, args ...any) error {
 	return SimpleError(fmt.Sprintf(format, args...))
 }
 

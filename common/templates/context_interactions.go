@@ -53,7 +53,7 @@ func CreateModal(values ...any) (*discordgo.InteractionResponse, error) {
 		return &discordgo.InteractionResponse{}, errors.New("no values passed to component builder")
 	}
 
-	var m map[string]interface{}
+	var m map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		m = t
@@ -145,7 +145,7 @@ func CreateModal(values ...any) (*discordgo.InteractionResponse, error) {
 	return modalBuilder.toModal()
 }
 
-func (c *Context) tmplDeleteInteractionResponse(interactionToken, msgID interface{}, delaySeconds ...interface{}) (interface{}, error) {
+func (c *Context) tmplDeleteInteractionResponse(interactionToken, msgID any, delaySeconds ...any) (any, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
@@ -169,8 +169,8 @@ func (c *Context) tmplDeleteInteractionResponse(interactionToken, msgID interfac
 	return "", nil
 }
 
-func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(interactionToken, msgID, msg interface{}) (interface{}, error) {
-	return func(interactionToken, msgID, msg interface{}) (interface{}, error) {
+func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(interactionToken, msgID, msg any) (any, error) {
+	return func(interactionToken, msgID, msg any) (any, error) {
 		if c.CurrentFrame.Interaction == nil {
 			return "", errors.New("no interaction data in context")
 		}
@@ -230,7 +230,7 @@ func (c *Context) tmplEphemeralResponse() string {
 	return ""
 }
 
-func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message *discordgo.Message, err error) {
+func (c *Context) tmplGetResponse(interactionToken, msgID any) (message *discordgo.Message, err error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
 	}
@@ -255,7 +255,7 @@ func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message 
 	return
 }
 
-func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
+func (c *Context) tmplSendModal(modal any) (any, error) {
 	if c.CurrentFrame.Interaction == nil {
 		return "", errors.New("no interaction data in context")
 	}
@@ -304,8 +304,8 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 	return "", nil
 }
 
-func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken interface{}, msg interface{}) (interface{}, error) {
-	return func(interactionToken interface{}, msg interface{}) (interface{}, error) {
+func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken any, msg any) (any, error) {
+	return func(interactionToken any, msg any) (any, error) {
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
 		}
@@ -371,8 +371,8 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 	}
 }
 
-func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interface{}) (interface{}, error) {
-	return func(msg interface{}) (interface{}, error) {
+func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg any) (any, error) {
+	return func(msg any) (any, error) {
 		if c.CurrentFrame.Interaction == nil {
 			return "", errors.New("no interaction data in context; consider editMessage or editResponse")
 		}
@@ -415,7 +415,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 // tokenArg validates the interaction token, or falls back to the one in
 // context if it exists. it returns an empty string on failure of both of
 // these. also returns the sendMessageType.
-func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageType, token string) {
+func (c *Context) tokenArg(interactionToken any) (sendType sendMessageType, token string) {
 	sendType = sendMessageInteractionFollowup
 	sToken, ok := interactionToken.(string)
 	if !ok {

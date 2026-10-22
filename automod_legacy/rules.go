@@ -3,6 +3,7 @@ package automod_legacy
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -105,10 +106,8 @@ func (r BaseRule) ShouldIgnore(cs *dstate.ChannelState, evt *discordgo.Message, 
 	}
 
 	strC := discordgo.StrID(common.ChannelOrThreadParentID(cs))
-	for _, ignoreChannel := range r.IgnoreChannels {
-		if ignoreChannel == strC {
-			return true
-		}
+	if slices.Contains(r.IgnoreChannels, strC) {
+		return true
 	}
 
 	for _, role := range ms.Member.Roles {
@@ -401,8 +400,8 @@ func (w *WordsRule) GetCompiled() map[string]bool {
 	}
 
 	w.compiledWords = make(map[string]bool)
-	fields := strings.Fields(w.BannedWords)
-	for _, word := range fields {
+	fields := strings.FieldsSeq(w.BannedWords)
+	for word := range fields {
 		w.compiledWords[strings.ToLower(word)] = true
 	}
 
@@ -428,8 +427,8 @@ func (w *WordsRule) CheckMessage(content string) (word string) {
 	userBanned := w.GetCompiled()
 
 	lower := strings.ToLower(content)
-	messageWords := strings.Fields(lower)
-	for _, v := range messageWords {
+	messageWords := strings.FieldsSeq(lower)
+	for v := range messageWords {
 		if _, ok := userBanned[v]; ok {
 			return v
 		}

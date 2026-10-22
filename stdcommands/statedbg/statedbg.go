@@ -32,7 +32,7 @@ var getGuild = &commands.YAGCommand{
 	RunFunc:      util.RequireOwner(cmdFuncGetGuild),
 }
 
-func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
+func cmdFuncGetGuild(data *dcmd.Data) (any, error) {
 	serialized, err := json.MarshalIndent(data.GuildData.GS, "", "  ")
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ var getMember = &commands.YAGCommand{
 	RunFunc:      util.RequireOwner(cmdFuncGetMember),
 }
 
-func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
+func cmdFuncGetMember(data *dcmd.Data) (any, error) {
 
 	targetID := data.Args[0].Int64()
 
@@ -98,7 +98,7 @@ var botMember = &commands.YAGCommand{
 	RunFunc:      util.RequireOwner(cmdFuncBotMember),
 }
 
-func cmdFuncBotMember(data *dcmd.Data) (interface{}, error) {
+func cmdFuncBotMember(data *dcmd.Data) (any, error) {
 	shards := bot.ReadyTracker.GetProcessShards()
 
 	numFound := 0

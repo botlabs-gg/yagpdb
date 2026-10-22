@@ -523,7 +523,7 @@ func (config *BulkRoleConfig) filterRoleString(prefix string) string {
 				roleText += strings.Join(addedRoles, ", ") + truncationMsg + suffix
 			} else {
 				// Not enough room even for truncation message, show fewer roles
-				for j := len(addedRoles) - 1; j >= 0; j-- {
+				for j := range slices.Backward(addedRoles) {
 					testText := strings.Join(addedRoles[:j+1], ", ") + truncationMsg
 					if len(testText) <= availableLength {
 						roleText += testText + suffix

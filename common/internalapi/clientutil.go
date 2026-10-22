@@ -24,7 +24,7 @@ func GetServerAddrForShard(shard int) string {
 	return addr
 }
 
-func GetWithGuild(guildID int64, url string, dest interface{}) error {
+func GetWithGuild(guildID int64, url string, dest any) error {
 	serverAddr := GetServerAddrForGuild(guildID)
 	if serverAddr == "" {
 		return ErrCantFindAddress
@@ -33,7 +33,7 @@ func GetWithGuild(guildID int64, url string, dest interface{}) error {
 	return GetWithAddress(serverAddr, url, dest)
 }
 
-func GetWithShard(shard int, url string, dest interface{}) error {
+func GetWithShard(shard int, url string, dest any) error {
 	serverAddr := GetServerAddrForShard(shard)
 	if serverAddr == "" {
 		return ErrCantFindAddress
@@ -42,7 +42,7 @@ func GetWithShard(shard int, url string, dest interface{}) error {
 	return GetWithAddress(serverAddr, url, dest)
 }
 
-func GetWithAddress(addr string, url string, dest interface{}) error {
+func GetWithAddress(addr string, url string, dest any) error {
 	resp, err := http.Get("http://" + addr + "/" + url)
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func GetWithAddress(addr string, url string, dest interface{}) error {
 	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
 }
 
-func PostWithGuild(guildID int64, url string, bodyData interface{}, dest interface{}) error {
+func PostWithGuild(guildID int64, url string, bodyData any, dest any) error {
 	serverAddr := GetServerAddrForGuild(guildID)
 	if serverAddr == "" {
 		return ErrCantFindAddress
@@ -71,7 +71,7 @@ func PostWithGuild(guildID int64, url string, bodyData interface{}, dest interfa
 	return PostWithAddress(serverAddr, url, bodyData, dest)
 }
 
-func PostWithShard(shard int, url string, bodyData interface{}, dest interface{}) error {
+func PostWithShard(shard int, url string, bodyData any, dest any) error {
 	serverAddr := GetServerAddrForShard(shard)
 	if serverAddr == "" {
 		return ErrCantFindAddress
@@ -80,7 +80,7 @@ func PostWithShard(shard int, url string, bodyData interface{}, dest interface{}
 	return PostWithAddress(serverAddr, url, bodyData, dest)
 }
 
-func PostWithAddress(serverAddr string, url string, bodyData interface{}, dest interface{}) error {
+func PostWithAddress(serverAddr string, url string, bodyData any, dest any) error {
 	var bodyBuf bytes.Buffer
 	if bodyData != nil {
 		encoder := json.NewEncoder(&bodyBuf)

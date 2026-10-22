@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "guildid", Type: dcmd.BigInt, Default: int64(0)},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		gID := data.Args[0].Int64()
 		guild, err := botrest.GetGuild(gID)
 		if err != nil {

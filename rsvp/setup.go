@@ -353,7 +353,7 @@ func (s *SetupSession) remove() {
 	}
 }
 
-func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
+func (s *SetupSession) sendMessage(msgf string, args ...any) {
 	m, err := common.BotSession.ChannelMessageSend(s.SetupChannel, "[RSVP Event Setup]: "+fmt.Sprintf(msgf, args...))
 	if err != nil {
 		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
@@ -362,7 +362,7 @@ func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 	}
 }
 
-func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...interface{}) {
+func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...any) {
 	send := &discordgo.MessageSend{Content: "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)}
 	msgs, err := data.SendFollowupMessage(send, discordgo.AllowedMentions{})
 	if err != nil {

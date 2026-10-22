@@ -21,7 +21,7 @@ var cachedCommandsContextMenuTrigger = common.CacheSet.RegisterSlot("custom_comm
 // BotCachedGetCommandsWithContextMenuTrigger returns the (cached) context menu custom
 // commands (both user and message type) for a guild.
 func BotCachedGetCommandsWithContextMenuTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsContextMenuTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedCommandsContextMenuTrigger.GetCustomFetch(guildID, func(key any) (any, error) {
 		var cmds []*models.CustomCommand
 		var err error
 		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {

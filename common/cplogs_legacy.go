@@ -16,11 +16,11 @@ type CPLogEntryLegacy struct {
 	TimestampString string `json:"-"`
 }
 
-func AddCPLogEntry(user *discordgo.User, guild int64, args ...interface{}) {
+func AddCPLogEntry(user *discordgo.User, guild int64, args ...any) {
 	// no op, as to not cause breakage
 }
 
-func AddCPLogEntryLegacy(user *discordgo.User, guild int64, args ...interface{}) {
+func AddCPLogEntryLegacy(user *discordgo.User, guild int64, args ...any) {
 	action := fmt.Sprintf("(UserID: %d) %s#%s: %s", user.ID, user.Username, user.Discriminator, fmt.Sprint(args...))
 
 	now := time.Now()

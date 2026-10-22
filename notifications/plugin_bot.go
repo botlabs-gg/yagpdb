@@ -33,7 +33,7 @@ var configCache = ccache.New(ccache.Configure().MaxSize(15000))
 func BotCachedGetConfig(guildID int64) (*Config, error) {
 	const cacheDuration = 10 * time.Minute
 
-	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
+	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (any, error) {
 		return FetchConfig(guildID)
 	})
 	if err != nil {

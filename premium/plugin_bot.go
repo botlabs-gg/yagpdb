@@ -53,7 +53,7 @@ const (
 	premiumAccentGold   = 0xf1c40f
 )
 
-func runPremium(data *dcmd.Data) (interface{}, error) {
+func runPremium(data *dcmd.Data) (any, error) {
 	perksURL := fmt.Sprintf("%s/premium-perks", web.BaseURL())
 	manageURL := fmt.Sprintf("%s/premium", web.BaseURL())
 	discordStoreURL := fmt.Sprintf("https://discord.com/application-directory/%s/store", common.ConfClientID.GetString())

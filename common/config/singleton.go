@@ -6,7 +6,7 @@ func AddSource(source ConfigSource) {
 	Singleton.AddSource(source)
 }
 
-func RegisterOption(name, desc string, defaultValue interface{}) *ConfigOption {
+func RegisterOption(name, desc string, defaultValue any) *ConfigOption {
 	return Singleton.RegisterOption(name, desc, defaultValue)
 }
 

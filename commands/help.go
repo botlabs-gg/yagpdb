@@ -31,7 +31,7 @@ func CmdNotFound(search string) string {
 	return "Couldn't find that command."
 }
 
-func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
+func cmdFuncHelp(data *dcmd.Data) (any, error) {
 	target := data.Args[0].Str()
 
 	// Send the targetted help in the channel it was requested in
@@ -86,7 +86,7 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	return createInteractiveHelp(data, resp)
 }
 
-func createInteractiveHelp(data *dcmd.Data, helpEmbeds []*discordgo.MessageEmbed) (interface{}, error) {
+func createInteractiveHelp(data *dcmd.Data, helpEmbeds []*discordgo.MessageEmbed) (any, error) {
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
 		Title: "YAGPDB Help",

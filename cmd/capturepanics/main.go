@@ -91,7 +91,7 @@ func reader(reader io.ReadCloser, logPrefix string) {
 func writeLogs(prefix string, r *ring.Ring) {
 	compiled := make([]byte, 0, 10000000)
 
-	r.Do(func(p interface{}) {
+	r.Do(func(p any) {
 		if p != nil {
 			v := p.([]byte)
 			compiled = append(compiled, v...)

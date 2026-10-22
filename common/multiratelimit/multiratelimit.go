@@ -9,7 +9,7 @@ import (
 
 type MultiRatelimiter struct {
 	mu       sync.Mutex
-	limiters map[interface{}]*rate.Limiter
+	limiters map[any]*rate.Limiter
 
 	maxPerSecond float64
 	maxBurst     int
@@ -17,7 +17,7 @@ type MultiRatelimiter struct {
 
 func NewMultiRatelimiter(maxPerSecond float64, maxBurst int) *MultiRatelimiter {
 	multiLimiter := &MultiRatelimiter{
-		limiters: make(map[interface{}]*rate.Limiter),
+		limiters: make(map[any]*rate.Limiter),
 
 		maxPerSecond: maxPerSecond,
 		maxBurst:     maxBurst,
@@ -26,7 +26,7 @@ func NewMultiRatelimiter(maxPerSecond float64, maxBurst int) *MultiRatelimiter {
 	return multiLimiter
 }
 
-func (multi *MultiRatelimiter) findCreateLimiter(key interface{}) *rate.Limiter {
+func (multi *MultiRatelimiter) findCreateLimiter(key any) *rate.Limiter {
 	multi.mu.Lock()
 	defer multi.mu.Unlock()
 
@@ -39,6 +39,6 @@ func (multi *MultiRatelimiter) findCreateLimiter(key interface{}) *rate.Limiter 
 	return multi.limiters[key]
 }
 
-func (multi *MultiRatelimiter) AllowN(key interface{}, now time.Time, n int) bool {
+func (multi *MultiRatelimiter) AllowN(key any, now time.Time, n int) bool {
 	return multi.findCreateLimiter(key).AllowN(now, n)
 }

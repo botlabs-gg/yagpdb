@@ -89,7 +89,7 @@ var (
 )
 
 // Probably needs some cleaning up
-func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) bool {
+func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form any) bool {
 
 	ok := true
 
@@ -98,7 +98,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 
 	// Walk over each field and look for valid tag
 	numFields := v.NumField()
-	for i := 0; i < numFields; i++ {
+	for i := range numFields {
 		tField := t.Field(i)
 		tag := tField.Tag
 		validationStr := tag.Get("valid")
@@ -181,7 +181,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 		default:
 			// Recurse if it's another struct
 			switch tField.Type.Kind() {
-			case reflect.Struct, reflect.Ptr:
+			case reflect.Struct, reflect.Pointer:
 				addr := reflect.Indirect(vField).Addr()
 				innerOk := ValidateForm(guild, tmpl, addr.Interface())
 				if !innerOk {

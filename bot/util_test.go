@@ -48,9 +48,7 @@ func TestMemberHighestRole(t *testing.T) {
 
 func TestIsMemberAbove(t *testing.T) {
 	gs := &dstate.GuildSet{
-		GuildState: dstate.GuildState{
-			OwnerID: 99,
-		},
+		OwnerID: 99,
 		Roles: []discordgo.Role{
 			{ID: 10, Position: 10},
 			{ID: 5, Position: 5},
@@ -225,10 +223,9 @@ func TestRegisteredDMInteractionHandler(t *testing.T) {
 	called := ""
 	RegisterDMInteractionHandler("DM_TEST_", func(evt *eventsystem.EventData) { called = "test" })
 
-	button := &discordgo.InteractionCreate{Interaction: discordgo.Interaction{
+	button := &discordgo.InteractionCreate{
 		Type: discordgo.InteractionMessageComponent,
-		Data: discordgo.MessageComponentInteractionData{CustomID: "DM_TEST_123"},
-	}}
+		Data: discordgo.MessageComponentInteractionData{CustomID: "DM_TEST_123"}}
 	handler, ok := registeredDMInteractionHandler(button)
 	if !ok {
 		t.Fatal("registered prefix was not matched")
@@ -238,10 +235,9 @@ func TestRegisteredDMInteractionHandler(t *testing.T) {
 		t.Error("wrong handler returned")
 	}
 
-	other := &discordgo.InteractionCreate{Interaction: discordgo.Interaction{
+	other := &discordgo.InteractionCreate{
 		Type: discordgo.InteractionMessageComponent,
-		Data: discordgo.MessageComponentInteractionData{CustomID: "DM_123"},
-	}}
+		Data: discordgo.MessageComponentInteractionData{CustomID: "DM_123"}}
 	if _, ok := registeredDMInteractionHandler(other); ok {
 		t.Error("unregistered prefix was matched")
 	}

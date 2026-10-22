@@ -54,7 +54,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "subject", Type: dcmd.String},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
 			}
@@ -77,7 +77,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "target", Type: &commands.MemberArg{}},
 		},
 
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			target := parsed.Args[0].Value.(*dstate.MemberState)
 
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
@@ -120,7 +120,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "target", Type: &commands.MemberArg{}},
 		},
 
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			target := parsed.Args[0].Value.(*dstate.MemberState)
 
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
@@ -168,7 +168,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "new-name", Type: dcmd.String},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 
 			newName := parsed.Args[0].Str()
@@ -204,7 +204,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "reason", Type: dcmd.String, Default: "none"},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 			return closeTicket(parsed.GuildData.GS, currentTicket, parsed.GuildData.CS, conf, parsed.Author, parsed.Args[0].Str(), parsed.Context())
@@ -272,7 +272,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "button-8", Help: "Predefined reason for button 8", Type: dcmd.String},
 			{Name: "button-9", Help: "Predefined reason for button 9", Type: dcmd.String},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			var components []discordgo.InteractiveComponent
 			var usedReasons []string
 			for i := 1; i < 10; i++ {
@@ -376,7 +376,7 @@ func (p *Plugin) AddCommands() {
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.AddMiddlewares(
 		func(inner dcmd.RunFunc) dcmd.RunFunc {
-			return func(data *dcmd.Data) (interface{}, error) {
+			return func(data *dcmd.Data) (any, error) {
 
 				conf, err := models.FindTicketConfigG(data.Context(), data.GuildData.GS.ID)
 				if err != nil {
@@ -445,7 +445,7 @@ func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {
 }
 
 func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
-	return func(data *dcmd.Data) (interface{}, error) {
+	return func(data *dcmd.Data) (any, error) {
 		if data.Context().Value(CtxKeyCurrentTicket) == nil {
 			return "This command can only be run in a active ticket", nil
 		}
@@ -455,7 +455,7 @@ func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
 }
 
 func ProhibitActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
-	return func(data *dcmd.Data) (interface{}, error) {
+	return func(data *dcmd.Data) (any, error) {
 		if data.Context().Value(CtxKeyCurrentTicket) != nil {
 			return "This command cannot be run in a active ticket", nil
 		}
@@ -632,8 +632,7 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 		ticket.LocalID, ticket.Title, ticket.AuthorUsernameDiscrim, ticket.CreatedAt.UTC().Format(TicketTXTDateFormat), ticket.ClosedAt.Time.UTC().Format(TicketTXTDateFormat))
 
 	// traverse reverse for correct order (they come in with new-old order, we want old-new)
-	for i := len(msgs) - 1; i >= 0; i-- {
-		m := msgs[i]
+	for _, m := range slices.Backward(msgs) {
 
 		// serialize message content
 		ts, _ := m.Timestamp.Parse()
@@ -953,7 +952,7 @@ func applyChannelParentSettings(gs *dstate.GuildSet, parentCategoryID int64, ove
 	}
 
 	channel_overwrites := make([]*discordgo.PermissionOverwrite, len(cs.PermissionOverwrites))
-	for i := 0; i < len(overwrites); i++ {
+	for i := range overwrites {
 		channel_overwrites[i] = &cs.PermissionOverwrites[i]
 	}
 

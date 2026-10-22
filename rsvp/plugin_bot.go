@@ -46,13 +46,13 @@ func (p *Plugin) AddCommands() {
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	cmdCreateEvent := &commands.YAGCommand{
-		CmdCategory: catEvents,
-		Name:        "Create",
-		Aliases:     []string{"new", "make"},
-		Description: "Creates an event, You will be led through an interactive setup",
+		CmdCategory:         catEvents,
+		Name:                "Create",
+		Aliases:             []string{"new", "make"},
+		Description:         "Creates an event, You will be led through an interactive setup",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageEvents},
-		Plugin:      p,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		Plugin:              p,
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 
 			count, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID)).CountG(parsed.Context())
 			if err != nil {
@@ -115,7 +115,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "time", Help: "Change the start time of the event", Type: dcmd.String},
 			{Name: "max", Help: "Change max participants", Type: dcmd.Int},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			m, err := models.RSVPSessions(
 				models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID),
 				models.RSVPSessionWhere.LocalID.EQ(parsed.Args[0].Int64()),
@@ -184,7 +184,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Lists all events in this server",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageEvents},
 		Plugin:              p,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
 			if err != nil {
 				return nil, err
@@ -218,7 +218,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 
 			m, err := models.RSVPSessions(
 				models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID),
@@ -249,7 +249,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Force cancels the current setup session in this channel",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageEvents},
 		Plugin:              p,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 
 			p.setupSessionsMU.Lock()
 			for _, v := range p.setupSessions {
@@ -553,7 +553,7 @@ func NextUpdateTime(m *models.RSVPSession) time.Time {
 	}
 }
 
-func (p *Plugin) handleScheduledUpdate(evt *eventModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func (p *Plugin) handleScheduledUpdate(evt *eventModels.ScheduledEvent, data any) (retry bool, err error) {
 	mID := *(data.(*int64))
 
 	m, err := models.RSVPSessions(models.RSVPSessionWhere.MessageID.EQ(mID), qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc"))).OneG(context.Background())

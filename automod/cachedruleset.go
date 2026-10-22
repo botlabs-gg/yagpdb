@@ -29,7 +29,7 @@ type ParsedPart struct {
 	RSConditionModel *models.AutomodRulesetCondition
 
 	Part           RulePart
-	ParsedSettings interface{}
+	ParsedSettings any
 }
 
 func ParseRuleset(rs *models.AutomodRuleset) (*ParsedRuleset, error) {

@@ -109,7 +109,7 @@ var _ dcmd.CmdWithCategory = (*StaticCmd)(nil)
 // Descriptions should return a short Desc (used in the overall help overiview) and one long descriptions for targetted help
 func (s *StaticCmd) Descriptions(d *dcmd.Data) (string, string) { return s.Desc, "" }
 
-func (e *StaticCmd) Run(data *dcmd.Data) (interface{}, error) {
+func (e *StaticCmd) Run(data *dcmd.Data) (any, error) {
 	if e.Resp == "" {
 		return "Mock response", nil
 	}

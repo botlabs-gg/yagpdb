@@ -633,8 +633,8 @@ func ReadRuleRowData(guild *dstate.GuildSet, tmpl web.TemplateData, rawData []Ru
 	for i, entry := range rawData {
 		for k, fv := range form {
 
-			if strings.HasPrefix(k, namePrefix+"."+strconv.Itoa(i)+".Data.") {
-				dataKey := strings.TrimPrefix(k, namePrefix+"."+strconv.Itoa(i)+".Data.")
+			if after, ok := strings.CutPrefix(k, namePrefix+"."+strconv.Itoa(i)+".Data."); ok {
+				dataKey := after
 				if entry.Data == nil {
 					entry.Data = make(map[string][]string)
 				}
@@ -695,7 +695,7 @@ OUTER:
 			}
 		}
 
-		dupes := []interface{}{parsedPart.ParsedSettings}
+		dupes := []any{parsedPart.ParsedSettings}
 		// find duplicate types
 		for _, v := range parsedSettings {
 			if v.Part == parsedPart.Part && v != parsedPart {
@@ -769,9 +769,9 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 	// 1st index: rule
 	// 2nd index: part
 	// keys: part data
-	parsedData := make([][]map[string]interface{}, len(ruleset.R.RulesetAutomodRules))
+	parsedData := make([][]map[string]any, len(ruleset.R.RulesetAutomodRules))
 	for i, rule := range ruleset.R.RulesetAutomodRules {
-		ruleData := make([]map[string]interface{}, len(rule.R.RuleAutomodRuleData))
+		ruleData := make([]map[string]any, len(rule.R.RuleAutomodRuleData))
 
 		for j, part := range rule.R.RuleAutomodRuleData {
 			dst := RulePartMap[part.TypeID].DataType()
@@ -793,7 +793,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 	}
 
 	// The ruleset scoped conditions
-	parsedRSData := make([]map[string]interface{}, len(ruleset.R.RulesetAutomodRulesetConditions))
+	parsedRSData := make([]map[string]any, len(ruleset.R.RulesetAutomodRulesetConditions))
 	for i, part := range ruleset.R.RulesetAutomodRulesetConditions {
 		dst := RulePartMap[part.TypeID].DataType()
 		if dst != nil {

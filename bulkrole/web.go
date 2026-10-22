@@ -144,7 +144,7 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Post("/"), saveAndStartHandler)
 }
 
-func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface{} {
+func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
@@ -214,7 +214,7 @@ func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface
 
 		tmpl["TotalMembers"] = int(activeGuild.MemberCount)
 
-		tmpl["CurrentOperation"] = map[string]interface{}{
+		tmpl["CurrentOperation"] = map[string]any{
 			"TargetRole":          general.TargetRole,
 			"Operation":           general.Operation,
 			"FilterType":          general.FilterType,

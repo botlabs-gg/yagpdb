@@ -15,7 +15,7 @@ func TestDecoderUint64(t *testing.T) {
 		json           string
 		expectedResult uint64
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -169,7 +169,7 @@ func TestDecoderUint64Null(t *testing.T) {
 		json           string
 		expectedResult uint64
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -315,7 +315,7 @@ func TestDecoderUint32(t *testing.T) {
 		json           string
 		expectedResult uint32
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -477,7 +477,7 @@ func TestDecoderUint32Null(t *testing.T) {
 		json           string
 		expectedResult uint32
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -631,7 +631,7 @@ func TestDecoderUint16(t *testing.T) {
 		json           string
 		expectedResult uint16
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -821,7 +821,7 @@ func TestDecoderUint16Null(t *testing.T) {
 		json           string
 		expectedResult uint16
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -995,7 +995,7 @@ func TestDecoderUint8(t *testing.T) {
 		json           string
 		expectedResult uint8
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -1174,7 +1174,7 @@ func TestDecoderUint8Null(t *testing.T) {
 		json           string
 		expectedResult uint8
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{

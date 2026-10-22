@@ -12,7 +12,7 @@ const CtxKeyNoPagination CtxKey = 1
 type PaginatedCommandFunc func(data *dcmd.Data, p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error)
 
 func PaginatedCommand(pageArgIndex int, cb PaginatedCommandFunc) dcmd.RunFunc {
-	return func(data *dcmd.Data) (interface{}, error) {
+	return func(data *dcmd.Data) (any, error) {
 		page := 1
 		if pageArgIndex > -1 {
 			page = data.Args[pageArgIndex].Int()

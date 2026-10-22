@@ -115,7 +115,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		}
 
 		timeNext := now.UTC()
-		for i := 0; i < 200; i++ {
+		for range 200 {
 			// alternative method if month/dom are configured but dow isn't. in
 			// the lucky scenarios where it's calculated right on the first
 			// try, this won't need to loop.

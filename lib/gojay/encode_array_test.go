@@ -29,7 +29,7 @@ func (t TestEncodingArr) IsNil() bool {
 	return t == nil
 }
 
-type testEncodingArrInterfaces []interface{}
+type testEncodingArrInterfaces []any
 
 func (t testEncodingArrInterfaces) MarshalJSONArray(enc *Encoder) {
 	for _, e := range t {

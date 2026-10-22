@@ -31,7 +31,7 @@ var Command = &commands.YAGCommand{
 
 var logger = common.GetFixedPrefixLogger("yagstatuc_cmd")
 
-func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
+func cmdFuncYagStatus(data *dcmd.Data) (any, error) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 

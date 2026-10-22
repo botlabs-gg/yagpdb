@@ -3,11 +3,11 @@ package codegen
 import (
 	"fmt"
 	"go/format"
-	"io/ioutil"
+
+	"github.com/viant/toolbox"
 	"os"
 	"path/filepath"
 	"strings"
-	"github.com/viant/toolbox"
 )
 
 const gojayPackage = "github.com/francoispqt/gojay"
@@ -130,7 +130,7 @@ func (g *Generator) writeCode() error {
 		return nil
 	}
 
-	return ioutil.WriteFile(g.options.Dest, code, 0644)
+	return os.WriteFile(g.options.Dest, code, 0644)
 }
 
 func (g *Generator) generatePrimitiveArray(field *Field) error {

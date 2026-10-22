@@ -1,5 +1,7 @@
 package dstate
 
+import "slices"
+
 import "github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 
 const AllPermissions int64 = discordgo.PermissionAll
@@ -37,11 +39,8 @@ func CalculateBasePermissions(guildID int64, ownerID int64, guildRoles []discord
 
 	// member roles
 	for _, role := range guildRoles {
-		for _, roleID := range roles {
-			if role.ID == roleID {
-				perms |= int64(role.Permissions)
-				break
-			}
+		if slices.Contains(roles, role.ID) {
+			perms |= int64(role.Permissions)
 		}
 	}
 

@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
+
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,7 +21,7 @@ func NewClient(addr string) *Client {
 	}
 }
 
-func (c *Client) do(method string, path string, body []byte, respData interface{}) error {
+func (c *Client) do(method string, path string, body []byte, respData any) error {
 	r := bytes.NewReader(body)
 
 	req, err := http.NewRequest(method, c.addr+path, r)
@@ -39,7 +40,7 @@ func (c *Client) do(method string, path string, body []byte, respData interface{
 	if respData != nil {
 		// decoder := json.NewDecoder(resp.Body)
 		// err = decoder.Decode(respData)
-		fullBody, err := ioutil.ReadAll(resp.Body)
+		fullBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

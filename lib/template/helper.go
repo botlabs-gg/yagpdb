@@ -8,7 +8,8 @@ package template
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
+
 	"path/filepath"
 )
 
@@ -17,6 +18,7 @@ import (
 // Must is a helper that wraps a call to a function returning (*Template, error)
 // and panics if the error is non-nil. It is intended for use in variable
 // initializations such as
+//
 //	var t = template.Must(template.New("name").Parse("text"))
 func Must(t *Template, err error) *Template {
 	if err != nil {
@@ -62,7 +64,7 @@ func parseFiles(t *Template, filenames ...string) (*Template, error) {
 		return nil, fmt.Errorf("template: no files named in call to ParseFiles")
 	}
 	for _, filename := range filenames {
-		b, err := ioutil.ReadFile(filename)
+		b, err := os.ReadFile(filename)
 		if err != nil {
 			return nil, err
 		}

@@ -13,7 +13,7 @@ type Condition interface {
 	RulePart
 
 	// IsMet is called to check wether this condition is met or not
-	IsMet(data *TriggeredRuleData, parsedSettings interface{}) (bool, error)
+	IsMet(data *TriggeredRuleData, parsedSettings any) (bool, error)
 }
 
 /////////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ func (mrc *MemberRolesCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (mrc *MemberRolesCondition) DataType() interface{} {
+func (mrc *MemberRolesCondition) DataType() any {
 	return &MemberRolesConditionData{}
 }
 
@@ -72,7 +72,7 @@ func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
 	return settings
 }
 
-func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	settingsCast := settings.(*MemberRolesConditionData)
 	allRolesPresent := false
 	for _, r := range settingsCast.Roles {
@@ -104,7 +104,7 @@ func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interfa
 	return false, nil
 }
 
-func (mrc *MemberRolesCondition) MergeDuplicates(data []interface{}) interface{} {
+func (mrc *MemberRolesCondition) MergeDuplicates(data []any) any {
 	totalRoles := make([]int64, 0, 100)
 	for _, dupe := range data {
 		cast := dupe.(*MemberRolesConditionData)
@@ -140,7 +140,7 @@ func (cd *ChannelsCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (cd *ChannelsCondition) DataType() interface{} {
+func (cd *ChannelsCondition) DataType() any {
 	return &ChannelsConditionData{}
 }
 
@@ -170,7 +170,7 @@ func (cd *ChannelsCondition) UserSettings() []*SettingDef {
 	}
 }
 
-func (cd *ChannelsCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (cd *ChannelsCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	settingsCast := settings.(*ChannelsConditionData)
 	if data.CS == nil {
 		return true, nil
@@ -195,7 +195,7 @@ func (cd *ChannelsCondition) IsMet(data *TriggeredRuleData, settings interface{}
 	return false, nil
 }
 
-func (cd *ChannelsCondition) MergeDuplicates(data []interface{}) interface{} {
+func (cd *ChannelsCondition) MergeDuplicates(data []any) any {
 	totalChannels := make([]int64, 0, 100)
 	for _, dupe := range data {
 		cast := dupe.(*ChannelsConditionData)
@@ -231,7 +231,7 @@ func (cd *ChannelCategoriesCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (cd *ChannelCategoriesCondition) DataType() interface{} {
+func (cd *ChannelCategoriesCondition) DataType() any {
 	return &ChannelCategoryConditionData{}
 }
 
@@ -261,7 +261,7 @@ func (cd *ChannelCategoriesCondition) UserSettings() []*SettingDef {
 	}
 }
 
-func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	settingsCast := settings.(*ChannelCategoryConditionData)
 	if data.CS == nil {
 		return true, nil
@@ -297,7 +297,7 @@ func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings in
 	return false, nil
 }
 
-func (cd *ChannelCategoriesCondition) MergeDuplicates(data []interface{}) interface{} {
+func (cd *ChannelCategoriesCondition) MergeDuplicates(data []any) any {
 	totalCats := make([]int64, 0, 100)
 	for _, dupe := range data {
 		cast := dupe.(*ChannelCategoryConditionData)
@@ -333,7 +333,7 @@ func (ac *AccountAgeCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (ac *AccountAgeCondition) DataType() interface{} {
+func (ac *AccountAgeCondition) DataType() any {
 	return &AccountAgeConditionData{}
 }
 
@@ -363,7 +363,7 @@ func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
 	}
 }
 
-func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	settingsCast := settings.(*AccountAgeConditionData)
 
 	created := bot.SnowflakeToTime(data.MS.User.ID)
@@ -385,7 +385,7 @@ func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface
 	}
 }
 
-func (ac *AccountAgeCondition) MergeDuplicates(data []interface{}) interface{} {
+func (ac *AccountAgeCondition) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -405,7 +405,7 @@ func (mc *MemberAgecondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (mc *MemberAgecondition) DataType() interface{} {
+func (mc *MemberAgecondition) DataType() any {
 	return &MemberAgeConditionData{}
 }
 
@@ -435,7 +435,7 @@ func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 	}
 }
 
-func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	settingsCast := settings.(*MemberAgeConditionData)
 
 	var joinedAt time.Time
@@ -473,7 +473,7 @@ func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{
 	}
 }
 
-func (mc *MemberAgecondition) MergeDuplicates(data []interface{}) interface{} {
+func (mc *MemberAgecondition) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -489,7 +489,7 @@ func (bc *BotCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (bc *BotCondition) DataType() interface{} {
+func (bc *BotCondition) DataType() any {
 	return nil
 }
 
@@ -513,7 +513,7 @@ func (bc *BotCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (bc *BotCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (bc *BotCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	if bc.Ignore {
 		return !data.MS.User.Bot, nil
 	}
@@ -521,7 +521,7 @@ func (bc *BotCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bo
 	return data.MS.User.Bot, nil
 }
 
-func (bc *BotCondition) MergeDuplicates(data []interface{}) interface{} {
+func (bc *BotCondition) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -537,7 +537,7 @@ func (mc *MessageEditedCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (mc *MessageEditedCondition) DataType() interface{} {
+func (mc *MessageEditedCondition) DataType() any {
 	return nil
 }
 
@@ -559,7 +559,7 @@ func (mc *MessageEditedCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	if data.Message == nil {
 		// pass the condition if no message is found
 		return true, nil
@@ -579,7 +579,7 @@ func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interf
 	return true, nil
 }
 
-func (mc *MessageEditedCondition) MergeDuplicates(data []interface{}) interface{} {
+func (mc *MessageEditedCondition) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -593,7 +593,7 @@ func (mc *MessageAttachmentCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (mc *MessageAttachmentCondition) DataType() interface{} {
+func (mc *MessageAttachmentCondition) DataType() any {
 	return nil
 }
 
@@ -615,7 +615,7 @@ func (mc *MessageAttachmentCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (mc *MessageAttachmentCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (mc *MessageAttachmentCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	if data.Message == nil {
 		// pass the condition if no message is found
 		return true, nil
@@ -628,7 +628,7 @@ func (mc *MessageAttachmentCondition) IsMet(data *TriggeredRuleData, settings in
 	}
 }
 
-func (mc *MessageAttachmentCondition) MergeDuplicates(data []interface{}) interface{} {
+func (mc *MessageAttachmentCondition) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -644,7 +644,7 @@ func (bc *ThreadCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (bc *ThreadCondition) DataType() interface{} {
+func (bc *ThreadCondition) DataType() any {
 	return nil
 }
 
@@ -668,7 +668,7 @@ func (bc *ThreadCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (bc *ThreadCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (bc *ThreadCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	//Channel won't be present in case the trigger is on member update event like nick update
 	if data.CS == nil {
 		return true, nil
@@ -681,7 +681,7 @@ func (bc *ThreadCondition) IsMet(data *TriggeredRuleData, settings interface{}) 
 	return data.CS.Type.IsThread(), nil
 }
 
-func (bc *ThreadCondition) MergeDuplicates(data []interface{}) interface{} {
+func (bc *ThreadCondition) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -697,7 +697,7 @@ func (mf *MessageForwardCondition) Kind() RulePartType {
 	return RulePartCondition
 }
 
-func (mf *MessageForwardCondition) DataType() interface{} {
+func (mf *MessageForwardCondition) DataType() any {
 	return nil
 }
 
@@ -721,7 +721,7 @@ func (mf *MessageForwardCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (mf *MessageForwardCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+func (mf *MessageForwardCondition) IsMet(data *TriggeredRuleData, settings any) (bool, error) {
 	if data.Message == nil {
 		return false, nil
 	}
@@ -734,6 +734,6 @@ func (mf *MessageForwardCondition) IsMet(data *TriggeredRuleData, settings inter
 	return !mf.Forward, nil
 }
 
-func (mf *MessageForwardCondition) MergeDuplicates(data []interface{}) interface{} {
+func (mf *MessageForwardCondition) MergeDuplicates(data []any) any {
 	return data[0]
 }

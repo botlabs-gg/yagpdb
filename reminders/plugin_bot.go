@@ -81,7 +81,7 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "channel", Type: dcmd.Channel},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			uid := discordgo.StrID(parsed.Author.ID)
 			count, _ := models.Reminders(models.ReminderWhere.UserID.EQ(uid)).CountG(parsed.Context())
 			if count >= MaxReminders {
@@ -151,7 +151,7 @@ var cmds = []*commands.YAGCommand{
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunInDM:             true,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			uid := discordgo.StrID(parsed.Author.ID)
 			qms := []qm.QueryMod{models.ReminderWhere.UserID.EQ(uid)}
 
@@ -186,7 +186,7 @@ var cmds = []*commands.YAGCommand{
 		RequireDiscordPerms: []int64{discordgo.PermissionManageChannels},
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			cid := discordgo.StrID(parsed.ChannelID)
 			currentReminders, err := models.Reminders(models.ReminderWhere.ChannelID.EQ(cid)).AllG(parsed.Context())
 			if err != nil {
@@ -217,7 +217,7 @@ var cmds = []*commands.YAGCommand{
 		},
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			if clearAll := parsed.Switch("a").Bool(); clearAll {
 				uid := discordgo.StrID(parsed.Author.ID)
 				count, err := models.Reminders(models.ReminderWhere.UserID.EQ(uid)).DeleteAllG(parsed.Context(), false /* hardDelete */)
@@ -280,7 +280,7 @@ func memberHasAnyRole(ms *dstate.MemberState, roles []int64) bool {
 	return false
 }
 
-func checkUserScheduledEvent(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func checkUserScheduledEvent(evt *seventsmodels.ScheduledEvent, data any) (retry bool, err error) {
 	// IMPORTANT: evt.GuildID can be 1 in cases where it was migrated from the
 	// legacy scheduled event system.
 

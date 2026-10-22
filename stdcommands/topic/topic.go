@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	Description:         "Generates a conversation topic to help chat get moving.",
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		topic := ChatTopics[rand.Intn(len(ChatTopics))]
 		return "> " + topic, nil
 	},

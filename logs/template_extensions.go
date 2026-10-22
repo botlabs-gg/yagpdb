@@ -20,8 +20,8 @@ type CCNameChange struct {
 	Time time.Time
 }
 
-func tmplUsernames(tmplCtx *templates.Context) interface{} {
-	return func(userIDi interface{}, offset int) (interface{}, error) {
+func tmplUsernames(tmplCtx *templates.Context) any {
+	return func(userIDi any, offset int) (any, error) {
 		if !confEnableUsernameTracking.GetBool() {
 			return nil, errors.New("pastUsernames has been disabled globally")
 		}
@@ -48,8 +48,8 @@ func tmplUsernames(tmplCtx *templates.Context) interface{} {
 	}
 }
 
-func tmplNicknames(tmplCtx *templates.Context) interface{} {
-	return func(userIDi interface{}, offset int) (interface{}, error) {
+func tmplNicknames(tmplCtx *templates.Context) any {
+	return func(userIDi any, offset int) (any, error) {
 		if !confEnableUsernameTracking.GetBool() {
 			return nil, errors.New("pastNicknames has been disabled globally")
 		}

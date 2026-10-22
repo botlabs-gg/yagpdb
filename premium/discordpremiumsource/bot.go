@@ -56,7 +56,7 @@ var CmdActivateTestEntitlement = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.UserID},
 		{Name: "SKUID", Type: dcmd.Int},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		userID := data.Args[0].Int64()
 		skuID := data.Args[1].Int64()
 		slots := fetchSlotsForDiscordSku(int64(skuID))
@@ -89,7 +89,7 @@ var CmdDeleteTestEntitlement = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.UserID},
 		{Name: "SKUID", Type: dcmd.Int},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		userID := data.Args[0].Int64()
 		skuID := data.Args[1].Int64()
 		slots := fetchSlotsForDiscordSku(int64(skuID))

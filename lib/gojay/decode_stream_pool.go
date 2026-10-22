@@ -21,7 +21,7 @@ func (s stream) NewDecoder(r io.Reader) *StreamDecoder {
 	}
 	return streamDec
 }
-func newStreamDecoderPool() interface{} {
+func newStreamDecoderPool() any {
 	return Stream.NewDecoder(nil)
 }
 

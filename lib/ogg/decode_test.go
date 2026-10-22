@@ -122,17 +122,17 @@ func TestBadSegs(t *testing.T) {
 
 func TestSyncDecode(t *testing.T) {
 	var b bytes.Buffer
-	for i := 0; i < HeaderSize-1; i++ {
+	for range HeaderSize - 1 {
 		b.Write([]byte("x"))
 	}
 	b.Write([]byte("O"))
 
-	for i := 0; i < HeaderSize-3; i++ {
+	for range HeaderSize - 3 {
 		b.Write([]byte("x"))
 	}
 	b.Write([]byte("Og"))
 
-	for i := 0; i < HeaderSize-5; i++ {
+	for range HeaderSize - 5 {
 		b.Write([]byte("x"))
 	}
 	b.Write([]byte("Ogg"))

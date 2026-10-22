@@ -2,6 +2,7 @@ package dcmd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -13,7 +14,7 @@ var (
 )
 
 func ArgParserMW(inner RunFunc) RunFunc {
-	return func(data *Data) (interface{}, error) {
+	return func(data *Data) (any, error) {
 		// Parse Args
 		err := ParseCmdArgs(data)
 		if err != nil {
@@ -180,13 +181,7 @@ func sortInteractionArgDefs(data *Data, defs []*ArgDef, required int, combos [][
 }
 
 func containsInt(s []int, i int) bool {
-	for _, v := range s {
-		if v == i {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(s, i)
 }
 
 func findSmallestCombo(defs []*ArgDef, requiredArgs int, combos [][]int) []int {
@@ -204,7 +199,7 @@ func findSmallestCombo(defs []*ArgDef, requiredArgs int, combos [][]int) []int {
 		return smallest
 	}
 
-	for i := 0; i < requiredArgs; i++ {
+	for i := range requiredArgs {
 		smallest = append(smallest, i)
 	}
 

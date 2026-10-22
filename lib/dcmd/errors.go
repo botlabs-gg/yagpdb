@@ -39,7 +39,7 @@ type ErrArgExpectedType struct {
 	Got      string
 }
 
-func NewErrArgExpected(name string, expected string, got interface{}) error {
+func NewErrArgExpected(name string, expected string, got any) error {
 	gotStr := ""
 	if got == nil {
 		gotStr = "nil"
@@ -123,8 +123,8 @@ func (c *ChannelNotFound) IsUserError() bool {
 }
 
 type OutOfRangeError struct {
-	Min, Max interface{}
-	Got      interface{}
+	Min, Max any
+	Got      any
 	Float    bool
 	ArgName  string
 }
@@ -180,6 +180,6 @@ func (s simpleUserError) IsUserError() bool {
 	return true
 }
 
-func NewSimpleUserError(args ...interface{}) error {
+func NewSimpleUserError(args ...any) error {
 	return simpleUserError(fmt.Sprint(args...))
 }

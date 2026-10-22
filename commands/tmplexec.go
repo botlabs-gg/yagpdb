@@ -24,8 +24,8 @@ func init() {
 }
 
 // Returns a user from either id, mention string or if the input is just a user, a user...
-func tmplUserArg(tmplCtx *templates.Context) interface{} {
-	return func(v interface{}) (interface{}, error) {
+func tmplUserArg(tmplCtx *templates.Context) any {
+	return func(v any) (any, error) {
 		if tmplCtx.IncreaseCheckGenericAPICall() {
 			return nil, templates.ErrTooManyAPICalls
 		}
@@ -72,11 +72,11 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 	}
 }
 
-type cmdExecFunc func(cmd string, args ...interface{}) (interface{}, error)
+type cmdExecFunc func(cmd string, args ...any) (any, error)
 
 // Returns 2 functions to execute commands in user or bot context with limited about of commands executed
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
-	execUser := func(cmd string, args ...interface{}) (interface{}, error) {
+	execUser := func(cmd string, args ...any) (any, error) {
 		messageCopy := *ctx.Msg
 		if ctx.CurrentFrame.CS != nil { //Check if CS is not a nil pointer
 			messageCopy.ChannelID = ctx.CurrentFrame.CS.ID
@@ -89,7 +89,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 		return execCmd(ctx, dryRun, mc, cmd, args...)
 	}
 
-	execBot := func(cmd string, args ...interface{}) (interface{}, error) {
+	execBot := func(cmd string, args ...any) (any, error) {
 
 		botUserCopy := *common.BotUser
 		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.String() + ")"
@@ -118,7 +118,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	return execUser, execBot
 }
 
-func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...interface{}) (interface{}, error) {
+func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...any) (any, error) {
 	fakeMsg := *m.Message
 	fakeMsg.Mentions = make([]*discordgo.User, 0)
 
@@ -216,7 +216,8 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 }
 
 func buildExecCmdLine(cmd string, args ...any) (string, []*discordgo.User, error) {
-	cmdLine := cmd + " "
+	var cmdLine strings.Builder
+	cmdLine.WriteString(cmd + " ")
 	var mentions []*discordgo.User
 
 	for _, arg := range args {
@@ -228,55 +229,55 @@ func buildExecCmdLine(cmd string, args ...any) (string, []*discordgo.User, error
 		case string:
 			if strings.HasPrefix(t, "-") {
 				// Don't put quotes around switches
-				cmdLine += t
+				cmdLine.WriteString(t)
 			} else if strings.HasPrefix(t, "\\-") {
 				// Escaped -
-				cmdLine += "\"" + t[1:] + "\""
+				cmdLine.WriteString("\"" + t[1:] + "\"")
 			} else {
-				cmdLine += "\"" + t + "\""
+				cmdLine.WriteString("\"" + t + "\"")
 			}
 		case int:
-			cmdLine += strconv.FormatInt(int64(t), 10)
+			cmdLine.WriteString(strconv.FormatInt(int64(t), 10))
 		case int32:
-			cmdLine += strconv.FormatInt(int64(t), 10)
+			cmdLine.WriteString(strconv.FormatInt(int64(t), 10))
 		case int64:
-			cmdLine += strconv.FormatInt(t, 10)
+			cmdLine.WriteString(strconv.FormatInt(t, 10))
 		case uint:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
+			cmdLine.WriteString(strconv.FormatUint(uint64(t), 10))
 		case uint8:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
+			cmdLine.WriteString(strconv.FormatUint(uint64(t), 10))
 		case uint16:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
+			cmdLine.WriteString(strconv.FormatUint(uint64(t), 10))
 		case uint32:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
+			cmdLine.WriteString(strconv.FormatUint(uint64(t), 10))
 		case uint64:
-			cmdLine += strconv.FormatUint(t, 10)
+			cmdLine.WriteString(strconv.FormatUint(t, 10))
 		case float32:
-			cmdLine += strconv.FormatFloat(float64(t), 'E', -1, 32)
+			cmdLine.WriteString(strconv.FormatFloat(float64(t), 'E', -1, 32))
 		case float64:
-			cmdLine += strconv.FormatFloat(t, 'E', -1, 64)
+			cmdLine.WriteString(strconv.FormatFloat(t, 'E', -1, 64))
 		case *discordgo.User:
-			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			cmdLine.WriteString("<@" + strconv.FormatInt(t.ID, 10) + ">")
 			mentions = append(mentions, t)
 		case discordgo.User:
-			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			cmdLine.WriteString("<@" + strconv.FormatInt(t.ID, 10) + ">")
 			mentions = append(mentions, &t)
 		case []string:
 			for i, str := range t {
 				if i != 0 {
-					cmdLine += " "
+					cmdLine.WriteString(" ")
 				}
-				cmdLine += str
+				cmdLine.WriteString(str)
 			}
 		default:
 			return "", nil, errors.New("Unknown type in exec, only strings, numbers, users and string slices are supported")
 		}
-		cmdLine += " "
+		cmdLine.WriteString(" ")
 
-		if len(cmdLine) > templates.MaxStringLength {
+		if len(cmdLine.String()) > templates.MaxStringLength {
 			return "", nil, templates.ErrStringTooLong
 		}
 	}
 
-	return cmdLine, mentions, nil
+	return cmdLine.String(), mentions, nil
 }

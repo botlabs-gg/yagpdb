@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-var TypeMap = map[string]interface{}{
+var TypeMap = map[string]any{
 	"user": UserAttributes{},
 	"tier": TierAttributes{},
 }
@@ -16,7 +16,7 @@ type Include struct {
 	ID   string `json:"id"`
 
 	Attributes json.RawMessage `json:"attributes"`
-	Decoded    interface{}     `json:"-"`
+	Decoded    any             `json:"-"`
 }
 
 func DecodeIncludes(includes []*Include) error {
@@ -32,7 +32,7 @@ func DecodeIncludes(includes []*Include) error {
 	return nil
 }
 
-func DecodeInclude(include *Include) (interface{}, error) {
+func DecodeInclude(include *Include) (any, error) {
 	t, ok := TypeMap[include.Type]
 	if !ok {
 		return nil, errors.New("Unknown include: " + include.Type)

@@ -15,7 +15,7 @@ func TestDecoderInt(t *testing.T) {
 		json           string
 		expectedResult int
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -315,7 +315,7 @@ func TestDecoderIntNull(t *testing.T) {
 		json           string
 		expectedResult int
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -599,7 +599,7 @@ func TestDecoderInt64(t *testing.T) {
 		json           string
 		expectedResult int64
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -926,7 +926,7 @@ func TestDecoderInt64Null(t *testing.T) {
 		json           string
 		expectedResult int64
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -1231,7 +1231,7 @@ func TestDecoderInt32(t *testing.T) {
 		json           string
 		expectedResult int32
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -1588,7 +1588,7 @@ func TestDecoderInt32Null(t *testing.T) {
 		json           string
 		expectedResult int32
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -1923,7 +1923,7 @@ func TestDecoderInt16(t *testing.T) {
 		json           string
 		expectedResult int16
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -2274,7 +2274,7 @@ func TestDecoderInt16Null(t *testing.T) {
 		json           string
 		expectedResult int16
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{
@@ -2603,7 +2603,7 @@ func TestDecoderInt8(t *testing.T) {
 		json           string
 		expectedResult int8
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-positive",
@@ -2963,7 +2963,7 @@ func TestDecoderInt8Null(t *testing.T) {
 		json           string
 		expectedResult int8
 		err            bool
-		errType        interface{}
+		errType        any
 		resultIsNil    bool
 	}{
 		{

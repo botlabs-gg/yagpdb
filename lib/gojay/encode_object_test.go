@@ -27,7 +27,7 @@ type TestEncoding struct {
 	testBool      bool
 	testF32       float32
 	testF64       float64
-	testInterface interface{}
+	testInterface any
 	testArr       TestEncodingArr
 	sub           *SubObject
 }
@@ -69,7 +69,7 @@ func (t *SubObject) MarshalJSONObject(enc *Encoder) {
 }
 
 type testEncodingObjInterfaces struct {
-	interfaceVal interface{}
+	interfaceVal any
 }
 
 func (t *testEncodingObjInterfaces) IsNil() bool {
@@ -87,7 +87,7 @@ func TestEncoderObjectEncodeAPI(t *testing.T) {
 		err := enc.EncodeObject(&testObject{
 			"漢字", nil, 1, nil, 1, nil, 1, nil, 1, nil, 1, nil, 1, nil, 1, nil,
 			1, nil, 1, nil, 1.1, nil, 1.1, nil, true, nil,
-			&testObject{}, testSliceInts{}, interface{}("test"),
+			&testObject{}, testSliceInts{}, any("test"),
 		})
 		assert.Nil(t, err, "Error should be nil")
 		assert.Equal(
@@ -104,7 +104,7 @@ func TestEncoderObjectMarshalAPI(t *testing.T) {
 		r, err := Marshal(&testObject{
 			"漢字", nil, 1, nil, 1, nil, 1, nil, 1, nil, 1, nil, 1, nil, 1,
 			nil, 1, nil, 1, nil, 1.1, nil, 1.1, nil, true, nil,
-			&testObject{}, testSliceInts{}, []interface{}{"h", "o", "l", "a"},
+			&testObject{}, testSliceInts{}, []any{"h", "o", "l", "a"},
 		})
 		assert.Nil(t, err, "Error should be nil")
 		assert.Equal(

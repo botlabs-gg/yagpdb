@@ -11,7 +11,7 @@ type RedisConfigStore struct {
 	Pool *radix.Pool
 }
 
-func (rs *RedisConfigStore) GetValue(key string) interface{} {
+func (rs *RedisConfigStore) GetValue(key string) any {
 	prefixStripped := strings.TrimPrefix(key, "yagpdb.")
 
 	var v string

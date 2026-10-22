@@ -37,7 +37,7 @@ type Handler struct {
 }
 
 type EventData struct {
-	EvtInterface      interface{}
+	EvtInterface      any
 	Type              Event
 	ctx               context.Context
 	Session           *discordgo.Session
@@ -60,7 +60,7 @@ func (e *EventData) Clone() *EventData {
 	}
 }
 
-func NewEventData(session *discordgo.Session, t Event, evtInterface interface{}) *EventData {
+func NewEventData(session *discordgo.Session, t Event, evtInterface any) *EventData {
 	return &EventData{
 		EvtInterface: evtInterface,
 		Type:         t,
@@ -228,15 +228,13 @@ func AddHandlerLegacy(p common.Plugin, handler HandlerFuncLegacy, order Order, e
 	}
 
 	// check if one of them is EventAll
-	for _, evt := range evts {
-		if evt == EventAll {
-			for _, e := range AllDiscordEvents {
-				handlers[e][int(order)] = append(handlers[e][int(order)], h)
-			}
-
-			// If one of the events is all, then there's not point in passing more
-			return
+	if slices.Contains(evts, EventAll) {
+		for _, e := range AllDiscordEvents {
+			handlers[e][int(order)] = append(handlers[e][int(order)], h)
 		}
+
+		// If one of the events is all, then there's not point in passing more
+		return
 	}
 
 	for _, evt := range evts {
@@ -267,15 +265,13 @@ func AddHandler(p common.Plugin, handler HandlerFunc, order Order, evts ...Event
 	}
 
 	// check if one of them is EventAll
-	for _, evt := range evts {
-		if evt == EventAll {
-			for _, e := range AllDiscordEvents {
-				handlers[e][int(order)] = append(handlers[e][int(order)], h)
-			}
-
-			// If one of the events is all, then there's not point in passing more
-			return
+	if slices.Contains(evts, EventAll) {
+		for _, e := range AllDiscordEvents {
+			handlers[e][int(order)] = append(handlers[e][int(order)], h)
 		}
+
+		// If one of the events is all, then there's not point in passing more
+		return
 	}
 
 	for _, evt := range evts {
@@ -298,7 +294,7 @@ func AddHandlerAsyncLast(p common.Plugin, handler HandlerFunc, evts ...Event) {
 	AddHandler(p, handler, OrderAsyncPostState, evts...)
 }
 
-func HandleEvent(s *discordgo.Session, evt interface{}) {
+func HandleEvent(s *discordgo.Session, evt any) {
 	var evtData = &EventData{
 		Session:      s,
 		EvtInterface: evt,

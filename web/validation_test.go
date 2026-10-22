@@ -47,7 +47,7 @@ var (
 
 func TestValidationString(t *testing.T) {
 	for i, v := range stringTestCases {
-		ok := ValidateForm(nil, TemplateData(make(map[string]interface{})), v.Struct)
+		ok := ValidateForm(nil, TemplateData(make(map[string]any)), v.Struct)
 		if ok && !v.Valid {
 			t.Errorf("String case [%d] is valid, but shouldn't be", i)
 		} else if !ok && v.Valid {
@@ -117,7 +117,7 @@ func TestValidationChannel(t *testing.T) {
 	}
 
 	for i, v := range channelTestCases {
-		ok := ValidateForm(g, TemplateData(make(map[string]interface{})), v.Struct)
+		ok := ValidateForm(g, TemplateData(make(map[string]any)), v.Struct)
 		if ok && !v.Valid {
 			t.Errorf("Channel case [%d] is valid, but shoulnd't be", i)
 		} else if !ok && v.Valid {
@@ -168,7 +168,7 @@ func TestValidationNestedSlice(t *testing.T) {
 	}
 
 	for i, v := range testCases {
-		ok := ValidateForm(nil, TemplateData(make(map[string]interface{})), v.Struct)
+		ok := ValidateForm(nil, TemplateData(make(map[string]any)), v.Struct)
 		if ok && !v.Valid {
 			t.Errorf("String case [%d] is valid, but shouldn't be", i)
 		} else if !ok && v.Valid {

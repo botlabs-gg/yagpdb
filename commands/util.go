@@ -39,7 +39,7 @@ func (d *DurationArg) CheckCompatibility(def *dcmd.ArgDef, part string) dcmd.Com
 	return dcmd.CompatibilityGood
 }
 
-func (d *DurationArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+func (d *DurationArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (any, error) {
 	dur, err := common.ParseDuration(part)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (d *DurationArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd
 	return dur, nil
 }
 
-func (d *DurationArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {
+func (d *DurationArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val any, err error) {
 	s, err := options.ExpectString(def.Name)
 	if err != nil {
 		return nil, err
@@ -114,11 +114,11 @@ func (p PublicError) Error() string {
 	return string(p)
 }
 
-func NewPublicError(a ...interface{}) PublicError {
+func NewPublicError(a ...any) PublicError {
 	return PublicError(fmt.Sprint(a...))
 }
 
-func NewPublicErrorF(f string, a ...interface{}) PublicError {
+func NewPublicErrorF(f string, a ...any) PublicError {
 	return PublicError(fmt.Sprintf(f, a...))
 }
 
@@ -135,11 +135,11 @@ func (ue UserError) IsUserError() bool {
 	return true
 }
 
-func NewUserError(a ...interface{}) error {
+func NewUserError(a ...any) error {
 	return UserError(fmt.Sprint(a...))
 }
 
-func NewUserErrorf(f string, a ...interface{}) error {
+func NewUserErrorf(f string, a ...any) error {
 	return UserError(fmt.Sprintf(f, a...))
 }
 
@@ -150,8 +150,8 @@ func FilterBadInvites(msg string, guildID int64, replacement string) string {
 // CommonContainerNotFoundHandler is a common "NotFound" handler that should be used with dcmd containers
 // it ensures that no messages is sent if none of the commands in te container is enabeld
 // if "fixedMessage" is empty, then it shows default generated container help
-func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage string) func(data *dcmd.Data) (interface{}, error) {
-	return func(data *dcmd.Data) (interface{}, error) {
+func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage string) func(data *dcmd.Data) (any, error) {
+	return func(data *dcmd.Data) (any, error) {
 		// Only show stuff if atleast 1 of the commands in the container is enabled
 		if data.GuildData != nil {
 			ms := data.GuildData.MS
@@ -225,7 +225,7 @@ func (ma *MemberArg) CheckCompatibility(def *dcmd.ArgDef, part string) dcmd.Comp
 	return dcmd.DetermineSnowflakeCompatibility(part)
 }
 
-func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (any, error) {
 	id := ma.ExtractID(part, data)
 
 	if id < 1 {
@@ -244,7 +244,7 @@ func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.
 	return member, nil
 }
 
-func (ma *MemberArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {
+func (ma *MemberArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val any, err error) {
 	member, err := options.ExpectMember(def.Name)
 	if err != nil {
 		return nil, err
@@ -378,7 +378,7 @@ func (ra *RoleArg) CheckCompatibility(def *dcmd.ArgDef, part string) dcmd.Compat
 	return dcmd.Incompatible
 }
 
-func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (any, error) {
 	id := ra.ExtractID(part, data)
 
 	var idName string
@@ -402,7 +402,7 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 	return nil, dcmd.NewSimpleUserError("Invalid role mention or id")
 }
 
-func (ra *RoleArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {
+func (ra *RoleArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val any, err error) {
 	r, err := options.ExpectRole(def.Name)
 	return r, err
 }
@@ -411,7 +411,7 @@ func (ra *RoleArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.Applicatio
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionRole)}
 }
 
-func (ra *RoleArg) ExtractID(part string, data *dcmd.Data) interface{} {
+func (ra *RoleArg) ExtractID(part string, data *dcmd.Data) any {
 	if strings.HasPrefix(part, "<@&") && len(part) > 3 {
 		// Direct mention
 		id := part[3 : len(part)-1]

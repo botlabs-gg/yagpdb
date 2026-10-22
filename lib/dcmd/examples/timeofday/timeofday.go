@@ -47,7 +47,7 @@ func (t *CmdTimeOfDay) Descriptions(d *dcmd.Data) (string, string) {
 }
 
 // Run implements the dcmd.Cmd interface and gets called when the command is invoked
-func (t *CmdTimeOfDay) Run(data *dcmd.Data) (interface{}, error) {
+func (t *CmdTimeOfDay) Run(data *dcmd.Data) (any, error) {
 	return time.Now().UTC().Format(t.Format), nil
 }
 

@@ -157,7 +157,7 @@ func toStorableValue(value any, depth int) (any, error) {
 
 func isPlainElem(kind reflect.Kind) bool {
 	switch kind {
-	case reflect.Interface, reflect.Ptr, reflect.Struct, reflect.Map, reflect.Slice, reflect.Array:
+	case reflect.Interface, reflect.Pointer, reflect.Struct, reflect.Map, reflect.Slice, reflect.Array:
 		return false
 	}
 	return true
@@ -303,21 +303,21 @@ func componentBuilderKey(component discordgo.MessageComponent) (string, error) {
 // flattened into a map keyed by its go field names and no component type.
 
 var legacyComponentTypes = []reflect.Type{
-	reflect.TypeOf(discordgo.ActionsRow{}),
-	reflect.TypeOf(discordgo.Button{}),
-	reflect.TypeOf(discordgo.SelectMenu{}),
-	reflect.TypeOf(discordgo.TextInput{}),
-	reflect.TypeOf(discordgo.Section{}),
-	reflect.TypeOf(discordgo.TextDisplay{}),
-	reflect.TypeOf(discordgo.Thumbnail{}),
-	reflect.TypeOf(discordgo.MediaGallery{}),
-	reflect.TypeOf(discordgo.ComponentFile{}),
-	reflect.TypeOf(discordgo.Separator{}),
-	reflect.TypeOf(discordgo.Container{}),
-	reflect.TypeOf(discordgo.Label{}),
-	reflect.TypeOf(discordgo.RadioGroup{}),
-	reflect.TypeOf(discordgo.CheckboxGroup{}),
-	reflect.TypeOf(discordgo.Checkbox{}),
+	reflect.TypeFor[discordgo.ActionsRow](),
+	reflect.TypeFor[discordgo.Button](),
+	reflect.TypeFor[discordgo.SelectMenu](),
+	reflect.TypeFor[discordgo.TextInput](),
+	reflect.TypeFor[discordgo.Section](),
+	reflect.TypeFor[discordgo.TextDisplay](),
+	reflect.TypeFor[discordgo.Thumbnail](),
+	reflect.TypeFor[discordgo.MediaGallery](),
+	reflect.TypeFor[discordgo.ComponentFile](),
+	reflect.TypeFor[discordgo.Separator](),
+	reflect.TypeFor[discordgo.Container](),
+	reflect.TypeFor[discordgo.Label](),
+	reflect.TypeFor[discordgo.RadioGroup](),
+	reflect.TypeFor[discordgo.CheckboxGroup](),
+	reflect.TypeFor[discordgo.Checkbox](),
 }
 
 func asStringMap(value any) (map[string]any, bool) {
@@ -479,8 +479,8 @@ func matchLegacyComponentType(m map[string]any) (reflect.Type, bool) {
 
 func exportedFieldNames(typ reflect.Type) map[string]bool {
 	names := make(map[string]bool, typ.NumField())
-	for i := range typ.NumField() {
-		if f := typ.Field(i); f.IsExported() {
+	for f := range typ.Fields() {
+		if f.IsExported() {
 			names[f.Name] = true
 		}
 	}
@@ -518,7 +518,7 @@ func legacyToJSONValue(typ reflect.Type, value any, depth int) (any, error) {
 	}
 
 	switch typ.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return legacyToJSONValue(typ.Elem(), value, depth)
 	case reflect.Interface:
 		m, ok := value.(map[string]any)
@@ -548,8 +548,7 @@ func legacyToJSONValue(typ reflect.Type, value any, depth int) (any, error) {
 			return nil, errors.New("stored component is malformed")
 		}
 		converted := make(map[string]any, len(m))
-		for i := range typ.NumField() {
-			field := typ.Field(i)
+		for field := range typ.Fields() {
 			fieldValue, present := m[field.Name]
 			if !field.IsExported() || !present {
 				continue

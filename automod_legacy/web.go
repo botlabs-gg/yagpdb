@@ -51,7 +51,7 @@ func (p *Plugin) InitWeb() {
 	autmodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
 }
 
-func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleAutomod(w http.ResponseWriter, r *http.Request) any {
 	g, templateData := web.GetBaseCPContextData(r.Context())
 
 	config, err := GetConfig(g.ID)

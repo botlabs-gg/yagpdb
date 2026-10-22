@@ -2,6 +2,7 @@ package dcmd
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -301,13 +302,7 @@ func (s *StdHelpFormatter) argumentDetails(cmd *RegisteredCommand, data *Data) s
 			return i < required
 		}
 		for _, combo := range combos {
-			found := false
-			for _, idx := range combo {
-				if idx == i {
-					found = true
-					break
-				}
-			}
+			found := slices.Contains(combo, i)
 			if !found {
 				return false
 			}
@@ -532,7 +527,7 @@ func (h *StdHelpCommand) ArgDefs(data *Data) (args []*ArgDef, required int, comb
 	}, 0, nil
 }
 
-func (h *StdHelpCommand) Run(d *Data) (interface{}, error) {
+func (h *StdHelpCommand) Run(d *Data) (any, error) {
 	root := d.ContainerChain[0]
 
 	target := d.Args[0].Str()

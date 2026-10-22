@@ -287,11 +287,12 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 		content = "Hey @everyone " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
 	} else if len(sub.MentionRoles) > 0 {
-		mentions := "Hey"
+		var mentions strings.Builder
+		mentions.WriteString("Hey")
 		for _, roleId := range sub.MentionRoles {
-			mentions += fmt.Sprintf(" <@&%d>", roleId)
+			mentions.WriteString(fmt.Sprintf(" <@&%d>", roleId))
 		}
-		content = mentions + " " + content
+		content = mentions.String() + " " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles}
 	}
 

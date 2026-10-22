@@ -68,7 +68,7 @@ var CreateGameCommand = &dcmd.SimpleCmd{
 	CmdSwitches: []*dcmd.ArgDef{
 		{Name: "v", Help: "Vote mode, no cardczar"},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		voteMode := data.Switch("v").Bool()
 		pStr := data.Args[0].Str()
 		packs := strings.Fields(pStr)
@@ -90,7 +90,7 @@ var CreateGameCommand = &dcmd.SimpleCmd{
 
 var StopCommand = &dcmd.SimpleCmd{
 	ShortDesc: "Stops a cards against humanity game in this channel",
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		err := cahManager.TryAdminRemoveGame(data.Author.ID)
 		if err != nil {
 			if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
@@ -110,7 +110,7 @@ var KickCommand = &dcmd.SimpleCmd{
 	CmdArgDefs: []*dcmd.ArgDef{
 		{Name: "user", Type: dcmd.UserID},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		userID := data.Args[0].Int64()
 
 		err := cahManager.AdminKickUser(data.Author.ID, userID)
@@ -128,12 +128,13 @@ var KickCommand = &dcmd.SimpleCmd{
 
 var PacksCommand = &dcmd.SimpleCmd{
 	ShortDesc: "Lists available packs",
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		resp := "Available packs: \n\n"
+	RunFunc: func(data *dcmd.Data) (any, error) {
+		var resp strings.Builder
+		resp.WriteString("Available packs: \n\n")
 		for _, v := range cardsagainstdiscord.Packs {
-			resp += "`" + v.Name + "` - " + v.Description + "\n"
+			resp.WriteString("`" + v.Name + "` - " + v.Description + "\n")
 		}
 
-		return resp, nil
+		return resp.String(), nil
 	},
 }

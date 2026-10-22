@@ -144,7 +144,7 @@ func (p *Plugin) createListener(addr string) (net.Listener, int, error) {
 	}
 }
 
-func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
+func ServeJson(w http.ResponseWriter, r *http.Request, data any) {
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
 		serverLogger.WithError(err).Error("Failed sending json")

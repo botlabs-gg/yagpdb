@@ -23,7 +23,7 @@ func (p *Plugin) AddCommands() {
 			},
 			SlashCommandEnabled: true,
 			DefaultEnabled:      true,
-			RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			RunFunc: func(data *dcmd.Data) (any, error) {
 				sounds, err := GetSoundboardSounds(data.GuildData.GS.ID, data.Context())
 				if err != nil {
 					return nil, errors.WithMessage(err, "GetSoundboardSounds")
@@ -91,7 +91,7 @@ func (p *Plugin) AddCommands() {
 			Description:         "Reset Soundboard Player",
 			SlashCommandEnabled: true,
 			DefaultEnabled:      true,
-			RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			RunFunc: func(data *dcmd.Data) (any, error) {
 				response := resetPlayerServer(data.GuildData.GS.ID)
 				if response != "" {
 					return response, nil
@@ -102,23 +102,23 @@ func (p *Plugin) AddCommands() {
 }
 
 func ListSounds(sounds []*models.SoundboardSound, ms *dstate.MemberState) string {
-	canPlay := ""
-	restricted := ""
+	var canPlay strings.Builder
+	var restricted strings.Builder
 
 	for _, sound := range sounds {
 		if CanPlaySound(sound, ms.Member.Roles) {
-			canPlay += "`" + sound.Name + "`, "
+			canPlay.WriteString("`" + sound.Name + "`, ")
 		} else {
-			restricted += "`" + sound.Name + "`, "
+			restricted.WriteString("`" + sound.Name + "`, ")
 		}
 	}
 	out := "Soundboard sounds:\n"
 
-	if canPlay != "" {
-		out += "Can Play: " + canPlay[:len(canPlay)-2] + "\n"
+	if canPlay.String() != "" {
+		out += "Can Play: " + canPlay.String()[:len(canPlay.String())-2] + "\n"
 	}
-	if restricted != "" {
-		out += "No access: " + restricted[:len(restricted)-2] + "\n"
+	if restricted.String() != "" {
+		out += "No access: " + restricted.String()[:len(restricted.String())-2] + "\n"
 	}
 
 	out += "\nPlay a sound with `sb <soundname>`"

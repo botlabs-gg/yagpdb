@@ -42,7 +42,7 @@ func HandleUpdateAutomodRules(event *pubsub.Event) {
 
 // CachedGetConfig either retrieves from local application cache or redis
 func CachedGetConfig(gID int64) (*Config, error) {
-	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (interface{}, error) {
+	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (any, error) {
 		c, err := GetConfig(gID)
 		if err != nil {
 			return nil, err

@@ -107,7 +107,7 @@ func baseData(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleReddit(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	_, templateData := web.GetBaseCPContextData(ctx)
 
@@ -119,7 +119,7 @@ func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 	return templateData
 }
 
-func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleNew(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
@@ -184,7 +184,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	return templateData
 }
 
-func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleModify(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	_, templateData := web.GetBaseCPContextData(ctx)
 
@@ -229,7 +229,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	return templateData
 }
 
-func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleRemove(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	_, templateData := web.GetBaseCPContextData(ctx)
 

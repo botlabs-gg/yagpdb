@@ -34,7 +34,7 @@ type Event struct {
 	Type      string             `json:"t"`
 	RawData   gojay.EmbeddedJSON `json:"d"`
 	// Struct contains one of the other types in this file.
-	Struct interface{} `json:"-"`
+	Struct any `json:"-"`
 }
 
 // implement gojay.UnmarshalerJSONObject
@@ -372,7 +372,7 @@ func (u *UserUpdate) NKeys() int {
 }
 
 // UserSettingsUpdate is the data for a UserSettingsUpdate event.
-type UserSettingsUpdate map[string]interface{}
+type UserSettingsUpdate map[string]any
 
 // UserGuildSettingsUpdate is the data for a UserGuildSettingsUpdate event.
 type UserGuildSettingsUpdate struct {

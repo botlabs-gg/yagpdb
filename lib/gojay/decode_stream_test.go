@@ -11,9 +11,8 @@ import (
 )
 
 // Basic Behaviour Tests
-//
 func TestDecoderImplementsContext(t *testing.T) {
-	var dec interface{} = &StreamDecoder{}
+	var dec any = &StreamDecoder{}
 	_ = dec.(context.Context)
 }
 
@@ -173,7 +172,6 @@ func TestStreamDecodingObjectsParallel(t *testing.T) {
 		},
 	}
 	for _, testCase := range tests {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			runStreamTestCaseObjects(t, testCase)
@@ -281,7 +279,6 @@ func TestStreamDecodingStringsParallel(t *testing.T) {
 		},
 	}
 	for _, testCase := range tests {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			runStreamTestCaseStrings(t, testCase)

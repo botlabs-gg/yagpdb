@@ -24,7 +24,7 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "v", Help: "Vote mode - players vote instead of having a card czar."},
 		},
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: func(data *dcmd.Data) (any, error) {
 			voteMode := data.Switch("v").Bool()
 			pStr := data.Args[0].Str()
 			packs := strings.Fields(pStr)
@@ -47,7 +47,7 @@ func (p *Plugin) AddCommands() {
 		Name:        "End",
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: func(data *dcmd.Data) (any, error) {
 			isAdmin, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, 0)
 			if err == nil && isAdmin {
 				err = p.Manager.RemoveGame(data.ChannelID)
@@ -75,7 +75,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "user", Type: dcmd.UserID},
 		},
 		Description: "Kicks a player from the ongoing Cards Against Humanity game in this channel.",
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: func(data *dcmd.Data) (any, error) {
 			userID := data.Args[0].Int64()
 			err := p.Manager.AdminKickUser(data.Author.ID, userID)
 			if err != nil {
@@ -95,13 +95,14 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:  commands.CategoryFun,
 		RequiredArgs: 0,
 		Description:  "Lists all available packs.",
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			resp := "Available packs: \n\n"
+		RunFunc: func(data *dcmd.Data) (any, error) {
+			var resp strings.Builder
+			resp.WriteString("Available packs: \n\n")
 			for _, v := range cardsagainstdiscord.Packs {
-				resp += "`" + v.Name + "` - " + v.Description + "\n"
+				resp.WriteString("`" + v.Name + "` - " + v.Description + "\n")
 			}
 
-			return resp, nil
+			return resp.String(), nil
 		},
 	}
 

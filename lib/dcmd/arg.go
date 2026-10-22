@@ -15,7 +15,7 @@ type ArgDef struct {
 	Name    string
 	Type    ArgType
 	Help    string
-	Default interface{}
+	Default any
 
 	// Choices and AutocompleteFunc are mutually exclusive and only apply to interaction commands
 	Choices          []*discordgo.ApplicationCommandOptionChoice
@@ -68,7 +68,7 @@ func (def *ArgDef) NewParsedDef() *ParsedArg {
 
 type ParsedArg struct {
 	Def   *ArgDef
-	Value interface{}
+	Value any
 	Raw   *RawArg
 }
 
@@ -237,7 +237,7 @@ type SlashCommandsParseOptions struct {
 	Interaction *discordgo.Interaction
 }
 
-func (sopts *SlashCommandsParseOptions) ExpectAny(name string) (interface{}, error) {
+func (sopts *SlashCommandsParseOptions) ExpectAny(name string) (any, error) {
 	if v, ok := sopts.ExpectAnyOpt(name); ok {
 		return v, nil
 	} else {
@@ -245,7 +245,7 @@ func (sopts *SlashCommandsParseOptions) ExpectAny(name string) (interface{}, err
 	}
 }
 
-func (sopts *SlashCommandsParseOptions) ExpectAnyOpt(name string) (interface{}, bool) {
+func (sopts *SlashCommandsParseOptions) ExpectAnyOpt(name string) (any, bool) {
 	if v, ok := sopts.Options[strings.ToLower(name)]; ok {
 		return v.Value, true
 	}
@@ -430,8 +430,8 @@ type ArgType interface {
 	CheckCompatibility(def *ArgDef, part string) CompatibilityResult
 
 	// Attempt to parse it, returning any error if one occured.
-	ParseFromMessage(def *ArgDef, part string, data *Data) (val interface{}, err error)
-	ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error)
+	ParseFromMessage(def *ArgDef, part string, data *Data) (val any, err error)
+	ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error)
 
 	// Name as shown in help
 	HelpName() string
@@ -528,7 +528,7 @@ func (i *IntArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResul
 	return CompatibilityPoor
 }
 
-func (i *IntArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (i *IntArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 	v, err := strconv.ParseInt(part, 10, 64)
 	if err != nil {
 		return nil, &InvalidInt{part}
@@ -548,7 +548,7 @@ func (i *IntArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interfa
 	return v, nil
 }
 
-func (i *IntArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (i *IntArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 
 	any, err := options.ExpectAny(def.Name)
 	if err != nil {
@@ -607,7 +607,7 @@ func (f *FloatArg) CheckCompatibility(def *ArgDef, part string) CompatibilityRes
 	return CompatibilityPoor
 }
 
-func (f *FloatArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (f *FloatArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 	v, err := strconv.ParseFloat(part, 64)
 	if err != nil {
 		return nil, &InvalidFloat{part}
@@ -627,7 +627,7 @@ func (f *FloatArg) ParseFromMessage(def *ArgDef, part string, data *Data) (inter
 	return v, nil
 }
 
-func (f *FloatArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (f *FloatArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 	v, err := options.ExpectString(def.Name)
 	if err != nil {
 		return nil, err
@@ -665,11 +665,11 @@ func (s *StringArg) CheckCompatibility(def *ArgDef, part string) CompatibilityRe
 	return CompatibilityGood
 }
 
-func (s *StringArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (s *StringArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 	return part, nil
 }
 
-func (s *StringArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (s *StringArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 	v, err := options.ExpectString(def.Name)
 	return v, err
 }
@@ -694,7 +694,7 @@ func (u *UserArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResu
 	return DetermineSnowflakeCompatibility(part)
 }
 
-func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 	if strings.HasPrefix(part, "<@") && len(part) > 3 {
 		// Direct mention
 		id := part[2 : len(part)-1]
@@ -730,7 +730,7 @@ func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interf
 	return nil, err
 }
 
-func (u *UserArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (u *UserArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 	user, err := options.ExpectUser(def.Name)
 	return user, err
 }
@@ -829,7 +829,7 @@ func (u *UserIDArg) CheckCompatibility(def *ArgDef, part string) CompatibilityRe
 	return DetermineSnowflakeCompatibility(part)
 }
 
-func (u *UserIDArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (u *UserIDArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 	if strings.HasPrefix(part, "<@") && len(part) > 3 {
 		// Direct mention
 		id := part[2 : len(part)-1]
@@ -854,7 +854,7 @@ func (u *UserIDArg) ParseFromMessage(def *ArgDef, part string, data *Data) (inte
 	return nil, &ImproperMention{part}
 }
 
-func (u *UserIDArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (u *UserIDArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 	user, found, err := options.ExpectUserOpt(def.Name)
 	if err != nil {
 		return nil, err
@@ -898,7 +898,7 @@ func (ca *ChannelArg) CheckCompatibility(def *ArgDef, part string) Compatibility
 	return DetermineSnowflakeCompatibility(part)
 }
 
-func (ca *ChannelArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (ca *ChannelArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 	if data.GuildData == nil {
 		return nil, nil
 	}
@@ -935,7 +935,7 @@ func (ca *ChannelArg) ParseFromMessage(def *ArgDef, part string, data *Data) (in
 	return nil, &ImproperMention{part}
 }
 
-func (ca *ChannelArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (ca *ChannelArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 	if data.GuildData == nil {
 		return nil, nil
 	}
@@ -1012,7 +1012,7 @@ func (u *AdvUserArg) CheckCompatibility(def *ArgDef, part string) CompatibilityR
 	return Incompatible
 }
 
-func (u *AdvUserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
+func (u *AdvUserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (any, error) {
 
 	var user *discordgo.User
 	var ms *dstate.MemberState
@@ -1059,7 +1059,7 @@ func (u *AdvUserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (int
 	}, nil
 }
 
-func (u *AdvUserArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
+func (u *AdvUserArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val any, err error) {
 	user, found, err := options.ExpectUserOpt(def.Name)
 	if err != nil {
 		return nil, err

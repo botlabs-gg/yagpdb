@@ -344,7 +344,7 @@ func DeleteMessages(guildID, channelID int64, filterUser int64, deleteNum, fetch
 
 	toDelete := make([]int64, 0)
 	now := time.Now()
-	for i := 0; i < len(msgs); i++ {
+	for i := range msgs {
 		if filterUser == 0 || msgs[i].Author.ID == filterUser {
 
 			// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)

@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
+	"maps"
+	"os"
+
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -102,7 +104,7 @@ func HandleServerHome(w http.ResponseWriter, r *http.Request) (TemplateData, err
 	return templateData, nil
 }
 
-func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleCPLogs(w http.ResponseWriter, r *http.Request) any {
 	activeGuild, templateData := GetBaseCPContextData(r.Context())
 
 	logs, err := cplogs.GetEntries(activeGuild.ID, 100, 0)
@@ -134,7 +136,7 @@ func SendAddedServerToSetup(inner http.Handler) http.Handler {
 	})
 }
 
-func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleSelectServer(w http.ResponseWriter, r *http.Request) any {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
 	if patreon.ActivePoller != nil {
@@ -292,7 +294,7 @@ func HandleStatusHTML(w http.ResponseWriter, r *http.Request) (TemplateData, err
 }
 
 // HandleStatusJSON handles GET /status.json
-func HandleStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleStatusJSON(w http.ResponseWriter, r *http.Request) any {
 	status, err := getFullBotStatus()
 	if err != nil {
 		return err
@@ -306,7 +308,7 @@ type GuildStatus struct {
 }
 
 // HandleGuildStatusJSON handles GET /api/:server/status.json
-func HandleGuildStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleGuildStatusJSON(w http.ResponseWriter, r *http.Request) any {
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	status, err := getFullBotStatus()
 	if err != nil {
@@ -335,11 +337,11 @@ type HostStatus struct {
 func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
 	result := make([]*HostStatus, 0, hosts)
 
-	for hostI := 0; hostI < hosts; hostI++ {
+	for hostI := range hosts {
 		host := &HostStatus{
 			Name: "yagpdb-" + strconv.Itoa(hostI),
 		}
-		for nodeI := 0; nodeI < nodes; nodeI++ {
+		for nodeI := range nodes {
 
 			nodeID := (hostI * nodes) + nodeI
 
@@ -347,7 +349,7 @@ func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
 				ID: strconv.Itoa(nodeID),
 			}
 
-			for shardI := 0; shardI < shards; shardI++ {
+			for shardI := range shards {
 				shard := &botrest.ShardStatus{
 					ShardID:         (nodeID * shards) + shardI,
 					TotalEvents:     999999,
@@ -404,7 +406,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	return HandleStatusHTML(w, r)
 }
 
-func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) any {
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
@@ -446,7 +448,7 @@ func handleAdsTXT(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f, err := ioutil.ReadFile(ConfAdsTxt.GetString())
+	f, err := os.ReadFile(ConfAdsTxt.GetString())
 	if err != nil {
 		logger.WithError(err).Error("failed reading ads.txt file")
 		return
@@ -626,9 +628,7 @@ func GuildScopeCacheMW(plugin common.Plugin, inner http.Handler) http.Handler {
 		if v, ok := WidgetCache.Get(cacheKey); ok {
 			// already in the cache
 			cast := v.(*WidgetCacheItem)
-			for headerKey, headerValue := range cast.Header {
-				w.Header()[headerKey] = headerValue
-			}
+			maps.Copy(w.Header(), cast.Header)
 			w.WriteHeader(200)
 			w.Write(cast.RawResponse)
 			// CtxLogger(r.Context()).Info("cache hit")

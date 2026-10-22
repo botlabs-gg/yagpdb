@@ -460,7 +460,7 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 	var err error
 
 	userIDs := make([]int64, len(ranks))
-	for i := 0; i < len(ranks); i++ {
+	for i := range ranks {
 		userIDs[i] = ranks[i].UserID
 	}
 
@@ -481,7 +481,7 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 	}
 
 	var resultEntries = make([]*LeaderboardEntry, len(ranks))
-	for i := 0; i < len(ranks); i++ {
+	for i := range ranks {
 		lEntry := &LeaderboardEntry{
 			RankEntry: ranks[i],
 			Username:  strconv.FormatInt(userIDs[i], 10),

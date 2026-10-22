@@ -367,7 +367,7 @@ func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i := 0; i < totalShards; i++ {
+	for i := range totalShards {
 		err = botrest.SendReconnectShard(i, true)
 		if err != nil {
 			fmt.Fprintf(w, "Failed restarting %d\n", i)

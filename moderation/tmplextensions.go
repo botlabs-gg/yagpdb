@@ -61,8 +61,8 @@ func templatesWarningFromModel(model *models.ModerationWarning) *TemplatesWarnin
 }
 
 // getWarnings returns a slice of all warnings the target user has.
-func tmplGetWarnings(ctx *templates.Context) interface{} {
-	return func(target interface{}) ([]*TemplatesWarning, error) {
+func tmplGetWarnings(ctx *templates.Context) any {
+	return func(target any) ([]*TemplatesWarning, error) {
 		if ctx.IncreaseCheckCallCounterPremium("cc_moderation", 5, 10) {
 			return nil, templates.ErrTooManyCalls
 		}

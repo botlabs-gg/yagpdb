@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "server", Type: dcmd.BigInt},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		target := data.GuildData.GS.ID
 		if data.Args[0].Int64() != 0 {
 			target = data.Args[0].Int64()

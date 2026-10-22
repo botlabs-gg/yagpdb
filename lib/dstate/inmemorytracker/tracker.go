@@ -2,6 +2,7 @@ package inmemorytracker
 
 import (
 	"container/list"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -40,7 +41,7 @@ func NewInMemoryTracker(conf TrackerConfig, totalShards int64) *InMemoryTracker 
 	}
 }
 
-func (t *InMemoryTracker) HandleEvent(s *discordgo.Session, evt interface{}) {
+func (t *InMemoryTracker) HandleEvent(s *discordgo.Session, evt any) {
 	shard := t.getShard(int64(s.ShardID))
 	shard.HandleEvent(s, evt)
 }
@@ -180,7 +181,7 @@ func newShard(conf TrackerConfig, id int) *ShardTracker {
 	}
 }
 
-func (tracker *ShardTracker) HandleEvent(s *discordgo.Session, i interface{}) {
+func (tracker *ShardTracker) HandleEvent(s *discordgo.Session, i any) {
 
 	switch evt := i.(type) {
 	// Guild events
@@ -724,13 +725,10 @@ func (shard *ShardTracker) handleMessageDeleteBulk(m *discordgo.MessageDeleteBul
 		for e := cl.Back(); e != nil; e = e.Prev() {
 			cast := e.Value.(*dstate.MessageState)
 
-			for _, delID := range m.Messages {
-				if delID == cast.ID {
-					cop := *cast
-					cop.Deleted = true
-					e.Value = &cop
-					break
-				}
+			if slices.Contains(m.Messages, cast.ID) {
+				cop := *cast
+				cop.Deleted = true
+				e.Value = &cop
 			}
 		}
 	}
@@ -1046,11 +1044,5 @@ func botHasAccessToChannel(gs *SparseGuildState, ms *WrappedMember, cs *dstate.C
 }
 
 func containsInt64(slice []int64, i int64) bool {
-	for _, v := range slice {
-		if v == i {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(slice, i)
 }

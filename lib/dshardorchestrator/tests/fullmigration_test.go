@@ -105,7 +105,7 @@ func TestFullMigration(t *testing.T) {
 		AddNewShardFunc: func(shards ...int) {
 			shardsAddedChan <- shards
 		},
-		HandleUserEventFunc: func(evt dshardorchestrator.EventType, data interface{}) {
+		HandleUserEventFunc: func(evt dshardorchestrator.EventType, data any) {
 			dataCast := *data.(*string)
 			if evt != 101 {
 				t.Fatal("event was not 101")
@@ -159,7 +159,7 @@ func TestFullMigration(t *testing.T) {
 		t.Fatal("failed migrating: ", err)
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		select {
 		case <-shardStartedChan:
 		case <-time.After(time.Second * 5):

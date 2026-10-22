@@ -22,7 +22,7 @@ var Command = &commands.YAGCommand{
 	Description:         "Generates a dad joke using the API from icanhazdadjoke.",
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		req, err := http.NewRequest("GET", "https://icanhazdadjoke.com", nil)
 		if err != nil {
 			return nil, err

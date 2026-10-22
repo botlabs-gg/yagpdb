@@ -1141,7 +1141,7 @@ func validateTopLevelComponentsCustomIDs(rows []discordgo.TopLevelComponent, use
 	if used == nil {
 		used = make(map[string]bool)
 	}
-	for rowIdx := 0; rowIdx < len(rows); rowIdx++ {
+	for rowIdx := range rows {
 		var rowComps []discordgo.InteractiveComponent
 		switch r := rows[rowIdx].(type) {
 		case *discordgo.ActionsRow:

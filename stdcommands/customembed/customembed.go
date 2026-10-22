@@ -21,7 +21,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Json", Type: dcmd.String},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		j := common.ParseCodeblock(data.Args[0].Str())
 		var parsed discordgo.MessageEmbed
 

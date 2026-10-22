@@ -268,7 +268,7 @@ func pruneOldestFiles(dir string, maxFiles int) {
 
 func parseDumpMultipliers(raw string) []float64 {
 	var multipliers []float64
-	for _, part := range strings.Split(raw, ",") {
+	for part := range strings.SplitSeq(raw, ",") {
 		m, err := strconv.ParseFloat(strings.TrimSpace(part), 64)
 		if err != nil || m <= 1 {
 			continue

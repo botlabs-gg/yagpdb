@@ -148,7 +148,7 @@ func TestMigrateShard(t *testing.T) {
 		AddNewShardFunc: func(shards ...int) {
 			shardsAddedChan <- shards
 		},
-		HandleUserEventFunc: func(evt dshardorchestrator.EventType, data interface{}) {
+		HandleUserEventFunc: func(evt dshardorchestrator.EventType, data any) {
 			dataCast := *data.(*string)
 			if evt != 101 {
 				t.Fatal("event was not 101")
@@ -305,7 +305,7 @@ func TestMigrateNode(t *testing.T) {
 			dataReceivedMU.Unlock()
 			shardStartedChan <- shard
 		},
-		HandleUserEventFunc: func(evt dshardorchestrator.EventType, data interface{}) {
+		HandleUserEventFunc: func(evt dshardorchestrator.EventType, data any) {
 			dataCast := *data.(*string)
 			if evt != 101 {
 				t.Fatal("event was not 101")
@@ -351,7 +351,7 @@ func TestMigrateNode(t *testing.T) {
 		t.Fatal("failed performing migration: ", err.Error())
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		select {
 		case <-shardStartedChan:
 		case <-time.After(time.Second * 5):

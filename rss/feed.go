@@ -562,8 +562,8 @@ func collectPostableItems(feed *gofeed.Feed) []*feedItem {
 	cutoff := time.Now().Add(-maxItemAge)
 
 	items := make([]*feedItem, 0, len(feed.Items))
-	for i := len(feed.Items) - 1; i >= 0; i-- {
-		item := feed.Items[i]
+	for _, item := range slices.Backward(feed.Items) {
+
 		if !isPostableLink(item.Link) {
 			continue
 		}

@@ -25,7 +25,7 @@ type Event struct {
 	TargetGuild    string // The guild this event was meant for, or * for all
 	TargetGuildInt int64
 	EventName      string
-	Data           interface{}
+	Data           any
 }
 
 type eventHandler struct {
@@ -46,7 +46,7 @@ var (
 
 // AddEventHandler adds a event handler
 // For the specified event, should only be done during startup
-func AddHandler(evt string, cb func(*Event), t interface{}) {
+func AddHandler(evt string, cb func(*Event), t any) {
 	handlersMU.Lock()
 	defer handlersMU.Unlock()
 
@@ -65,7 +65,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 
 // PublishEvent publishes the specified event
 // set target to -1 to handle on all nodes
-func Publish(evt string, target int64, data interface{}) error {
+func Publish(evt string, target int64, data any) error {
 	dataStr := ""
 	if data != nil {
 		encoded, err := json.Marshal(data)
@@ -80,7 +80,7 @@ func Publish(evt string, target int64, data interface{}) error {
 	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
 }
 
-func PublishLogErr(evt string, target int64, data interface{}) {
+func PublishLogErr(evt string, target int64, data any) {
 	err := Publish(evt, target, data)
 	if err != nil {
 		logger.WithError(err).WithField("target", target).WithField("evt", evt).Error("failed sending pubsub")
@@ -175,7 +175,7 @@ func handleEvent(evt string) {
 		return
 	}
 
-	var decoded interface{}
+	var decoded any
 	if data != "" && t != nil {
 		decoded = reflect.New(t).Interface()
 		err := json.Unmarshal([]byte(data), decoded)

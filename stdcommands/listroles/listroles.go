@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 		{Name: "nomanaged", Help: "Don't list managed/bot roles"},
 	},
 
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		var out, outFinal string
 		var noMana bool
 

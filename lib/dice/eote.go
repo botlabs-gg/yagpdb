@@ -131,7 +131,7 @@ func (EoteRoller) Roll(matches []string) (RollResult, error) {
 
 	res := EoteResult{basicRollResult: basicRollResult{matches[0]}}
 
-	for _, die := range strings.Split(matches[0], " ") {
+	for die := range strings.SplitSeq(matches[0], " ") {
 		parts := diePattern.FindStringSubmatch(strings.Trim(die, " \t\r\n"))
 		if parts == nil {
 			continue
@@ -150,7 +150,7 @@ func (EoteRoller) Roll(matches []string) (RollResult, error) {
 			continue
 		}
 
-		for i := int64(0); i < num; i++ {
+		for range num {
 			die := choices[rand.Intn(len(choices))]
 			res.Add(die)
 			res.Rolls = append(res.Rolls, die)

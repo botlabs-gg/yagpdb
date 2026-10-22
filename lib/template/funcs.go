@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/url"
 	"reflect"
 	"strings"
@@ -28,7 +29,7 @@ import (
 // apply to arguments of arbitrary type can use parameters of type interface{} or
 // of type reflect.Value. Similarly, functions meant to return a result of arbitrary
 // type can return interface{} or reflect.Value.
-type FuncMap map[string]interface{}
+type FuncMap map[string]any
 
 var builtinExecTemplate = reflect.ValueOf(execTemplate)
 
@@ -103,9 +104,7 @@ func addValueFuncs(out map[string]reflect.Value, in FuncMap) {
 // addFuncs adds to values the functions in funcs. It does no checking of the input -
 // call addValueFuncs first.
 func addFuncs(out, in FuncMap) {
-	for name, fn := range in {
-		out[name] = fn
-	}
+	maps.Copy(out, in)
 }
 
 // goodFunc reports whether the function or method has the right result signature.
@@ -242,7 +241,7 @@ func index(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 // Length
 
 // length returns the length of the item, with an error if it has no defined length.
-func length(item interface{}) (int, error) {
+func length(item any) (int, error) {
 	v := reflect.ValueOf(item)
 	if !v.IsValid() {
 		return 0, fmt.Errorf("len of untyped nil")
@@ -262,7 +261,7 @@ func length(item interface{}) (int, error) {
 
 // execTemplate executes the associated template with the given name and data
 // and returns its return value.
-func execTemplate(name string, data ...interface{}) reflect.Value {
+func execTemplate(name string, data ...any) reflect.Value {
 	panic("unreachable") // implemented as a special case in evalCall
 }
 
@@ -604,7 +603,7 @@ func HTMLEscapeString(s string) string {
 
 // HTMLEscaper returns the escaped HTML equivalent of the textual
 // representation of its arguments.
-func HTMLEscaper(args ...interface{}) string {
+func HTMLEscaper(args ...any) string {
 	return HTMLEscapeString(evalArgs(args))
 }
 
@@ -689,22 +688,24 @@ func jsIsSpecial(r rune) bool {
 
 // JSEscaper returns the escaped JavaScript equivalent of the textual
 // representation of its arguments.
-func JSEscaper(args ...interface{}) string {
+func JSEscaper(args ...any) string {
 	return JSEscapeString(evalArgs(args))
 }
 
 // URLQueryEscaper returns the escaped value of the textual representation of
 // its arguments in a form suitable for embedding in a URL query.
-func URLQueryEscaper(args ...interface{}) string {
+func URLQueryEscaper(args ...any) string {
 	return url.QueryEscape(evalArgs(args))
 }
 
 // evalArgs formats the list of arguments into a string. It is therefore equivalent to
+//
 //	fmt.Sprint(args...)
+//
 // except that each argument is indirected (if a pointer), as required,
 // using the same rules as the default string evaluation during template
 // execution.
-func evalArgs(args []interface{}) string {
+func evalArgs(args []any) string {
 	ok := false
 	var s string
 	// Fast path for simple common case.

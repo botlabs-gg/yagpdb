@@ -22,7 +22,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: cmdFuncTopCommands,
 }
 
-func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
+func cmdFuncTopCommands(data *dcmd.Data) (any, error) {
 	allSwitch := data.Switch("all")
 	var all bool
 	if allSwitch != nil && allSwitch.Bool() {

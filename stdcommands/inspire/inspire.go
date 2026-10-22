@@ -32,7 +32,7 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "mindfulness", Help: "Generates Mindful Quotes!"},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		available := map[string]bool{"xmas": true}
 		inspireArray := []string{}
 		var paginatedView bool

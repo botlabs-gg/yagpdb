@@ -46,7 +46,7 @@ func ScheduleDeleteMessages(guildID, channelID int64, when time.Time, messages .
 	return nil
 }
 
-func handleDeleteMessagesEvent(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleDeleteMessagesEvent(evt *models.ScheduledEvent, data any) (retry bool, err error) {
 	dataCast := data.(*DeleteMessagesEvent)
 
 	bot.MessageDeleteQueue.DeleteMessages(dataCast.GuildID, dataCast.ChannelID, dataCast.Messages...)
@@ -87,7 +87,7 @@ func CancelRemoveRole(ctx context.Context, guildID, userID, roleID int64) error 
 	return err
 }
 
-func handleRemoveMemberRole(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleRemoveMemberRole(evt *models.ScheduledEvent, data any) (retry bool, err error) {
 	dataCast := data.(*RmoveRoleData)
 	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
 	if err != nil {
@@ -129,7 +129,7 @@ func CancelAddRole(ctx context.Context, guildID, userID, roleID int64) error {
 	return err
 }
 
-func handleAddMemberRole(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleAddMemberRole(evt *models.ScheduledEvent, data any) (retry bool, err error) {
 	dataCast := data.(*AddRoleData)
 	err = common.BotSession.GuildMemberRoleAdd(evt.GuildID, dataCast.UserID, dataCast.RoleID)
 	if err != nil {

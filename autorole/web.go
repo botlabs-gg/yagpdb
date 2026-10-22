@@ -77,7 +77,7 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
 }
 
-func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface{} {
+func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 

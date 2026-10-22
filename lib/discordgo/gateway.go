@@ -349,10 +349,7 @@ func (g *GatewayConnectionManager) Open() error {
 
 // initSharding sets the sharding details and verifies that they are valid
 func (g *GatewayConnectionManager) initSharding() {
-	g.shardCount = g.session.ShardCount
-	if g.shardCount < 1 {
-		g.shardCount = 1
-	}
+	g.shardCount = max(g.session.ShardCount, 1)
 
 	g.shardID = g.session.ShardID
 	if g.shardID >= g.shardCount || g.shardID < 0 {
@@ -653,7 +650,7 @@ type GatewayConnection struct {
 	resumeGatewayUrl string
 
 	// This gets closed when the connection closes to signal all workers to stop
-	stopWorkers chan interface{}
+	stopWorkers chan any
 
 	wsReader *wsutil.Reader
 
@@ -685,7 +682,7 @@ type GatewayConnection struct {
 func NewGatewayConnection(parent *GatewayConnectionManager, id int, intents []GatewayIntent) *GatewayConnection {
 	gwc := &GatewayConnection{
 		manager:           parent,
-		stopWorkers:       make(chan interface{}),
+		stopWorkers:       make(chan any),
 		readMessageBuffer: bytes.NewBuffer(make([]byte, 0, 0xffff)), // initial 65k buffer
 		connID:            id,
 		status:            GatewayStatusConnecting,
@@ -1058,7 +1055,7 @@ func (g *GatewayConnection) reader() {
 	}
 }
 
-func (g *GatewayConnection) readerError(err error, msgf string, args ...interface{}) {
+func (g *GatewayConnection) readerError(err error, msgf string, args ...any) {
 	// There was an error reading the next frame, close the connection and trigger a reconnect
 	g.mu.Lock()
 	g.conn.Close()
@@ -1432,14 +1429,14 @@ func (g *GatewayConnection) RequestGuildMembers(d *RequestGuildMembersData) {
 	g.writer.Queue(op)
 }
 
-func (g *GatewayConnection) onError(err error, msgf string, args ...interface{}) {
+func (g *GatewayConnection) onError(err error, msgf string, args ...any) {
 	g.log(LogError, "%s: %s", fmt.Sprintf(msgf, args...), err.Error())
 	if err := g.ReconnectUnlessClosed(false); err != nil {
 		g.log(LogError, "Failed reconnecting to the gateway: %v", err)
 	}
 }
 
-func (g *GatewayConnection) log(msgL int, msgf string, args ...interface{}) {
+func (g *GatewayConnection) log(msgL int, msgf string, args ...any) {
 	if GatewayLogger != nil {
 		GatewayLogger(g.manager.shardID, g.connID, msgL, msgf, args...)
 		return
@@ -1454,9 +1451,9 @@ func (g *GatewayConnection) log(msgL int, msgf string, args ...interface{}) {
 }
 
 type outgoingEvent struct {
-	Operation GatewayOP   `json:"op"`
-	Type      string      `json:"t,omitempty"`
-	Data      interface{} `json:"d,omitempty"`
+	Operation GatewayOP `json:"op"`
+	Type      string    `json:"t,omitempty"`
+	Data      any       `json:"d,omitempty"`
 }
 
 type identifyData struct {

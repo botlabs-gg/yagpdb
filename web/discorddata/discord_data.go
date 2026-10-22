@@ -37,7 +37,7 @@ func keySession(raw string) string {
 }
 
 func GetSession(token string, sessionFetcher func(string) (*oauth2.Token, error)) (*discordgo.Session, error) {
-	result, err := applicationCache.Fetch(keySession(token), time.Minute*60, func() (interface{}, error) {
+	result, err := applicationCache.Fetch(keySession(token), time.Minute*60, func() (any, error) {
 		decoded, err := sessionFetcher(token)
 		if err != nil {
 			return nil, errors.WithStackIf(err)
@@ -66,7 +66,7 @@ func keyUserInfo(token string) string {
 }
 
 func GetUserInfo(token string, session *discordgo.Session) (*discordgo.User, error) {
-	result, err := applicationCache.Fetch(keyUserInfo(token), time.Minute*10, func() (interface{}, error) {
+	result, err := applicationCache.Fetch(keyUserInfo(token), time.Minute*10, func() (any, error) {
 		user, err := session.UserMe()
 		if err != nil {
 			return nil, errors.WithStackIf(err)
@@ -93,7 +93,7 @@ func keyFullGuild(guildID int64) string {
 //
 // It will will also make sure channels are included in the event we fall back to the discord API
 func GetFullGuild(guildID int64) (*dstate.GuildSet, error) {
-	result, err := applicationCache.Fetch(keyFullGuild(guildID), time.Minute*10, func() (interface{}, error) {
+	result, err := applicationCache.Fetch(keyFullGuild(guildID), time.Minute*10, func() (any, error) {
 		gs, err := botrest.GetGuild(guildID)
 		if err != nil {
 			// fall back to discord API
@@ -132,7 +132,7 @@ func keyGuildMember(guildID int64, userID int64) string {
 }
 
 func GetMember(guildID, userID int64) (*discordgo.Member, error) {
-	result, err := applicationCache.Fetch(keyGuildMember(guildID, userID), time.Minute*10, func() (interface{}, error) {
+	result, err := applicationCache.Fetch(keyGuildMember(guildID, userID), time.Minute*10, func() (any, error) {
 
 		results, err := botrest.GetMembers(guildID, userID)
 

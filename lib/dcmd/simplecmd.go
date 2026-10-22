@@ -12,10 +12,10 @@ type SimpleCmd struct {
 
 	CmdSwitches []*ArgDef
 
-	RunFunc func(data *Data) (interface{}, error)
+	RunFunc func(data *Data) (any, error)
 }
 
-func (s *SimpleCmd) Run(data *Data) (interface{}, error) {
+func (s *SimpleCmd) Run(data *Data) (any, error) {
 	return s.RunFunc(data)
 }
 
