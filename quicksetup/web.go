@@ -37,15 +37,15 @@ type pluginFeature struct {
 }
 
 var suggestedFeatures = []pluginFeature{
-	{"custom_commands", showcasedFeature{"Custom Commands", "Make your own commands and automatic replies.", "/customcommands", "fas fa-terminal", "#4a90e2"}},
-	{"role_commands", showcasedFeature{"Role Menus", "Let members pick their own roles, like colours or pings.", "/rolecommands/", "fas fa-tags", "#a371f7"}},
-	{"reputation", showcasedFeature{"Reputation", "Members thank each other for help and earn points.", "/reputation", "fas fa-star", "#e3a008"}},
-	{"server_stats", showcasedFeature{"Server Stats", "See how many people join, leave and chat each day.", "/stats", "fas fa-chart-line", "#2bb3a3"}},
-	{"messagecreator", showcasedFeature{"Message Creator", "Post good looking announcements and embeds as the bot.", "/messagecreator", "fas fa-pen-fancy", "#e5534b"}},
-	{"youtube", showcasedFeature{"YouTube", "Announce new videos from your favourite channels.", "/youtube", "fab fa-youtube", "#e5534b"}},
-	{"twitch", showcasedFeature{"Twitch", "Announce when streamers go live.", "/twitch", "fab fa-twitch", "#a371f7"}},
-	{"reddit", showcasedFeature{"Reddit", "Post new submissions from subreddits.", "/reddit", "fab fa-reddit", "#f97316"}},
-	{"rss", showcasedFeature{"RSS Feeds", "Post updates from any website with an RSS feed.", "/rss", "fas fa-rss", "#e3a008"}},
+	{"custom_commands", showcasedFeature{"Custom Commands", "Make your own commands and automatic replies.", "/customcommands", "fas fa-terminal", "primary"}},
+	{"role_commands", showcasedFeature{"Role Menus", "Let members pick their own roles, like colours or pings.", "/rolecommands/", "fas fa-tags", "info"}},
+	{"reputation", showcasedFeature{"Reputation", "Members thank each other for help and earn points.", "/reputation", "fas fa-star", "warning"}},
+	{"server_stats", showcasedFeature{"Server Stats", "See how many people join, leave and chat each day.", "/stats", "fas fa-chart-line", "success"}},
+	{"messagecreator", showcasedFeature{"Message Creator", "Post good looking announcements and embeds as the bot.", "/messagecreator", "fas fa-pen-fancy", "danger"}},
+	{"youtube", showcasedFeature{"YouTube", "Announce new videos from your favourite channels.", "/youtube", "fab fa-youtube", "danger"}},
+	{"twitch", showcasedFeature{"Twitch", "Announce when streamers go live.", "/twitch", "fab fa-twitch", "info"}},
+	{"reddit", showcasedFeature{"Reddit", "Post new submissions from subreddits.", "/reddit", "fab fa-reddit", "warning"}},
+	{"rss", showcasedFeature{"RSS Feeds", "Post updates from any website with an RSS feed.", "/rss", "fas fa-rss", "warning"}},
 }
 
 func (p *Plugin) InitWeb() {

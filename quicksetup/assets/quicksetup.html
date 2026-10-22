@@ -11,89 +11,38 @@
 {{end}}
 
 {{define "quick_setup_does"}}
-<ul class="qs-does">
-    {{range .}}<li><i class="fas fa-check"></i><span>{{.}}</span></li>{{end}}
+<ul class="list-unstyled mb-4">
+    {{range .}}<li class="mb-2"><i class="fas fa-check fa-fw text-success mr-2"></i>{{.}}</li>{{end}}
 </ul>
 {{end}}
 
-{{define "quick_setup_styles"}}
-<style>
-    #quick-setup [hidden] { display: none !important; }
-    #quick-setup { --qs-text: #222; --qs-muted: #6b7280; --qs-line: rgba(0, 0, 0, 0.1); --qs-soft: rgba(0, 0, 0, 0.04); }
-    html.dark #quick-setup { --qs-text: #f3f4f6; --qs-muted: #9ca3af; --qs-line: rgba(255, 255, 255, 0.08); --qs-soft: rgba(255, 255, 255, 0.03); }
-
-    #quick-setup .card-body { padding: 24px 28px; }
-    #quick-setup .card-footer { padding: 16px 28px; }
-    #quick-setup .qs-head { border-bottom: 1px solid var(--qs-line); }
-    #quick-setup .qs-title { display: flex; align-items: center; margin: 0; color: var(--qs-text); font-size: 1.6rem; font-weight: 600; }
-    #quick-setup .qs-title .qs-icon { margin-right: 14px; }
-    #quick-setup .qs-subtitle { margin: 6px 0 0; color: var(--qs-muted); font-size: 1rem; }
-
-    #quick-setup .qs-stepper { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 22px; padding: 0; list-style: none; }
-    #quick-setup .qs-stepper li { display: flex; align-items: center; color: var(--qs-muted); font-size: 0.85rem; }
-    #quick-setup .qs-step-dot {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 24px; height: 24px; margin-right: 7px; border-radius: 50%;
-        border: 2px solid var(--qs-line); font-size: 0.75rem; font-weight: 700;
-    }
-    #quick-setup .qs-stepper li.is-done .qs-step-dot { border-color: #47a447; background: #47a447; color: #fff; }
-    #quick-setup .qs-stepper li.is-current { color: var(--qs-text); font-weight: 600; }
-    #quick-setup .qs-stepper li.is-current .qs-step-dot { border-color: #0088cc; background: #0088cc; color: #fff; }
-
-    #quick-setup .qs-icon {
-        display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center;
-        width: 44px; height: 44px; border-radius: 12px; font-size: 1.15rem;
-        color: var(--qs-color, var(--qs-muted));
-        background: color-mix(in srgb, var(--qs-color, #888) 18%, transparent);
-    }
-    #quick-setup .qs-icon-sm { width: 32px; height: 32px; border-radius: 9px; font-size: 0.9rem; }
-
-    #quick-setup .qs-tile {
-        display: flex; align-items: center; width: 100%; height: calc(100% - 16px); margin-bottom: 16px; padding: 16px;
-        border: 1px solid var(--qs-line); border-radius: 10px; background: var(--qs-soft);
-        color: inherit; cursor: pointer; transition: border-color 0.15s, background 0.15s;
-    }
-    #quick-setup .qs-tile.is-on {
-        border-color: color-mix(in srgb, var(--qs-color) 40%, transparent);
-        background: color-mix(in srgb, var(--qs-color) 5%, transparent);
-    }
-    #quick-setup label.qs-tile:not(.is-on) .qs-icon { filter: grayscale(1); opacity: 0.55; }
-    #quick-setup .qs-tile-text { flex-grow: 1; margin: 0 14px; }
-    #quick-setup .qs-tile-name { display: block; color: var(--qs-text); font-size: 1rem; font-weight: 600; }
-    #quick-setup .qs-tile-description { display: block; margin-top: 2px; color: var(--qs-muted); font-size: 0.88rem; line-height: 1.4; }
-    #quick-setup .qs-tile-note { display: block; margin-top: 6px; color: #47a447; font-size: 0.8rem; font-weight: 600; }
-    #quick-setup .qs-tile .tgl-btn { flex-shrink: 0; margin: 0; }
-    #quick-setup a.qs-tile:hover { text-decoration: none; border-color: var(--qs-color); }
-
-    #quick-setup .qs-does { margin: 0 0 24px; padding: 16px 18px; border-radius: 10px; background: var(--qs-soft); list-style: none; }
-    #quick-setup .qs-does li { display: flex; color: var(--qs-text); }
-    #quick-setup .qs-does li + li { margin-top: 8px; }
-    #quick-setup .qs-does i { margin: 4px 12px 0 0; color: #47a447; }
-    #quick-setup .qs-question { display: block; margin-bottom: 8px; color: var(--qs-text); font-size: 1.05rem; font-weight: 600; }
-    #quick-setup .form-control { height: auto; padding: 10px 12px; font-size: 1rem; }
-    #quick-setup .tgl-desc { color: var(--qs-text); }
-    #quick-setup .qs-options { margin-bottom: 16px; padding: 4px 18px; border-radius: 10px; background: var(--qs-soft); }
-    #quick-setup .qs-options .form-group { margin: 0; padding: 12px 0; }
-    #quick-setup .qs-options .form-group + .form-group { border-top: 1px solid var(--qs-line); }
-    #quick-setup .qs-options .tgl-btn, #quick-setup .qs-options .tgl-desc { margin-bottom: 0 !important; }
-    #quick-setup .qs-options .tgl-desc { margin-left: 14px !important; }
-
-    #quick-setup .qs-summary-item { display: flex; align-items: center; padding: 8px 0; color: var(--qs-text); font-weight: 600; }
-    #quick-setup .qs-summary-item .qs-icon { margin-right: 12px; }
-    #quick-setup .qs-muted { color: var(--qs-muted); }
-    #quick-setup .qs-tips li { display: flex; margin-top: 10px; color: var(--qs-muted); font-size: 0.88rem; }
-    #quick-setup .qs-tips i { width: 18px; margin: 3px 10px 0 0; text-align: center; }
-    #quick-setup .btn-lg { min-width: 140px; font-weight: 600; }
-    #quick-setup .card + .card { margin-top: 24px; }
-    #quick-setup .qs-premium { border-top: 3px solid #f0b232; }
-    #quick-setup .qs-premium-button { background: #f0b232; border-color: #f0b232; color: #1f2023; }
-    #quick-setup .qs-premium-button:hover { background: #ffc94d; border-color: #ffc94d; color: #1f2023; }
-</style>
+{{define "quick_setup_feature_link"}}
+<div class="col-md-6 col-xl-4 mb-3">
+    <a class="card h-100 mb-0 border border-secondary" style="color: inherit; text-decoration: none" href="/manage/{{.GuildID}}{{.Feature.Path}}" data-partial-load="true">
+        <div class="card-body d-flex align-items-center p-3">
+            <i class="{{.Feature.Icon}} fa-2x fa-fw text-{{.Color}} mr-3 flex-shrink-0"></i>
+            <div class="flex-grow-1">
+                <div class="font-weight-bold">{{.Feature.Name}}</div>
+                <div class="small">{{.Feature.Description}}</div>
+            </div>
+        </div>
+    </a>
+</div>
 {{end}}
 
 {{define "cp_quick_setup"}}
 {{template "cp_head" .}}
-{{template "quick_setup_styles"}}
+
+<style>
+    #quick-setup [hidden] { display: none !important; }
+    /* Every step shares one grid cell, so the card is as tall as the tallest step and keeps its size between steps. */
+    #quick-setup .qs-steps { display: grid; }
+    #quick-setup .qs-steps > [data-step] { grid-area: 1 / 1; }
+    #quick-setup .qs-steps > [inert] { opacity: 0; pointer-events: none; }
+    /* On narrow screens the steps differ too much in height to share one, so only the current step takes up space. */
+    @media (max-width: 991.98px) { #quick-setup .qs-steps > [inert] { display: none; } }
+    #quick-setup .tgl-btn { flex-shrink: 0; }
+</style>
 
 <div class="page-header">
     <h2>Quick Setup</h2>
@@ -102,90 +51,70 @@
 <div id="quick-setup">
 {{if .SetupResults}}
     {{$guild := .ActiveGuild}}
-    <section class="card">
-        <div class="card-body qs-head">
-            <h2 class="qs-title"><span class="qs-icon" style="--qs-color: #47a447"><i class="fas fa-check"></i></span>You're all set!</h2>
-            <p class="qs-subtitle">Here's what was set up. You can change any of it whenever you like.</p>
-        </div>
+    <section class="card mb-4">
+        <header class="card-header">
+            <h2 class="card-title"><i class="fas fa-check-circle text-success mr-2"></i>You're all set!</h2>
+            <p class="mb-0">Here's what was set up. You can change any of it whenever you like.</p>
+        </header>
         <div class="card-body">
             <div class="row">
                 {{range .SetupResults}}
-                <div class="col-lg-6">
-                    <div class="qs-tile is-on" style="--qs-color: {{if .Done}}{{.Module.Color}}{{else}}#e5534b{{end}}; cursor: default">
-                        <span class="qs-icon"><i class="{{.Module.Icon}}"></i></span>
-                        <span class="qs-tile-text">
-                            <span class="qs-tile-name">{{.Module.Name}}
-                                {{if .Done}}<span class="badge badge-success ml-1">Done</span>{{else}}<span class="badge badge-danger ml-1">Not set up</span>{{end}}</span>
-                            <span class="qs-tile-description">{{.Message}}</span>
-                        </span>
-                        <a class="btn btn-default" href="/manage/{{$guild.ID}}{{.Module.SettingsPath}}" data-partial-load="true">{{if .Done}}Settings{{else}}Set up{{end}}</a>
+                <div class="col-lg-6 mb-3">
+                    <div class="card h-100 mb-0 border {{if .Done}}border-success{{else}}border-danger{{end}}">
+                        <div class="card-body d-flex align-items-center p-3">
+                            <i class="{{.Module.Icon}} fa-2x fa-fw text-{{.Module.Color}} mr-3 flex-shrink-0"></i>
+                            <div class="flex-grow-1 mr-3">
+                                <div class="font-weight-bold">{{.Module.Name}}
+                                    {{if .Done}}<span class="badge badge-success ml-1">Done</span>{{else}}<span class="badge badge-danger ml-1">Not set up</span>{{end}}</div>
+                                <div class="small">{{.Message}}</div>
+                            </div>
+                            <a class="btn btn-default btn-sm" href="/manage/{{$guild.ID}}{{.Module.SettingsPath}}" data-partial-load="true">{{if .Done}}Settings{{else}}Set up{{end}}</a>
+                        </div>
                     </div>
                 </div>
                 {{end}}
             </div>
         </div>
-        <footer class="card-footer d-flex align-items-center">
-            <a class="btn btn-default" href="/manage/{{$guild.ID}}/setup" data-partial-load="true">Run Quick Setup again</a>
-            <a class="btn btn-default ml-2" href="https://help.yagpdb.xyz/" target="_blank" rel="noopener"><i class="fas fa-book mr-2"></i>Read the docs</a>
-            <a class="btn btn-primary btn-lg ml-auto" href="/manage/{{$guild.ID}}/home" data-partial-load="true">Go to the dashboard</a>
+        <footer class="card-footer d-flex flex-column flex-md-row align-items-md-center">
+            <a class="btn btn-default mb-2 mb-md-0 mr-md-2" href="/manage/{{$guild.ID}}/setup" data-partial-load="true">Run Quick Setup again</a>
+            <a class="btn btn-default mb-2 mb-md-0" href="https://help.yagpdb.xyz/" target="_blank" rel="noopener"><i class="fas fa-book mr-2"></i>Read the docs</a>
+            <a class="btn btn-primary btn-lg mb-2 mb-md-0 ml-md-auto order-first order-md-0" href="/manage/{{$guild.ID}}/home" data-partial-load="true">Go to the dashboard</a>
         </footer>
     </section>
 
     {{if .SuggestedFeatures}}
-    <section class="card">
-        <div class="card-body qs-head">
-            <h2 class="qs-title"><span class="qs-icon" style="--qs-color: #0088cc"><i class="fas fa-compass"></i></span>Try these next</h2>
-            <p class="qs-subtitle">A few more things the bot can do for your server.</p>
-        </div>
+    <section class="card mb-4">
+        <header class="card-header">
+            <h2 class="card-title"><i class="fas fa-compass text-primary mr-2"></i>Try these next</h2>
+            <p class="mb-0">A few more things the bot can do for your server.</p>
+        </header>
         <div class="card-body">
             <div class="row">
-                {{range .SuggestedFeatures}}
-                <div class="col-md-6 col-xl-4">
-                    <a class="qs-tile" href="/manage/{{$guild.ID}}{{.Path}}" data-partial-load="true" style="--qs-color: {{.Color}}">
-                        <span class="qs-icon"><i class="{{.Icon}}"></i></span>
-                        <span class="qs-tile-text">
-                            <span class="qs-tile-name">{{.Name}}</span>
-                            <span class="qs-tile-description">{{.Description}}</span>
-                        </span>
-                        <i class="fas fa-chevron-right qs-muted"></i>
-                    </a>
-                </div>
-                {{end}}
+                {{range .SuggestedFeatures}}{{template "quick_setup_feature_link" (dict "GuildID" $guild.ID "Feature" . "Color" .Color)}}{{end}}
             </div>
         </div>
     </section>
     {{end}}
 
     {{if .PremiumPerks}}
-    <section class="card qs-premium">
-        <div class="card-body qs-head">
-            <h2 class="qs-title"><span class="qs-icon" style="--qs-color: #f0b232"><i class="fas fa-crown"></i></span>
-                {{if .IsGuildPremium}}Your premium features{{else}}Get more with Premium{{end}}</h2>
-            <p class="qs-subtitle">{{if .IsGuildPremium}}This server has premium, so all of these are ready for you to use.{{else}}Premium unlocks these extra features and much bigger limits for your server.{{end}}</p>
-        </div>
+    <section class="card mb-4 border border-warning">
+        <header class="card-header">
+            <h2 class="card-title"><i class="fas fa-crown text-warning mr-2"></i>{{if .IsGuildPremium}}Your premium features{{else}}Get more with Premium{{end}}</h2>
+            <p class="mb-0">{{if .IsGuildPremium}}This server has premium, so all of these are ready for you to use.{{else}}Premium unlocks these extra features and much bigger limits for your server.{{end}}</p>
+        </header>
         <div class="card-body">
             <div class="row">
-                {{range .PremiumPerks}}
-                <div class="col-md-6 col-xl-4">
-                    <a class="qs-tile" href="/manage/{{$guild.ID}}{{.Path}}" data-partial-load="true" style="--qs-color: #f0b232">
-                        <span class="qs-icon"><i class="{{.Icon}}"></i></span>
-                        <span class="qs-tile-text">
-                            <span class="qs-tile-name">{{.Name}}</span>
-                            <span class="qs-tile-description">{{.Description}}</span>
-                        </span>
-                    </a>
-                </div>
-                {{end}}
+                {{range .PremiumPerks}}{{template "quick_setup_feature_link" (dict "GuildID" $guild.ID "Feature" . "Color" "warning")}}{{end}}
             </div>
             {{if not .IsGuildPremium}}
-            <p class="qs-muted mb-0"><i class="fas fa-arrow-up mr-2"></i>Plus bigger limits, like 500 custom commands instead
+            <p class="mb-0"><i class="fas fa-arrow-up mr-2"></i>Plus bigger limits, like 500 custom commands instead
                 of 100, 250 YouTube feeds instead of 10 and 150 automod rules instead of 25.</p>
             {{end}}
         </div>
         {{if not .IsGuildPremium}}
-        <footer class="card-footer d-flex flex-wrap align-items-center">
-            <a class="btn btn-link pl-0" href="/premium">Already have premium? Add it to this server</a>
-            <a class="btn btn-lg qs-premium-button ml-auto" href="/premium-perks"><i class="fas fa-crown mr-2"></i>See Premium</a>
+        <footer class="card-footer d-flex flex-column flex-md-row align-items-md-center">
+            <a class="btn btn-link pl-md-0" href="/premium">Already have premium? Add it to this server</a>
+            <a class="btn btn-warning btn-lg mb-2 mb-md-0 ml-md-auto order-first order-md-0" href="/premium-perks"><i class="fas fa-crown mr-2"></i>See Premium</a>
         </footer>
         {{end}}
     </section>
@@ -201,127 +130,132 @@
     <div class="row">
         <div class="col-xl-8">
             <form method="post" action="/manage/{{.ActiveGuild.ID}}/setup" id="quick-setup-form">
-                <section class="card">
-                    <div class="card-body qs-head">
-                        <ol class="qs-stepper" id="qs-stepper"></ol>
-                        <h2 class="qs-title"><span class="qs-icon" id="qs-title-icon" hidden><i></i></span><span id="qs-title"></span></h2>
-                        <p class="qs-subtitle" id="qs-subtitle"></p>
-                    </div>
-                    <div class="card-body">
+                <section class="card mb-4">
+                    <header class="card-header">
+                        <div class="mb-3" id="qs-stepper"></div>
+                        <h2 class="card-title"><i id="qs-title-icon" hidden></i><span id="qs-title"></span></h2>
+                        <p class="mb-0" id="qs-subtitle"></p>
+                    </header>
+                    <div class="card-body qs-steps">
                         <div data-step="intro" data-short="Choose" data-title="Let's set up your server"
-                            data-subtitle="Switch on what you'd like. Each one is set up for you with good defaults.">
+                            data-subtitle="Choose what you'd like the bot to set up for you. Everything gets good defaults, and you can change it later.">
                             <div class="row">
                                 {{range .SetupModules}}
-                                <div class="col-lg-6">
-                                    <label class="qs-tile{{if not .AlreadySetUp}} is-on{{end}}" for="qs-module-{{.ID}}" style="--qs-color: {{.Color}}">
-                                        <span class="qs-icon"><i class="{{.Icon}}"></i></span>
-                                        <span class="qs-tile-text">
-                                            <span class="qs-tile-name">{{.Name}}</span>
-                                            <span class="qs-tile-description">{{.Description}}</span>
-                                            {{if .AlreadySetUp}}<span class="qs-tile-note"><i class="fas fa-check-circle mr-1"></i>Already on. Leave off to keep it as it is.</span>{{end}}
-                                        </span>
-                                        <input type="checkbox" class="tgl tgl-flat" name="Modules" value="{{.ID}}" id="qs-module-{{.ID}}" {{if not .AlreadySetUp}}checked{{end}}>
-                                        <span class="tgl-btn"></span>
+                                <div class="col-lg-6 mb-3">
+                                    <label class="card h-100 mb-0 border {{if .AlreadySetUp}}border-secondary{{else}}border-success{{end}}" for="qs-module-{{.ID}}" data-module-card style="cursor: pointer">
+                                        <div class="card-body d-flex align-items-center p-3">
+                                            <i class="{{.Icon}} fa-2x fa-fw text-{{.Color}} mr-3 flex-shrink-0"></i>
+                                            <div class="flex-grow-1 mr-3">
+                                                <div class="font-weight-bold">{{.Name}}
+                                                    {{if .AlreadySetUp}}<span class="badge badge-info ml-1">Already set up</span>{{end}}</div>
+                                                <div class="small">{{.Description}}</div>
+                                                {{if .AlreadySetUp}}
+                                                <div class="small text-warning mt-1 invisible" data-replace-warning><i class="fas fa-exclamation-triangle mr-1"></i>Your current settings for this will be replaced.</div>
+                                                {{end}}
+                                            </div>
+                                            <div class="d-flex flex-column align-items-end text-right flex-shrink-0">
+                                                <input type="checkbox" class="tgl tgl-flat" name="Modules" value="{{.ID}}" id="qs-module-{{.ID}}" {{if not .AlreadySetUp}}checked{{end}}>
+                                                <span class="tgl-btn"></span>
+                                                <div class="small font-weight-bold mt-1 text-nowrap" data-toggle-label
+                                                    {{if .AlreadySetUp}}data-on="Set up again" data-off="Keep my settings"{{else}}data-on="Set up" data-off="Skip"{{end}}></div>
+                                            </div>
+                                        </div>
                                     </label>
                                 </div>
                                 {{end}}
                             </div>
-                            <div class="alert alert-warning mb-0" id="qs-none-picked" hidden>Switch on at least one feature to
+                            <div class="alert alert-warning mb-0" id="qs-none-picked" hidden>Turn on at least one feature to
                                 continue, or choose <b>Skip for now</b>.</div>
                         </div>
 
                         {{range .SetupModules}}
                         {{if eq .ID "moderation"}}
                         <div data-step="{{.ID}}" data-module="{{.ID}}" data-short="{{.Name}}" data-glyph="{{.Icon}}" data-color="{{.Color}}"
-                            data-title="Moderation" data-subtitle="Give your moderators the tools to deal with troublemakers." hidden>
+                            data-title="Moderation" data-subtitle="Give your moderators the tools to deal with troublemakers.">
                             {{template "quick_setup_missing_perms" (dict "Module" . "InviteURL" $.InviteURL)}}
                             {{template "quick_setup_does" (cslice "Your moderators get the ban, kick, timeout and warn commands, using the permissions they already have in Discord." "Members can report rule breakers to your moderators with the report command." "Everything your moderators do is written to a log channel.")}}
                             <div class="form-group mb-0">
-                                <label class="qs-question" for="qs-modlog">Where should the bot keep the log?</label>
+                                <label class="font-weight-bold" for="qs-modlog">Where should the bot keep the log?</label>
                                 <select name="ModlogChannel" class="form-control" id="qs-modlog">
                                     {{textOnlyChannelOptions $.ActiveGuild.Channels $.CurrentModlogChannel true "Create a new private channel for me (recommended)"}}
                                 </select>
-                                <p class="help-block qs-muted">A new channel is called #mod-log, and only admins can see it at first.</p>
+                                <small class="form-text">A new channel is called #mod-log, and only admins can see it at first.</small>
                             </div>
                         </div>
 
                         {{else if eq .ID "automod"}}
                         <div data-step="{{.ID}}" data-module="{{.ID}}" data-short="{{.Name}}" data-glyph="{{.Icon}}" data-color="{{.Color}}"
-                            data-title="Auto Moderation" data-subtitle="Let the bot deal with common problems, even when nobody is around." hidden>
+                            data-title="Auto Moderation" data-subtitle="Let the bot deal with common problems, even when nobody is around.">
                             {{template "quick_setup_missing_perms" (dict "Module" . "InviteURL" $.InviteURL)}}
-                            <label class="qs-question">What should the bot stop automatically?</label>
-                            <div class="qs-options">
-                                {{checkbox "AutomodInvites" "qs-automod-invites" "<b>Invites to other servers</b>, deleted and the sender is warned" true}}
-                                {{checkbox "AutomodMentions" "qs-automod-mentions" "<b>Mass pinging</b> of 5 or more people, deleted and the sender is muted for 10 minutes" true}}
-                                {{checkbox "AutomodSpam" "qs-automod-spam" "<b>Spam</b> of 5 messages within 5 seconds, the sender is muted for 10 minutes" true}}
-                                {{checkbox "AutomodPhishing" "qs-automod-phishing" "<b>Scam and phishing links</b>, deleted and the sender is warned" true}}
-                            </div>
-                            <p class="help-block qs-muted mb-0">Other bots are never affected. If you set up moderation, your moderators
-                                are told in the log channel whenever this happens.</p>
+                            <p class="font-weight-bold">What should the bot stop automatically?</p>
+                            {{checkbox "AutomodInvites" "qs-automod-invites" "<b>Invites to other servers</b>, deleted and the sender is warned" true}}
+                            {{checkbox "AutomodMentions" "qs-automod-mentions" "<b>Mass pinging</b> of 5 or more people, deleted and the sender is muted for 10 minutes" true}}
+                            {{checkbox "AutomodSpam" "qs-automod-spam" "<b>Spam</b> of 5 messages within 5 seconds, the sender is muted for 10 minutes" true}}
+                            {{checkbox "AutomodPhishing" "qs-automod-phishing" "<b>Scam and phishing links</b>, deleted and the sender is warned" true}}
+                            <small class="form-text">Other bots are never affected. If you set up moderation, your moderators
+                                are told in the log channel whenever this happens.</small>
                         </div>
 
                         {{else if eq .ID "welcome"}}
                         <div data-step="{{.ID}}" data-module="{{.ID}}" data-short="{{.Name}}" data-glyph="{{.Icon}}" data-color="{{.Color}}"
-                            data-title="Welcome Messages" data-subtitle="Make new members feel at home the moment they join." hidden>
+                            data-title="Welcome Messages" data-subtitle="Make new members feel at home the moment they join.">
                             {{template "quick_setup_missing_perms" (dict "Module" . "InviteURL" $.InviteURL)}}
                             <div class="form-group">
-                                <label class="qs-question" for="qs-welcome-channel">Where should new members be welcomed?</label>
+                                <label class="font-weight-bold" for="qs-welcome-channel">Where should new members be welcomed?</label>
                                 <select name="WelcomeChannel" class="form-control" id="qs-welcome-channel">
                                     {{textOnlyChannelOptions $.ActiveGuild.Channels $.DefaultWelcomeChannel true "Create a new #welcome channel for me"}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="qs-question" for="qs-welcome-message">What should the message say?</label>
+                                <label class="font-weight-bold" for="qs-welcome-message">What should the message say?</label>
                                 <textarea name="WelcomeMessage" class="form-control" rows="3" id="qs-welcome-message">{{$.DefaultWelcomeMessage}}</textarea>
-                                <p class="help-block qs-muted">The default works well. <code>{{"{{.User.Mention}}"}}</code> becomes the new
-                                    member and <code>{{"{{.Guild.Name}}"}}</code> becomes your server's name.</p>
+                                <small class="form-text">The default works well. <code>{{"{{.User.Mention}}"}}</code> becomes the
+                                    new member and <code>{{"{{.Guild.Name}}"}}</code> becomes your server's name.</small>
                             </div>
-                            <div class="qs-options mb-0">
-                                {{checkbox "LeaveMessages" "qs-leave" "Also say goodbye when someone leaves" false}}
-                            </div>
+                            {{checkbox "LeaveMessages" "qs-leave" "Also say goodbye when someone leaves" false}}
                         </div>
 
                         {{else if eq .ID "autorole"}}
                         <div data-step="{{.ID}}" data-module="{{.ID}}" data-short="{{.Name}}" data-glyph="{{.Icon}}" data-color="{{.Color}}"
-                            data-title="Auto Role" data-subtitle="Give everyone who joins a role, so you don't have to do it by hand." hidden>
+                            data-title="Auto Role" data-subtitle="Give everyone who joins a role, so you don't have to do it by hand.">
                             {{template "quick_setup_missing_perms" (dict "Module" . "InviteURL" $.InviteURL)}}
                             <div class="form-group mb-0">
-                                <label class="qs-question" for="qs-autorole">Which role should new members get?</label>
+                                <label class="font-weight-bold" for="qs-autorole">Which role should new members get?</label>
                                 <select name="AutoroleRole" class="form-control" id="qs-autorole">
                                     {{roleOptions $.ActiveGuild.Roles $.HighestRole nil "Create a new Member role for me (recommended)"}}
                                 </select>
-                                <p class="help-block qs-muted">Greyed out roles are higher than the bot's own role in your server
-                                    settings, so the bot is not allowed to give them out.</p>
+                                <small class="form-text">Greyed out roles are higher than the bot's own role in your server
+                                    settings, so the bot is not allowed to give them out.</small>
                             </div>
                         </div>
 
                         {{else if eq .ID "tickets"}}
                         <div data-step="{{.ID}}" data-module="{{.ID}}" data-short="{{.Name}}" data-glyph="{{.Icon}}" data-color="{{.Color}}"
-                            data-title="Tickets" data-subtitle="Let members talk to your staff privately when they need help." hidden>
+                            data-title="Tickets" data-subtitle="Let members talk to your staff privately when they need help.">
                             {{template "quick_setup_missing_perms" (dict "Module" . "InviteURL" $.InviteURL)}}
                             {{template "quick_setup_does" (cslice "A member opens a ticket with the ticket open command." "The bot makes a private channel that only they and your staff can see." "Your staff close it with a button when they are done.")}}
                             <div class="form-group">
-                                <label class="qs-question" for="qs-tickets-category">Where should ticket channels go?</label>
+                                <label class="font-weight-bold" for="qs-tickets-category">Where should ticket channels go?</label>
                                 <select name="TicketsCategory" class="form-control" id="qs-tickets-category">
                                     {{catChannelOptions $.ActiveGuild.Channels nil true "Create a new Tickets category for me (recommended)"}}
                                 </select>
                             </div>
                             <div class="form-group mb-0">
-                                <label class="qs-question">Which staff roles should see tickets? <span class="qs-muted font-weight-normal">(optional)</span></label>
+                                <label class="font-weight-bold">Which staff roles should see tickets? <span class="font-weight-normal">(optional)</span></label>
                                 <select name="TicketModRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
                                     {{roleOptionsMulti $.ActiveGuild.Roles nil nil}}
                                 </select>
-                                <p class="help-block qs-muted">Admins can always see tickets, so you can leave this empty.</p>
+                                <small class="form-text">Admins can always see tickets, so you can leave this empty.</small>
                             </div>
                         </div>
 
                         {{else if eq .ID "verification"}}
                         <div data-step="{{.ID}}" data-module="{{.ID}}" data-short="{{.Name}}" data-glyph="{{.Icon}}" data-color="{{.Color}}"
-                            data-title="Verification" data-subtitle="Keep bots and raiders out by checking that new members are real people." hidden>
+                            data-title="Verification" data-subtitle="Keep bots and raiders out by checking that new members are real people.">
                             {{template "quick_setup_missing_perms" (dict "Module" . "InviteURL" $.InviteURL)}}
                             {{template "quick_setup_does" (cslice "New members are sent a link to a quick captcha." "Once they solve it, they get a Verified role.")}}
                             <div class="form-group">
-                                <label class="qs-question" for="qs-verified-role">Which role should verified members get?</label>
+                                <label class="font-weight-bold" for="qs-verified-role">Which role should verified members get?</label>
                                 <select name="VerifiedRole" class="form-control" id="qs-verified-role">
                                     {{roleOptions $.ActiveGuild.Roles $.HighestRole nil "Create a new Verified role for me (recommended)"}}
                                 </select>
@@ -335,16 +269,19 @@
                         {{end}}
 
                         <div data-step="review" data-short="Review" data-title="Ready to go"
-                            data-subtitle="Everything below will be set up when you press Set up now." hidden>
+                            data-subtitle="Press Set up now to set up everything below. Nothing changes in your server before that.">
                             <div class="row">
                                 {{range .SetupModules}}
-                                <div class="col-lg-6" data-review-module="{{.ID}}">
-                                    <div class="qs-tile is-on" style="--qs-color: {{.Color}}; cursor: default">
-                                        <span class="qs-icon"><i class="{{.Icon}}"></i></span>
-                                        <span class="qs-tile-text">
-                                            <span class="qs-tile-name">{{.Name}}</span>
-                                            <span class="qs-tile-description">{{.Description}}</span>
-                                        </span>
+                                <div class="col-lg-6 mb-3" data-review-module="{{.ID}}">
+                                    <div class="card h-100 mb-0 border border-success">
+                                        <div class="card-body d-flex align-items-center p-3">
+                                            <i class="{{.Icon}} fa-2x fa-fw text-{{.Color}} mr-3 flex-shrink-0"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="font-weight-bold">{{.Name}}
+                                                    {{if .AlreadySetUp}}<span class="badge badge-warning ml-1">Replaces current settings</span>{{end}}</div>
+                                                <div class="small">{{.Description}}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 {{end}}
@@ -362,21 +299,24 @@
         </div>
 
         <div class="col-xl-4">
-            <section class="card">
+            <section class="card mb-4">
+                <header class="card-header">
+                    <h2 class="card-title">Your setup</h2>
+                </header>
                 <div class="card-body">
-                    <h4 class="mt-0">Your setup</h4>
-                    <p class="qs-muted" id="qs-summary-empty" hidden>Nothing switched on yet.</p>
-                    {{range .SetupModules}}
-                    <div class="qs-summary-item" data-summary-module="{{.ID}}">
-                        <span class="qs-icon qs-icon-sm" style="--qs-color: {{.Color}}"><i class="{{.Icon}}"></i></span>{{.Name}}
-                    </div>
-                    {{end}}
-                    <ul class="list-unstyled qs-tips mb-0 mt-3">
-                        <li><i class="fas fa-stopwatch"></i><span>Takes about a minute.</span></li>
-                        <li><i class="fas fa-lock"></i><span>Nothing changes in your server until the last step.</span></li>
-                        <li><i class="fas fa-redo"></i><span>You can run Quick Setup again any time from the sidebar.</span></li>
+                    <p id="qs-summary-empty" hidden>Nothing will be set up yet.</p>
+                    <ul class="list-unstyled mb-0">
+                        {{range .SetupModules}}
+                        <li class="mb-2" data-summary-module="{{.ID}}"><i class="{{.Icon}} fa-fw text-{{.Color}} mr-2"></i><b>{{.Name}}</b></li>
+                        {{end}}
                     </ul>
-                    <a class="btn btn-default btn-block mt-3" href="https://help.yagpdb.xyz/" target="_blank" rel="noopener"><i class="fas fa-book mr-2"></i>Read the docs</a>
+                    <hr>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><i class="fas fa-stopwatch fa-fw mr-2"></i>Takes about a minute.</li>
+                        <li class="mb-2"><i class="fas fa-lock fa-fw mr-2"></i>Nothing changes in your server until the last step.</li>
+                        <li><i class="fas fa-redo fa-fw mr-2"></i>You can run Quick Setup again any time from the sidebar.</li>
+                    </ul>
+                    <a class="btn btn-default btn-block" href="https://help.yagpdb.xyz/" target="_blank" rel="noopener"><i class="fas fa-book mr-2"></i>Read the docs</a>
                 </div>
             </section>
         </div>
@@ -412,18 +352,36 @@
                 var stepper = document.getElementById("qs-stepper");
                 stepper.innerHTML = "";
                 visible.forEach(function (step, i) {
-                    var item = document.createElement("li");
-                    item.className = i < current ? "is-done" : (i === current ? "is-current" : "");
-                    var dot = document.createElement("span");
-                    dot.className = "qs-step-dot";
+                    var item = document.createElement("span");
+                    item.className = "d-inline-block mr-3 mb-1" + (i === current ? " font-weight-bold" : "");
+
+                    var badge = document.createElement("span");
+                    badge.className = "badge badge-pill mr-1 " + (i < current ? "badge-success" : (i === current ? "badge-primary" : "badge-secondary"));
                     if (i < current) {
-                        dot.innerHTML = '<i class="fas fa-check"></i>';
+                        badge.innerHTML = '<i class="fas fa-check"></i>';
                     } else {
-                        dot.textContent = i + 1;
+                        badge.textContent = i + 1;
                     }
-                    item.appendChild(dot);
+
+                    item.appendChild(badge);
                     item.appendChild(document.createTextNode(step.dataset.short));
                     stepper.appendChild(item);
+                });
+            }
+
+            function renderToggles() {
+                moduleToggles.forEach(function (toggle) {
+                    var card = toggle.closest("[data-module-card]");
+                    var label = card.querySelector("[data-toggle-label]");
+                    var replaceWarning = card.querySelector("[data-replace-warning]");
+
+                    card.classList.toggle("border-success", toggle.checked);
+                    card.classList.toggle("border-secondary", !toggle.checked);
+                    label.textContent = toggle.checked ? label.dataset.on : label.dataset.off;
+                    label.className = "small font-weight-bold mt-1 text-nowrap " + (toggle.checked ? "text-success" : "");
+                    if (replaceWarning) {
+                        replaceWarning.classList.toggle("invisible", !toggle.checked);
+                    }
                 });
             }
 
@@ -431,10 +389,7 @@
                 var visible = visibleSteps();
                 var step = visible[current];
 
-                steps.forEach(function (s) { s.hidden = s !== step; });
-                moduleToggles.forEach(function (toggle) {
-                    toggle.closest(".qs-tile").classList.toggle("is-on", toggle.checked);
-                });
+                steps.forEach(function (s) { s.inert = s !== step; });
                 document.querySelectorAll("[data-review-module]").forEach(function (item) {
                     item.hidden = !isPicked(item.dataset.reviewModule);
                 });
@@ -446,13 +401,13 @@
                 });
                 document.getElementById("qs-summary-empty").hidden = anyPicked;
 
+                renderToggles();
                 renderStepper(visible);
                 document.getElementById("qs-title").textContent = step.dataset.title;
                 document.getElementById("qs-subtitle").textContent = step.dataset.subtitle;
                 titleIcon.hidden = !step.dataset.glyph;
                 if (step.dataset.glyph) {
-                    titleIcon.style.setProperty("--qs-color", step.dataset.color);
-                    titleIcon.firstElementChild.className = step.dataset.glyph;
+                    titleIcon.className = step.dataset.glyph + " fa-fw text-" + step.dataset.color + " mr-2";
                 }
 
                 var last = current === visible.length - 1;

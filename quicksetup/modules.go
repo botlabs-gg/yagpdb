@@ -24,7 +24,7 @@ type module struct {
 	PluginSysName string
 	SettingsPath  string
 	Icon          string
-	Color         string
+	Color         string // a bootstrap color name
 	RequiredPerms []int64
 
 	alreadySetUp func(ctx context.Context, guildID int64) (bool, error)
@@ -38,7 +38,7 @@ var modules = []*module{
 		PluginSysName: "moderation",
 		SettingsPath:  "/moderation",
 		Icon:          "fas fa-gavel",
-		Color:         "#e5534b",
+		Color:         "danger",
 		RequiredPerms: []int64{discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionModerateMembers, discordgo.PermissionManageMessages},
 		alreadySetUp:  moderationSetUp,
 	},
@@ -49,7 +49,7 @@ var modules = []*module{
 		PluginSysName: "automod_v2",
 		SettingsPath:  "/automod",
 		Icon:          "fas fa-shield-alt",
-		Color:         "#4a90e2",
+		Color:         "primary",
 		RequiredPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionModerateMembers},
 		alreadySetUp:  automodSetUp,
 	},
@@ -60,7 +60,7 @@ var modules = []*module{
 		PluginSysName: "notifications",
 		SettingsPath:  "/notifications/general",
 		Icon:          "fas fa-door-open",
-		Color:         "#3fb950",
+		Color:         "success",
 		RequiredPerms: []int64{discordgo.PermissionSendMessages},
 		alreadySetUp:  welcomeSetUp,
 	},
@@ -71,7 +71,7 @@ var modules = []*module{
 		PluginSysName: "autorole",
 		SettingsPath:  "/autorole",
 		Icon:          "fas fa-user-tag",
-		Color:         "#a371f7",
+		Color:         "info",
 		RequiredPerms: []int64{discordgo.PermissionManageRoles},
 		alreadySetUp:  autoroleSetUp,
 	},
@@ -82,7 +82,7 @@ var modules = []*module{
 		PluginSysName: "tickets",
 		SettingsPath:  "/tickets",
 		Icon:          "fas fa-ticket-alt",
-		Color:         "#e3a008",
+		Color:         "warning",
 		RequiredPerms: []int64{discordgo.PermissionManageChannels},
 		alreadySetUp:  ticketsSetUp,
 	},
@@ -93,7 +93,7 @@ var modules = []*module{
 		PluginSysName: "verification",
 		SettingsPath:  "/verification",
 		Icon:          "fas fa-user-check",
-		Color:         "#2bb3a3",
+		Color:         "success",
 		RequiredPerms: []int64{discordgo.PermissionManageRoles},
 		alreadySetUp:  verificationSetUp,
 	},
