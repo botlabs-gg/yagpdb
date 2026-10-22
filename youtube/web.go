@@ -64,7 +64,7 @@ var (
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("youtube/assets/youtube.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
-		Name: "Youtube",
+		Name: "YouTube",
 		URL:  "youtube",
 		Icon: "fab fa-youtube",
 	})

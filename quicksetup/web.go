@@ -2,7 +2,6 @@ package quicksetup
 
 import (
 	_ "embed"
-	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
@@ -17,9 +16,6 @@ import (
 
 //go:embed assets/quicksetup.html
 var pageHTML string
-
-// The same permissions the bot is invited with everywhere else on the site.
-const invitePermissions = 1516122532343
 
 type moduleView struct {
 	*module
@@ -131,8 +127,7 @@ func handleGetSetup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	templateData["SetupModules"] = views
 	templateData["ReadOnly"] = web.GetIsReadOnly(ctx)
 	templateData["DefaultWelcomeMessage"] = DefaultWelcomeMessage
-	templateData["InviteURL"] = fmt.Sprintf("https://discord.com/oauth2/authorize?client_id=%s&scope=applications.commands%%20bot&permissions=%d&guild_id=%d",
-		common.ConfClientID.GetString(), invitePermissions, guild.ID)
+	templateData["InviteURL"] = web.BotInviteURL(guild.ID)
 
 	if systemChannel, err := strconv.ParseInt(guild.SystemChannelID, 10, 64); err == nil {
 		templateData["DefaultWelcomeChannel"] = systemChannel

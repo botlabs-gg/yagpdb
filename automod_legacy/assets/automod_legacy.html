@@ -3,6 +3,7 @@
 <header class="page-header">
     <h2>Automoderator {{if .AutomodConfig.Enabled}}<span class="bg-success">Enabled</span>{{else}}<span
             class="bg-danger">Disabled</span>{{end}}</h2>
+    {{template "cp_docs_link" "moderation/basic-automoderator"}}
 </header>
 
 {{template "cp_alerts" .}}
@@ -87,8 +88,10 @@
 <div class="row">
     <div class="col-lg-12">
         <h3>Basic automod</h3>
-        <p>This is the basic automod with limited functionality, if you want more flexibility then use automodv2,
-            although it's quite a bit more complex</p>
+        <p>The basic automoderator is the quick way to keep spam out: switch on the protections you want and pick what
+            happens to people who break them. If you'd rather build your own rules with their own triggers, conditions and
+            actions, use the <a href="/manage/{{.ActiveGuild.ID}}/automod" data-partial-load="true">Advanced Automoderator</a>
+            instead.</p>
         <p>The automoderator helps to perform mundane and repetitive duties on servers. It deals with the following
             cases:</p>
         <ul>

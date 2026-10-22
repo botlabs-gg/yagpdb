@@ -59,6 +59,9 @@ func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 // 1. current selected roleid
 // 2. default empty display name
 // 3. default unknown display name
+// Shown on roles the bot cannot give out, as they are not below its own highest role.
+const roleAboveBotLabel = " (higher than the bot's role, so it can't give it out)"
+
 func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, args ...interface{}) template.HTML {
 	hasCurrentSelected := len(args) > 0
 	var currentSelected int64
@@ -113,7 +116,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 		if highestBotRole != nil {
 			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
 				output += " disabled"
-				optName += " (role is above bot)"
+				optName += roleAboveBotLabel
 			}
 		}
 		output += ">" + optName + "</option>\n"
@@ -175,7 +178,7 @@ OUTER:
 					builder.WriteString(" disabled")
 				}
 
-				optName += " (role is above bot)"
+				optName += roleAboveBotLabel
 			}
 		}
 		builder.WriteString(">" + optName + "</option>\n")
@@ -254,7 +257,7 @@ func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.R
 		if highestBotRole != nil {
 			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
 				output += " disabled"
-				optName += " (role is above bot)"
+				optName += roleAboveBotLabel
 			}
 		}
 		output += ">" + optName + "</option>\n"
@@ -321,7 +324,7 @@ OUTER:
 					builder.WriteString(" disabled")
 				}
 
-				optName += " (role is above bot)"
+				optName += roleAboveBotLabel
 			}
 		}
 		builder.WriteString(">" + optName + "</option>\n")

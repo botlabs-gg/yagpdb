@@ -59,7 +59,7 @@
 
         {{if .User}}
         <div id="server-selection" class="userbox">
-            <a href="#" data-toggle="dropdown">
+            <a href="#" data-toggle="dropdown"{{if .ActiveGuild}} title="{{.ActiveGuild.Name}}"{{end}}>
                 <figure class="profile-picture">
                     {{if and .ActiveGuild .ActiveGuild.Icon}}
                     <img src="https://cdn.discordapp.com/icons/{{.ActiveGuild.ID}}/{{.ActiveGuild.Icon}}?size=64"
@@ -310,7 +310,7 @@
 
 
 {{define "cp_guild_selection"}}
-<a href="#" data-toggle="dropdown">
+<a href="#" data-toggle="dropdown"{{if .ActiveGuild}} title="{{.ActiveGuild.Name}}"{{end}}>
     <figure class="profile-picture">
         {{if and .ActiveGuild .ActiveGuild.Icon}}
         <img src="https://cdn.discordapp.com/icons/{{.ActiveGuild.ID}}/{{.ActiveGuild.Icon}}?size=64" alt="Server Icon"
@@ -332,13 +332,23 @@
     <ul class="list-unstyled mb-2" style="max-height: 500px; overflow-y: auto;">
         <li class="divider"></li>
 
+        {{if .ActiveGuild}}
+        {{/* The name is cut short in the header, and phones have no hover to show it. */}}
+        <li>
+            <a role="menuitem" tabindex="-1" href="/manage/{{.ActiveGuild.ID}}/home" class="font-weight-bold" style="white-space: normal; overflow-wrap: anywhere;">
+                <i class="fas fa-check"></i>{{.ActiveGuild.Name}}</a>
+        </li>
+        <li class="divider"></li>
+        {{end}}
+
         {{if .ManagedGuilds}}
 
         {{$clientid := .ClientID}}
         {{$host := .Host}}
         {{$baseURL := .BaseURL}}
+        {{$activeGuildID := 0}}{{if .ActiveGuild}}{{$activeGuildID = .ActiveGuild.ID}}{{end}}
 
-        {{range $index, $element := .ManagedGuilds -}}{{if $element.Connected -}}
+        {{range $index, $element := .ManagedGuilds -}}{{if and $element.Connected (ne $element.ID $activeGuildID) -}}
         <li>
             <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/home">
             {{if $element.Icon}}
