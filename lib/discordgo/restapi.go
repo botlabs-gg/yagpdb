@@ -1094,7 +1094,7 @@ func (s *Session) GuildChannelCreateWithOverwrites(guildID int64, name string, c
 	data := struct {
 		Name                 string                 `json:"name"`
 		Type                 ChannelType            `json:"type"`
-		ParentID             int64                  `json:"parent_id,string"`
+		ParentID             int64                  `json:"parent_id,string,omitempty"`
 		PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites"`
 	}{name, ctype, parentID, overwrites}
 

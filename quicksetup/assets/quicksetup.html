@@ -181,6 +181,12 @@
                                 </select>
                                 <small class="form-text">A new channel is called #mod-log, and only admins can see it at first.</small>
                             </div>
+                            <div class="form-group mb-0 mt-3" data-shown-when-creating="qs-modlog">
+                                <label class="font-weight-bold" for="qs-modlog-category">Which category should the new channel go in?</label>
+                                <select name="ModlogCategory" class="form-control" id="qs-modlog-category">
+                                    {{catChannelOptions $.ActiveGuild.Channels nil true "No category (top of the channel list)"}}
+                                </select>
+                            </div>
                         </div>
 
                         {{else if eq .ID "automod"}}
@@ -204,6 +210,12 @@
                                 <label class="font-weight-bold" for="qs-welcome-channel">Where should new members be welcomed?</label>
                                 <select name="WelcomeChannel" class="form-control" id="qs-welcome-channel">
                                     {{textOnlyChannelOptions $.ActiveGuild.Channels $.DefaultWelcomeChannel true "Create a new #welcome channel for me"}}
+                                </select>
+                            </div>
+                            <div class="form-group" data-shown-when-creating="qs-welcome-channel">
+                                <label class="font-weight-bold" for="qs-welcome-category">Which category should the new channel go in?</label>
+                                <select name="WelcomeCategory" class="form-control" id="qs-welcome-category">
+                                    {{catChannelOptions $.ActiveGuild.Channels nil true "No category (top of the channel list)"}}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -431,6 +443,14 @@
             back.addEventListener("click", function () {
                 current--;
                 render();
+            });
+
+            // A category is only asked for when a new channel is going to be created.
+            form.querySelectorAll("[data-shown-when-creating]").forEach(function (group) {
+                var channelSelect = document.getElementById(group.dataset.shownWhenCreating);
+                function syncCategory() { group.hidden = channelSelect.value !== ""; }
+                channelSelect.addEventListener("change", syncCategory);
+                syncCategory();
             });
 
             moduleToggles.forEach(function (toggle) {

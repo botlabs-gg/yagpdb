@@ -33,16 +33,18 @@ var panelLogKeySetUp = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "qu
 type SetupForm struct {
 	Modules []string
 
-	ModlogChannel int64 `valid:"channel,true"`
+	ModlogChannel  int64 `valid:"channel,true"`
+	ModlogCategory int64
 
 	AutomodInvites  bool
 	AutomodMentions bool
 	AutomodSpam     bool
 	AutomodPhishing bool
 
-	WelcomeChannel int64  `valid:"channel,true"`
-	WelcomeMessage string `valid:"template,2000"`
-	LeaveMessages  bool
+	WelcomeChannel  int64 `valid:"channel,true"`
+	WelcomeCategory int64
+	WelcomeMessage  string `valid:"template,2000"`
+	LeaveMessages   bool
 
 	AutoroleRole int64 `valid:"role,true"`
 
@@ -116,7 +118,7 @@ func applySetup(ctx context.Context, form *SetupForm) []*moduleResult {
 }
 
 func (r *setupRun) applyModeration() (string, error) {
-	channelID, err := r.textChannelOrCreate(r.form.ModlogChannel, "mod-log", true)
+	channelID, err := r.textChannelOrCreate(r.form.ModlogChannel, "mod-log", r.form.ModlogCategory, true)
 	if err != nil {
 		return "", err
 	}
@@ -180,7 +182,7 @@ func (r *setupRun) applyAutomod() (string, error) {
 }
 
 func (r *setupRun) applyWelcome() (string, error) {
-	channelID, err := r.textChannelOrCreate(r.form.WelcomeChannel, "welcome", false)
+	channelID, err := r.textChannelOrCreate(r.form.WelcomeChannel, "welcome", r.form.WelcomeCategory, false)
 	if err != nil {
 		return "", err
 	}
@@ -286,9 +288,15 @@ func (r *setupRun) applyVerification() (string, error) {
 	return fmt.Sprintf("New members get the %s role once they solve the captcha. Hide your channels from @everyone and allow them for this role, so only verified members can see them.", r.roleLabel(roleID)), nil
 }
 
-func (r *setupRun) textChannelOrCreate(channelID int64, name string, private bool) (int64, error) {
+// textChannelOrCreate creates the channel at the top of the channel list
+// when no category is picked for it.
+func (r *setupRun) textChannelOrCreate(channelID int64, name string, categoryID int64, private bool) (int64, error) {
 	if channelID != 0 {
 		return channelID, nil
+	}
+
+	if categoryID != 0 && !r.isCategory(categoryID) {
+		return 0, errors.New("The category picked for the #" + name + " channel no longer exists.")
 	}
 
 	var overwrites []*discordgo.PermissionOverwrite
@@ -299,7 +307,7 @@ func (r *setupRun) textChannelOrCreate(channelID int64, name string, private boo
 		}
 	}
 
-	channel, err := common.BotSession.GuildChannelCreateWithOverwrites(r.guild.ID, name, discordgo.ChannelTypeGuildText, 0, overwrites)
+	channel, err := common.BotSession.GuildChannelCreateWithOverwrites(r.guild.ID, name, discordgo.ChannelTypeGuildText, categoryID, overwrites)
 	if err != nil {
 		return 0, errors.WithMessage(err, "Could not create the #"+name+" channel")
 	}
@@ -311,8 +319,7 @@ func (r *setupRun) textChannelOrCreate(channelID int64, name string, private boo
 
 func (r *setupRun) categoryOrCreate(categoryID int64, name string) (int64, error) {
 	if categoryID != 0 {
-		channel := r.guild.GetChannel(categoryID)
-		if channel == nil || channel.Type != discordgo.ChannelTypeGuildCategory {
+		if !r.isCategory(categoryID) {
 			return 0, errors.New("The picked category no longer exists.")
 		}
 		return categoryID, nil
@@ -364,6 +371,11 @@ func (r *setupRun) withPostingWarning(message string, channelID int64) string {
 	}
 
 	return message + fmt.Sprintf(" The bot cannot post in %s yet, check its permissions there.", r.channelLabel(channelID))
+}
+
+func (r *setupRun) isCategory(channelID int64) bool {
+	channel := r.guild.GetChannel(channelID)
+	return channel != nil && channel.Type == discordgo.ChannelTypeGuildCategory
 }
 
 func (r *setupRun) channelLabel(channelID int64) string {
