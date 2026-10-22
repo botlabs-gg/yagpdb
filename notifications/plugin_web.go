@@ -21,7 +21,7 @@ var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notific
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("notifications/assets/notifications_general.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
-		Name: "General",
+		Name: "Join & Leave Messages",
 		URL:  "notifications/general",
 		Icon: "fas fa-bell",
 	})

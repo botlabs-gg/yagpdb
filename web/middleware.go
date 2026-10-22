@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"net/url"
@@ -740,38 +741,26 @@ func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {
 				currentPerms = permsInterface.(int64)
 			}
 
-			has := ""
-			missing := ""
-
+			var missing []string
 			for _, perm := range perms {
-				if currentPerms&perm != 0 {
-					if has != "" {
-						has += ", "
-					}
-					has += common.StringPerms[perm]
-				} else {
-					if missing != "" {
-						missing += ", "
-					}
-					missing += common.StringPerms[perm]
-
+				if currentPerms&perm == 0 {
+					missing = append(missing, common.StringPerms[perm])
 				}
 			}
 
 			c, tmpl := GetCreateTemplateData(ctx)
 			ctx = c
 
-			if missing != "" {
-				tmpl.AddAlerts(&Alert{
-					Style:   AlertWarning,
-					Message: fmt.Sprint("This plugin is missing the following permissions: ", missing, ", It may continue to work without the functionality that requires those permissions."),
-				})
-			}
-			if has != "" {
-				tmpl.AddAlerts(&Alert{
-					Style:   AlertInfo,
-					Message: fmt.Sprint("The bot has the following permissions used by this plugin: ", has),
-				})
+			if len(missing) > 0 {
+				noun := "permission"
+				if len(missing) > 1 {
+					noun = "permissions"
+				}
+				message := "The bot is missing the <b>" + template.HTMLEscapeString(strings.Join(missing, ", ")) + "</b> " + noun + ", so parts of this page may not work."
+				if guild, ok := ctx.Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet); ok {
+					message += fmt.Sprintf(` <a href="%s" target="_blank" rel="noopener">Invite the bot again</a> to give it the missing permissions, you do not need to remove it first.`, BotInviteURL(guild.ID))
+				}
+				tmpl.AddAlerts(&Alert{Style: AlertWarning, MessageHTML: template.HTML(message)})
 			}
 
 			inner.ServeHTTP(w, r.WithContext(ctx))

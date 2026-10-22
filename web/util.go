@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 	"strings"
@@ -111,6 +112,9 @@ func GetCreateTemplateData(ctx context.Context) (context.Context, TemplateData) 
 type Alert struct {
 	Style   string
 	Message string
+
+	// MessageHTML replaces Message on warning and info alerts, which are rendered on the page rather than as popups.
+	MessageHTML template.HTML `json:"-"`
 }
 
 const (
@@ -380,4 +384,14 @@ func GetIsReadOnly(ctx context.Context) bool {
 	}
 
 	return readOnly.(bool)
+}
+
+// The permissions the bot is invited with everywhere on the site.
+const BotInvitePermissions = 1516122532343
+
+// BotInviteURL adds the bot to the server again, which also grants it any
+// permissions it was missing, without removing it first.
+func BotInviteURL(guildID int64) string {
+	return fmt.Sprintf("https://discord.com/oauth2/authorize?client_id=%s&scope=applications.commands%%20bot&permissions=%d&guild_id=%d",
+		common.ConfClientID.GetString(), BotInvitePermissions, guildID)
 }

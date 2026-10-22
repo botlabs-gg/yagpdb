@@ -2,6 +2,7 @@
 {{template "cp_head" .}}
 <header class="page-header">
     <h2>Advanced Automoderator</h2>
+    {{template "cp_docs_link" "moderation/advanced-automoderator/overview"}}
 </header>
 
 {{template "cp_alerts" .}}
@@ -146,7 +147,8 @@ table{
                             <p>Advanced Automoderator (also known as Automoderator V2 or AMV2 ) is a completely new automoderator system made with the goal to be the most flexible, configurable system you could get for a chat bot (within reason).<br>
                                 You start by creating a ruleset, then creating rules inside said ruleset.<br>
                                 Rules consist of one or more triggers, conditions, and effects, you can also apply general conditions on the ruleset itself.<br>
-                                Visit the <a href="https://help.yagpdb.xyz/docs/moderation/advanced-automoderator" target="_blank">documentation</a> for more information on how to build rules and some examples.</p>
+                                Visit the <a href="https://help.yagpdb.xyz/docs/moderation/advanced-automoderator" target="_blank">documentation</a> for more information on how to build rules and some examples.<br>
+                                Just want the common protections switched on? The <a href="/manage/{{.ActiveGuild.ID}}/automod_legacy" data-partial-load="true">Basic Automoderator</a> does that with a few toggles.</p>
                             <p>If you have some suggestions for triggers, conditions,  or join the <a href="https://discord.gg/4udtcA5" target="_blank">support server</a> and add a suggestion.</p>
                         </div>
                     </div>

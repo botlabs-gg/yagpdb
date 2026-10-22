@@ -627,3 +627,21 @@ html.dark .feedlink {
   margin-block-start: 1em;
   margin-block-end: 1em;
 }
+
+/* On phones the theme keeps the right end of the page header free for a toggle the panel does not use, so the docs link sits there. */
+@media only screen and (max-width: 767px) {
+  /* Wider than the theme's own 80px, so long titles are cut off before they reach the link. Positioning the
+     header would bring the theme's z-index into effect and lift it over the open sidebar, so that is reset. */
+  .page-header {
+    position: relative;
+    z-index: auto;
+    padding-right: 100px;
+  }
+
+  .page-header .page-docs-link {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 8px !important;
+  }
+}

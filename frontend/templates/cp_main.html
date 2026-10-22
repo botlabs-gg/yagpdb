@@ -246,7 +246,7 @@ $(function(){
             {{if and (ne .Style "success") (ne .Style "danger")}}
             <div class="alert alert-{{.Style}}">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                {{.Message}}
+                {{or .MessageHTML .Message}}
             </div>
             {{end}}{{end}}
         </div>
@@ -308,6 +308,10 @@ For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
     {{end}}
 {{end}}
 
+
+{{define "cp_docs_link"}}
+<a class="btn btn-default btn-sm float-right mt-2 mr-3 page-docs-link" href="https://help.yagpdb.xyz/docs/{{.}}/" target="_blank" rel="noopener"><i class="fas fa-book mr-1"></i> <span class="d-none d-lg-inline">Stuck? Read our Documentation</span><span class="d-lg-none">Docs</span></a>
+{{end}}
 
 {{define "cp_premium_nudge"}}
     {{if(not .IsGuildPremium)}}

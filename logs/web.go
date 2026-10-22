@@ -69,7 +69,7 @@ func (lp *Plugin) InitWeb() {
 	web.AddHTMLTemplate("logs/assets/logs_view.html", PageHTMLView)
 
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
-		Name: "Logging",
+		Name: "Message Logs",
 		URL:  "logging/",
 		Icon: "fas fa-database",
 	})
