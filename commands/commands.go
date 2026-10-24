@@ -79,7 +79,12 @@ func InitCommands() {
 	// We have our own middleware before the argument parsing, this is to check for things such as whether or not the command is enabled at all
 	CommandSystem.Root.AddMiddlewares(YAGCommandMiddleware)
 	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
-	CommandSystem.Root.AddCommand(cmdPrefix, cmdPrefix.GetTrigger())
+
+	// With prefix triggers off the prefix only activates custom commands, so a
+	// command advertising it as the command prefix is misleading.
+	if !common.PrefixCommandsDisabled() {
+		CommandSystem.Root.AddCommand(cmdPrefix, cmdPrefix.GetTrigger())
+	}
 
 	for _, v := range common.Plugins {
 		if adder, ok := v.(CommandProvider); ok {
