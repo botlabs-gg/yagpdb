@@ -417,12 +417,14 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 	embed.Description = firstField.Value
 }
 
+// Custom commands still run off the prefix, so servers need a way to look it
+// up. Deliberately not a slash command: discord resolves slash commands itself,
+// so a prefix has no part in running one.
 var cmdPrefix = &YAGCommand{
-	Name:                "Prefix",
-	Description:         "Shows command prefix of the current server, or the specified server",
-	CmdCategory:         CategoryTool,
-	SlashCommandEnabled: true,
-	DefaultEnabled:      true,
+	Name:           "Prefix",
+	Description:    "Shows the prefix custom commands run on in the current server, or the specified server",
+	CmdCategory:    CategoryTool,
+	DefaultEnabled: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Server-ID", Type: dcmd.BigInt, Default: 0},
 	},

@@ -125,28 +125,6 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 	}
 }
 
-func messageTriggersCustomCommand(evt *eventsystem.EventData, msg *discordgo.Message) bool {
-	if evt.GS == nil || !evt.HasFeatureFlag(featureFlagHasCommands) {
-		return false
-	}
-
-	cs := evt.CSOrThread()
-	if cs == nil || shouldIgnoreChannel(msg, evt.GS, cs) {
-		return false
-	}
-
-	member := dstate.MemberStateFromMember(msg.Member)
-	member.GuildID = evt.GS.ID
-
-	matched, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, msg)
-	if err != nil {
-		logger.WithError(err).Error("Error matching custom commands for prefix alert")
-		return false
-	}
-
-	return len(matched) > 0
-}
-
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
 	cs := evt.CSOrThread()
