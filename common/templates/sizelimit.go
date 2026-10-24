@@ -26,7 +26,7 @@ const maxSizeWalkDepth = 1000
 // The estimate is a lower bound: string bytes plus one byte per value visited. A value referenced many times
 // is counted every time, which is what catches nesting the same slice into itself repeatedly, and because
 // every visit costs at least one byte the walk gives up after at most limit steps.
-func exceedsSerializedSize(mode sizeMode, limit int, values ...interface{}) bool {
+func exceedsSerializedSize(mode sizeMode, limit int, values ...any) bool {
 	remaining := limit
 
 	var walk func(v reflect.Value, depth int) bool
@@ -103,7 +103,7 @@ func exceedsSerializedSize(mode sizeMode, limit int, values ...interface{}) bool
 }
 
 // ExceedsEncodedSize reports whether json or msgpack encoding v would produce more than limit bytes.
-func ExceedsEncodedSize(v interface{}, limit int) bool {
+func ExceedsEncodedSize(v any, limit int) bool {
 	return exceedsSerializedSize(sizeModeEncode, limit, v)
 }
 

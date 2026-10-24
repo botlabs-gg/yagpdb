@@ -99,7 +99,7 @@ func (w *Encoder) writePage(page []byte, h *pageHeader) error {
 	}
 
 	segtbl := make([]byte, h.Nsegs)
-	for i := 0; i < len(segtbl); i++ {
+	for i := range segtbl {
 		segtbl[i] = 255
 	}
 

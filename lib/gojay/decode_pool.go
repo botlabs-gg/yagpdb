@@ -10,7 +10,7 @@ var decPool = sync.Pool{
 }
 
 func init() {
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		decPool.Put(NewDecoder(nil))
 	}
 }
@@ -29,7 +29,7 @@ func NewDecoder(r io.Reader) *Decoder {
 		isPooled: 0,
 	}
 }
-func newDecoderPool() interface{} {
+func newDecoderPool() any {
 	return NewDecoder(nil)
 }
 

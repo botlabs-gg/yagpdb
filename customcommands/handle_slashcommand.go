@@ -34,7 +34,7 @@ var cachedCommandsSlashTrigger = common.CacheSet.RegisterSlot("custom_commands_s
 // BotCachedGetCommandsWithSlashTrigger returns the (cached) slash command custom
 // commands for a guild.
 func BotCachedGetCommandsWithSlashTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsSlashTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedCommandsSlashTrigger.GetCustomFetch(guildID, func(key any) (any, error) {
 		var cmds []*models.CustomCommand
 		var err error
 		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {
@@ -145,7 +145,7 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 	}
 
 	options := templates.SDict{}
-	args := make([]interface{}, 0, len(defs)+1)
+	args := make([]any, 0, len(defs)+1)
 	args = append(args, data.Name)
 	for _, def := range defs {
 		o, ok := provided[strings.ToLower(def.Name)]
@@ -178,7 +178,7 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 // resolveSlashOptionValue converts a provided interaction option into the value
 // exposed to templates, resolving snowflake-typed options against the resolved
 // data Discord sent with the interaction.
-func resolveSlashOptionValue(o *discordgo.ApplicationCommandInteractionDataOption, data *discordgo.ApplicationCommandInteractionData) interface{} {
+func resolveSlashOptionValue(o *discordgo.ApplicationCommandInteractionDataOption, data *discordgo.ApplicationCommandInteractionData) any {
 	switch o.Type {
 	case discordgo.ApplicationCommandOptionString:
 		if v, ok := o.Value.(string); ok {

@@ -33,7 +33,7 @@ type Manager struct {
 
 	// All the shard sessions
 	Sessions      []*discordgo.Session
-	eventHandlers []interface{}
+	eventHandlers []any
 
 	// If set logs connection status events to this channel
 	LogChannel int64
@@ -90,10 +90,7 @@ func (m *Manager) GetRecommendedCount() (int, error) {
 		return 0, errors.WithMessage(err, "GetRecommendedCount()")
 	}
 
-	m.numShards = resp.Shards
-	if m.numShards < 1 {
-		m.numShards = 1
-	}
+	m.numShards = max(resp.Shards, 1)
 
 	return m.numShards, nil
 }
@@ -117,7 +114,7 @@ func (m *Manager) SetNumShards(n int) {
 
 // Adds an event handler to all shards
 // All event handlers will be added to new sessions automatically.
-func (m *Manager) AddHandler(handler interface{}) {
+func (m *Manager) AddHandler(handler any) {
 	m.Lock()
 	defer m.Unlock()
 	m.eventHandlers = append(m.eventHandlers, handler)
@@ -385,7 +382,7 @@ func (m *Manager) statusRoutine() {
 }
 
 func (m *Manager) updateStatusMessage(mID int64) (int64, error) {
-	content := ""
+	var content strings.Builder
 
 	status := m.GetFullStatus()
 	for _, shard := range status.Shards {
@@ -405,7 +402,7 @@ func (m *Manager) updateStatusMessage(mID int64) (int64, error) {
 			gwStatus = "?"
 		}
 
-		content += fmt.Sprintf("[%d/%d]: %s (%d,%d)\n", shard.Shard, m.numShards, gwStatus, shard.NumGuilds, status.NumGuilds)
+		content.WriteString(fmt.Sprintf("[%d/%d]: %s (%d,%d)\n", shard.Shard, m.numShards, gwStatus, shard.NumGuilds, status.NumGuilds))
 	}
 
 	nameStr := ""
@@ -414,7 +411,7 @@ func (m *Manager) updateStatusMessage(mID int64) (int64, error) {
 	}
 	embed := &discordgo.MessageEmbed{
 		Title:       "Sharding status" + nameStr,
-		Description: content,
+		Description: content.String(),
 		Color:       0x4286f4,
 		Timestamp:   time.Now().Format(time.RFC3339),
 	}

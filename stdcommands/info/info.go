@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	DefaultEnabled:      true,
 	RunInDM:             true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		info := fmt.Sprintf(`**YAGPDB - Yet Another General Purpose Discord Bot**
 This bot focuses on being configurable and therefore is one of the most advanced bots.
 It can perform a range of general purpose functionality (Reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.

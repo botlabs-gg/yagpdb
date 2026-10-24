@@ -50,7 +50,7 @@ var ErrMFA = errors.New("account has 2FA enabled")
 // and then use that authentication token for all future connections.
 // Also, doing any form of automation with a user (non Bot) account may result
 // in that account being permanently banned from Discord.
-func New(args ...interface{}) (s *Session, err error) {
+func New(args ...any) (s *Session, err error) {
 
 	// Create an empty Session interface.
 	s = &Session{

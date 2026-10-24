@@ -40,7 +40,7 @@ func (err InvalidUnmarshalError) Error() string {
 	return string(err)
 }
 
-func (dec *Decoder) makeInvalidUnmarshalErr(v interface{}) error {
+func (dec *Decoder) makeInvalidUnmarshalErr(v any) error {
 	return InvalidUnmarshalError(
 		fmt.Sprintf(
 			invalidUnmarshalErrorMsg,

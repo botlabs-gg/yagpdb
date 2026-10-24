@@ -22,7 +22,7 @@ func prettyTime(t time.Time) string {
 // mTemplate combines "template" with dictionary. so you can specify multiple variables
 // and call templates almost as if they were functions with arguments
 // makes certain templates a lot simpler
-func mTemplate(name string, values ...interface{}) (template.HTML, error) {
+func mTemplate(name string, values ...any) (template.HTML, error) {
 
 	data, err := templates.Dictionary(values...)
 	if err != nil {
@@ -62,7 +62,7 @@ func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 // Shown on roles the bot cannot give out, as they are not below its own highest role.
 const roleAboveBotLabel = " (higher than the bot's role, so it can't give it out)"
 
-func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, args ...interface{}) template.HTML {
+func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, args ...any) template.HTML {
 	hasCurrentSelected := len(args) > 0
 	var currentSelected int64
 	if hasCurrentSelected {
@@ -81,14 +81,14 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 		emptyName = templates.ToString(args[2])
 	}
 
-	output := ""
+	var output strings.Builder
 	if hasEmptyName {
-		output += `<option value=""`
+		output.WriteString(`<option value=""`)
 		if currentSelected == 0 {
-			output += `selected`
+			output.WriteString(`selected`)
 		}
-		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
-		output += `<optgroup label="────────────"></optgroup>`
+		output.WriteString(">" + template.HTMLEscapeString(emptyName) + "</option>\n")
+		output.WriteString(`<optgroup label="────────────"></optgroup>`)
 	}
 
 	found := false
@@ -101,32 +101,32 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 			continue
 		}
 
-		output += `<option value="` + discordgo.StrID(role.ID) + `"`
+		output.WriteString(`<option value="` + discordgo.StrID(role.ID) + `"`)
 		if role.ID == currentSelected {
-			output += " selected"
+			output.WriteString(" selected")
 			found = true
 		}
 
 		if role.Color != 0 {
 			hexColor := fmt.Sprintf("%06x", int64(role.Color))
-			output += " style=\"color: #" + hexColor + "\""
+			output.WriteString(" style=\"color: #" + hexColor + "\"")
 		}
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
 			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
-				output += " disabled"
+				output.WriteString(" disabled")
 				optName += roleAboveBotLabel
 			}
 		}
-		output += ">" + optName + "</option>\n"
+		output.WriteString(">" + optName + "</option>\n")
 	}
 
 	if !found && currentSelected != 0 {
-		output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
+		output.WriteString(`<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n")
 	}
 
-	return template.HTML(output)
+	return template.HTML(output.String())
 }
 
 // Same as tmplRoleDropdown but supports multiple selections
@@ -196,7 +196,7 @@ OUTER:
 // 1. current selected roleid
 // 2. default empty display name
 // 3. default unknown display name
-func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.Role, excludedRoleIDs []int64, args ...interface{}) template.HTML {
+func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.Role, excludedRoleIDs []int64, args ...any) template.HTML {
 	hasCurrentSelected := len(args) > 0
 	var currentSelected int64
 	if hasCurrentSelected {
@@ -215,14 +215,14 @@ func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.R
 		emptyName = templates.ToString(args[2])
 	}
 
-	output := ""
+	var output strings.Builder
 	if hasEmptyName {
-		output += `<option value=""`
+		output.WriteString(`<option value=""`)
 		if currentSelected == 0 {
-			output += `selected`
+			output.WriteString(`selected`)
 		}
-		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
-		output += `<optgroup label="────────────"></optgroup>`
+		output.WriteString(">" + template.HTMLEscapeString(emptyName) + "</option>\n")
+		output.WriteString(`<optgroup label="────────────"></optgroup>`)
 	}
 
 	found := false
@@ -242,32 +242,32 @@ func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.R
 			continue
 		}
 
-		output += `<option value="` + discordgo.StrID(role.ID) + `"`
+		output.WriteString(`<option value="` + discordgo.StrID(role.ID) + `"`)
 		if role.ID == currentSelected {
-			output += " selected"
+			output.WriteString(" selected")
 			found = true
 		}
 
 		if role.Color != 0 {
 			hexColor := fmt.Sprintf("%06x", int64(role.Color))
-			output += " style=\"color: #" + hexColor + "\""
+			output.WriteString(" style=\"color: #" + hexColor + "\"")
 		}
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
 			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
-				output += " disabled"
+				output.WriteString(" disabled")
 				optName += roleAboveBotLabel
 			}
 		}
-		output += ">" + optName + "</option>\n"
+		output.WriteString(">" + optName + "</option>\n")
 	}
 
 	if !found && currentSelected != 0 {
-		output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
+		output.WriteString(`<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n")
 	}
 
-	return template.HTML(output)
+	return template.HTML(output.String())
 }
 
 // tmplRoleDropdownMultiExclude is a template function for generating multi-select role dropdown options
@@ -333,9 +333,9 @@ OUTER:
 	return template.HTML(builder.String())
 }
 
-func tmplChannelOpts(channelTypes []discordgo.ChannelType) interface{} {
+func tmplChannelOpts(channelTypes []discordgo.ChannelType) any {
 	optsBuilder := tmplChannelOptsMulti(channelTypes)
-	return func(channels []dstate.ChannelState, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
+	return func(channels []dstate.ChannelState, selection any, allowEmpty bool, emptyName string) template.HTML {
 
 		var builder strings.Builder
 
@@ -438,12 +438,7 @@ func (g *channelOptsHTMLGenState) outputCategorizedChannels() {
 }
 
 func (g *channelOptsHTMLGenState) include(channelType discordgo.ChannelType) bool {
-	for _, t := range g.allowedChannelTypes {
-		if t == channelType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(g.allowedChannelTypes, channelType)
 }
 
 func (g *channelOptsHTMLGenState) outputChannel(id int64, name string, channelType discordgo.ChannelType) {

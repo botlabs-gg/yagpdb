@@ -49,7 +49,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 	}
 }
 
-func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data any) (retry bool, err error) {
 	dataCast := data.(*DelayedRunCCData)
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, dataCast.CmdID), qm.Load("Group")).OneG(context.Background())
 	if err != nil {
@@ -117,7 +117,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {
-		var i interface{}
+		var i any
 		err := msgpack.Unmarshal(dataCast.UserData, &i)
 		if err != nil {
 			return false, err
@@ -132,7 +132,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	return false, err
 }
 
-func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data any) (retry bool, err error) {
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, (data.(*NextRunScheduledEvent)).CmdID), qm.Load("Group")).OneG(context.Background())
 	if err != nil {
 		return false, errors.WrapIf(err, "find_command")

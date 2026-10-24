@@ -56,7 +56,7 @@ var roleCommands = []*commands.YAGCommand{
 		Description:         "Returns count of autorole assignments currently being processed",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			var processing int
 			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GuildData.GS.ID)))
 			return fmt.Sprintf("Processing %d users.", processing), err
@@ -437,7 +437,7 @@ func GuildCacheGetAutoroleConfig(guildID int64) (*AutoroleConfig, error) {
 	return v.(*AutoroleConfig), nil
 }
 
-func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data any) (retry bool, err error) {
 	config, err := GetAutoroleConfig(evt.GuildID)
 	if err != nil {
 		return true, nil

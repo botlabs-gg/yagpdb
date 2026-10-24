@@ -109,12 +109,12 @@ func (eh applicationCommandCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of ApplicationCommandCreate.
-func (eh applicationCommandCreateEventHandler) New() interface{} {
+func (eh applicationCommandCreateEventHandler) New() any {
 	return &ApplicationCommandCreate{}
 }
 
 // Handle is the handler for ApplicationCommandCreate events.
-func (eh applicationCommandCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh applicationCommandCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ApplicationCommandCreate); ok {
 		eh(s, t)
 	}
@@ -129,12 +129,12 @@ func (eh applicationCommandDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of ApplicationCommandDelete.
-func (eh applicationCommandDeleteEventHandler) New() interface{} {
+func (eh applicationCommandDeleteEventHandler) New() any {
 	return &ApplicationCommandDelete{}
 }
 
 // Handle is the handler for ApplicationCommandDelete events.
-func (eh applicationCommandDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh applicationCommandDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ApplicationCommandDelete); ok {
 		eh(s, t)
 	}
@@ -149,12 +149,12 @@ func (eh applicationCommandPermissionsUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ApplicationCommandPermissionsUpdate.
-func (eh applicationCommandPermissionsUpdateEventHandler) New() interface{} {
+func (eh applicationCommandPermissionsUpdateEventHandler) New() any {
 	return &ApplicationCommandPermissionsUpdate{}
 }
 
 // Handle is the handler for ApplicationCommandPermissionsUpdate events.
-func (eh applicationCommandPermissionsUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh applicationCommandPermissionsUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ApplicationCommandPermissionsUpdate); ok {
 		eh(s, t)
 	}
@@ -169,12 +169,12 @@ func (eh applicationCommandUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ApplicationCommandUpdate.
-func (eh applicationCommandUpdateEventHandler) New() interface{} {
+func (eh applicationCommandUpdateEventHandler) New() any {
 	return &ApplicationCommandUpdate{}
 }
 
 // Handle is the handler for ApplicationCommandUpdate events.
-func (eh applicationCommandUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh applicationCommandUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ApplicationCommandUpdate); ok {
 		eh(s, t)
 	}
@@ -189,12 +189,12 @@ func (eh autoModerationActionExecutionEventHandler) Type() string {
 }
 
 // New returns a new instance of AutoModerationActionExecution.
-func (eh autoModerationActionExecutionEventHandler) New() interface{} {
+func (eh autoModerationActionExecutionEventHandler) New() any {
 	return &AutoModerationActionExecution{}
 }
 
 // Handle is the handler for AutoModerationActionExecution events.
-func (eh autoModerationActionExecutionEventHandler) Handle(s *Session, i interface{}) {
+func (eh autoModerationActionExecutionEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*AutoModerationActionExecution); ok {
 		eh(s, t)
 	}
@@ -209,12 +209,12 @@ func (eh autoModerationRuleCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of AutoModerationRuleCreate.
-func (eh autoModerationRuleCreateEventHandler) New() interface{} {
+func (eh autoModerationRuleCreateEventHandler) New() any {
 	return &AutoModerationRuleCreate{}
 }
 
 // Handle is the handler for AutoModerationRuleCreate events.
-func (eh autoModerationRuleCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh autoModerationRuleCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*AutoModerationRuleCreate); ok {
 		eh(s, t)
 	}
@@ -229,12 +229,12 @@ func (eh autoModerationRuleDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of AutoModerationRuleDelete.
-func (eh autoModerationRuleDeleteEventHandler) New() interface{} {
+func (eh autoModerationRuleDeleteEventHandler) New() any {
 	return &AutoModerationRuleDelete{}
 }
 
 // Handle is the handler for AutoModerationRuleDelete events.
-func (eh autoModerationRuleDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh autoModerationRuleDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*AutoModerationRuleDelete); ok {
 		eh(s, t)
 	}
@@ -249,12 +249,12 @@ func (eh autoModerationRuleUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of AutoModerationRuleUpdate.
-func (eh autoModerationRuleUpdateEventHandler) New() interface{} {
+func (eh autoModerationRuleUpdateEventHandler) New() any {
 	return &AutoModerationRuleUpdate{}
 }
 
 // Handle is the handler for AutoModerationRuleUpdate events.
-func (eh autoModerationRuleUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh autoModerationRuleUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*AutoModerationRuleUpdate); ok {
 		eh(s, t)
 	}
@@ -269,12 +269,12 @@ func (eh channelCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of ChannelCreate.
-func (eh channelCreateEventHandler) New() interface{} {
+func (eh channelCreateEventHandler) New() any {
 	return &ChannelCreate{}
 }
 
 // Handle is the handler for ChannelCreate events.
-func (eh channelCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh channelCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ChannelCreate); ok {
 		eh(s, t)
 	}
@@ -289,12 +289,12 @@ func (eh channelDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of ChannelDelete.
-func (eh channelDeleteEventHandler) New() interface{} {
+func (eh channelDeleteEventHandler) New() any {
 	return &ChannelDelete{}
 }
 
 // Handle is the handler for ChannelDelete events.
-func (eh channelDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh channelDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ChannelDelete); ok {
 		eh(s, t)
 	}
@@ -309,12 +309,12 @@ func (eh channelPinsUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ChannelPinsUpdate.
-func (eh channelPinsUpdateEventHandler) New() interface{} {
+func (eh channelPinsUpdateEventHandler) New() any {
 	return &ChannelPinsUpdate{}
 }
 
 // Handle is the handler for ChannelPinsUpdate events.
-func (eh channelPinsUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh channelPinsUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ChannelPinsUpdate); ok {
 		eh(s, t)
 	}
@@ -329,12 +329,12 @@ func (eh channelTopicUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ChannelTopicUpdate.
-func (eh channelTopicUpdateEventHandler) New() interface{} {
+func (eh channelTopicUpdateEventHandler) New() any {
 	return &ChannelTopicUpdate{}
 }
 
 // Handle is the handler for ChannelTopicUpdate events.
-func (eh channelTopicUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh channelTopicUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ChannelTopicUpdate); ok {
 		eh(s, t)
 	}
@@ -349,12 +349,12 @@ func (eh channelUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ChannelUpdate.
-func (eh channelUpdateEventHandler) New() interface{} {
+func (eh channelUpdateEventHandler) New() any {
 	return &ChannelUpdate{}
 }
 
 // Handle is the handler for ChannelUpdate events.
-func (eh channelUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh channelUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ChannelUpdate); ok {
 		eh(s, t)
 	}
@@ -369,7 +369,7 @@ func (eh connectEventHandler) Type() string {
 }
 
 // Handle is the handler for Connect events.
-func (eh connectEventHandler) Handle(s *Session, i interface{}) {
+func (eh connectEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*Connect); ok {
 		eh(s, t)
 	}
@@ -384,7 +384,7 @@ func (eh disconnectEventHandler) Type() string {
 }
 
 // Handle is the handler for Disconnect events.
-func (eh disconnectEventHandler) Handle(s *Session, i interface{}) {
+func (eh disconnectEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*Disconnect); ok {
 		eh(s, t)
 	}
@@ -399,12 +399,12 @@ func (eh entitlementCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of EntitlementCreate.
-func (eh entitlementCreateEventHandler) New() interface{} {
+func (eh entitlementCreateEventHandler) New() any {
 	return &EntitlementCreate{}
 }
 
 // Handle is the handler for EntitlementCreate events.
-func (eh entitlementCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh entitlementCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*EntitlementCreate); ok {
 		eh(s, t)
 	}
@@ -419,12 +419,12 @@ func (eh entitlementDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of EntitlementDelete.
-func (eh entitlementDeleteEventHandler) New() interface{} {
+func (eh entitlementDeleteEventHandler) New() any {
 	return &EntitlementDelete{}
 }
 
 // Handle is the handler for EntitlementDelete events.
-func (eh entitlementDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh entitlementDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*EntitlementDelete); ok {
 		eh(s, t)
 	}
@@ -439,12 +439,12 @@ func (eh entitlementUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of EntitlementUpdate.
-func (eh entitlementUpdateEventHandler) New() interface{} {
+func (eh entitlementUpdateEventHandler) New() any {
 	return &EntitlementUpdate{}
 }
 
 // Handle is the handler for EntitlementUpdate events.
-func (eh entitlementUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh entitlementUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*EntitlementUpdate); ok {
 		eh(s, t)
 	}
@@ -459,7 +459,7 @@ func (eh eventEventHandler) Type() string {
 }
 
 // Handle is the handler for Event events.
-func (eh eventEventHandler) Handle(s *Session, i interface{}) {
+func (eh eventEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*Event); ok {
 		eh(s, t)
 	}
@@ -474,12 +474,12 @@ func (eh guildAuditLogEntryCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildAuditLogEntryCreate.
-func (eh guildAuditLogEntryCreateEventHandler) New() interface{} {
+func (eh guildAuditLogEntryCreateEventHandler) New() any {
 	return &GuildAuditLogEntryCreate{}
 }
 
 // Handle is the handler for GuildAuditLogEntryCreate events.
-func (eh guildAuditLogEntryCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildAuditLogEntryCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildAuditLogEntryCreate); ok {
 		eh(s, t)
 	}
@@ -494,12 +494,12 @@ func (eh guildBanAddEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildBanAdd.
-func (eh guildBanAddEventHandler) New() interface{} {
+func (eh guildBanAddEventHandler) New() any {
 	return &GuildBanAdd{}
 }
 
 // Handle is the handler for GuildBanAdd events.
-func (eh guildBanAddEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildBanAddEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildBanAdd); ok {
 		eh(s, t)
 	}
@@ -514,12 +514,12 @@ func (eh guildBanRemoveEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildBanRemove.
-func (eh guildBanRemoveEventHandler) New() interface{} {
+func (eh guildBanRemoveEventHandler) New() any {
 	return &GuildBanRemove{}
 }
 
 // Handle is the handler for GuildBanRemove events.
-func (eh guildBanRemoveEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildBanRemoveEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildBanRemove); ok {
 		eh(s, t)
 	}
@@ -534,12 +534,12 @@ func (eh guildCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildCreate.
-func (eh guildCreateEventHandler) New() interface{} {
+func (eh guildCreateEventHandler) New() any {
 	return &GuildCreate{}
 }
 
 // Handle is the handler for GuildCreate events.
-func (eh guildCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildCreate); ok {
 		eh(s, t)
 	}
@@ -554,12 +554,12 @@ func (eh guildDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildDelete.
-func (eh guildDeleteEventHandler) New() interface{} {
+func (eh guildDeleteEventHandler) New() any {
 	return &GuildDelete{}
 }
 
 // Handle is the handler for GuildDelete events.
-func (eh guildDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildDelete); ok {
 		eh(s, t)
 	}
@@ -574,12 +574,12 @@ func (eh guildEmojisUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildEmojisUpdate.
-func (eh guildEmojisUpdateEventHandler) New() interface{} {
+func (eh guildEmojisUpdateEventHandler) New() any {
 	return &GuildEmojisUpdate{}
 }
 
 // Handle is the handler for GuildEmojisUpdate events.
-func (eh guildEmojisUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildEmojisUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildEmojisUpdate); ok {
 		eh(s, t)
 	}
@@ -594,12 +594,12 @@ func (eh guildIntegrationsUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildIntegrationsUpdate.
-func (eh guildIntegrationsUpdateEventHandler) New() interface{} {
+func (eh guildIntegrationsUpdateEventHandler) New() any {
 	return &GuildIntegrationsUpdate{}
 }
 
 // Handle is the handler for GuildIntegrationsUpdate events.
-func (eh guildIntegrationsUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildIntegrationsUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildIntegrationsUpdate); ok {
 		eh(s, t)
 	}
@@ -614,12 +614,12 @@ func (eh guildJoinRequestCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildJoinRequestCreate.
-func (eh guildJoinRequestCreateEventHandler) New() interface{} {
+func (eh guildJoinRequestCreateEventHandler) New() any {
 	return &GuildJoinRequestCreate{}
 }
 
 // Handle is the handler for GuildJoinRequestCreate events.
-func (eh guildJoinRequestCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildJoinRequestCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildJoinRequestCreate); ok {
 		eh(s, t)
 	}
@@ -634,12 +634,12 @@ func (eh guildJoinRequestDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildJoinRequestDelete.
-func (eh guildJoinRequestDeleteEventHandler) New() interface{} {
+func (eh guildJoinRequestDeleteEventHandler) New() any {
 	return &GuildJoinRequestDelete{}
 }
 
 // Handle is the handler for GuildJoinRequestDelete events.
-func (eh guildJoinRequestDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildJoinRequestDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildJoinRequestDelete); ok {
 		eh(s, t)
 	}
@@ -654,12 +654,12 @@ func (eh guildJoinRequestUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildJoinRequestUpdate.
-func (eh guildJoinRequestUpdateEventHandler) New() interface{} {
+func (eh guildJoinRequestUpdateEventHandler) New() any {
 	return &GuildJoinRequestUpdate{}
 }
 
 // Handle is the handler for GuildJoinRequestUpdate events.
-func (eh guildJoinRequestUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildJoinRequestUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildJoinRequestUpdate); ok {
 		eh(s, t)
 	}
@@ -674,12 +674,12 @@ func (eh guildMemberAddEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildMemberAdd.
-func (eh guildMemberAddEventHandler) New() interface{} {
+func (eh guildMemberAddEventHandler) New() any {
 	return &GuildMemberAdd{}
 }
 
 // Handle is the handler for GuildMemberAdd events.
-func (eh guildMemberAddEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildMemberAddEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildMemberAdd); ok {
 		eh(s, t)
 	}
@@ -694,12 +694,12 @@ func (eh guildMemberRemoveEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildMemberRemove.
-func (eh guildMemberRemoveEventHandler) New() interface{} {
+func (eh guildMemberRemoveEventHandler) New() any {
 	return &GuildMemberRemove{}
 }
 
 // Handle is the handler for GuildMemberRemove events.
-func (eh guildMemberRemoveEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildMemberRemoveEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildMemberRemove); ok {
 		eh(s, t)
 	}
@@ -714,12 +714,12 @@ func (eh guildMemberUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildMemberUpdate.
-func (eh guildMemberUpdateEventHandler) New() interface{} {
+func (eh guildMemberUpdateEventHandler) New() any {
 	return &GuildMemberUpdate{}
 }
 
 // Handle is the handler for GuildMemberUpdate events.
-func (eh guildMemberUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildMemberUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildMemberUpdate); ok {
 		eh(s, t)
 	}
@@ -734,12 +734,12 @@ func (eh guildMembersChunkEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildMembersChunk.
-func (eh guildMembersChunkEventHandler) New() interface{} {
+func (eh guildMembersChunkEventHandler) New() any {
 	return &GuildMembersChunk{}
 }
 
 // Handle is the handler for GuildMembersChunk events.
-func (eh guildMembersChunkEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildMembersChunkEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildMembersChunk); ok {
 		eh(s, t)
 	}
@@ -754,12 +754,12 @@ func (eh guildRoleCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildRoleCreate.
-func (eh guildRoleCreateEventHandler) New() interface{} {
+func (eh guildRoleCreateEventHandler) New() any {
 	return &GuildRoleCreate{}
 }
 
 // Handle is the handler for GuildRoleCreate events.
-func (eh guildRoleCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildRoleCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildRoleCreate); ok {
 		eh(s, t)
 	}
@@ -774,12 +774,12 @@ func (eh guildRoleDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildRoleDelete.
-func (eh guildRoleDeleteEventHandler) New() interface{} {
+func (eh guildRoleDeleteEventHandler) New() any {
 	return &GuildRoleDelete{}
 }
 
 // Handle is the handler for GuildRoleDelete events.
-func (eh guildRoleDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildRoleDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildRoleDelete); ok {
 		eh(s, t)
 	}
@@ -794,12 +794,12 @@ func (eh guildRoleUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildRoleUpdate.
-func (eh guildRoleUpdateEventHandler) New() interface{} {
+func (eh guildRoleUpdateEventHandler) New() any {
 	return &GuildRoleUpdate{}
 }
 
 // Handle is the handler for GuildRoleUpdate events.
-func (eh guildRoleUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildRoleUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildRoleUpdate); ok {
 		eh(s, t)
 	}
@@ -814,12 +814,12 @@ func (eh guildScheduledEventCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildScheduledEventCreate.
-func (eh guildScheduledEventCreateEventHandler) New() interface{} {
+func (eh guildScheduledEventCreateEventHandler) New() any {
 	return &GuildScheduledEventCreate{}
 }
 
 // Handle is the handler for GuildScheduledEventCreate events.
-func (eh guildScheduledEventCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildScheduledEventCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildScheduledEventCreate); ok {
 		eh(s, t)
 	}
@@ -834,12 +834,12 @@ func (eh guildScheduledEventDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildScheduledEventDelete.
-func (eh guildScheduledEventDeleteEventHandler) New() interface{} {
+func (eh guildScheduledEventDeleteEventHandler) New() any {
 	return &GuildScheduledEventDelete{}
 }
 
 // Handle is the handler for GuildScheduledEventDelete events.
-func (eh guildScheduledEventDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildScheduledEventDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildScheduledEventDelete); ok {
 		eh(s, t)
 	}
@@ -854,12 +854,12 @@ func (eh guildScheduledEventUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildScheduledEventUpdate.
-func (eh guildScheduledEventUpdateEventHandler) New() interface{} {
+func (eh guildScheduledEventUpdateEventHandler) New() any {
 	return &GuildScheduledEventUpdate{}
 }
 
 // Handle is the handler for GuildScheduledEventUpdate events.
-func (eh guildScheduledEventUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildScheduledEventUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildScheduledEventUpdate); ok {
 		eh(s, t)
 	}
@@ -874,12 +874,12 @@ func (eh guildScheduledEventUserAddEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildScheduledEventUserAdd.
-func (eh guildScheduledEventUserAddEventHandler) New() interface{} {
+func (eh guildScheduledEventUserAddEventHandler) New() any {
 	return &GuildScheduledEventUserAdd{}
 }
 
 // Handle is the handler for GuildScheduledEventUserAdd events.
-func (eh guildScheduledEventUserAddEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildScheduledEventUserAddEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildScheduledEventUserAdd); ok {
 		eh(s, t)
 	}
@@ -894,12 +894,12 @@ func (eh guildScheduledEventUserRemoveEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildScheduledEventUserRemove.
-func (eh guildScheduledEventUserRemoveEventHandler) New() interface{} {
+func (eh guildScheduledEventUserRemoveEventHandler) New() any {
 	return &GuildScheduledEventUserRemove{}
 }
 
 // Handle is the handler for GuildScheduledEventUserRemove events.
-func (eh guildScheduledEventUserRemoveEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildScheduledEventUserRemoveEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildScheduledEventUserRemove); ok {
 		eh(s, t)
 	}
@@ -914,12 +914,12 @@ func (eh guildStickersUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildStickersUpdate.
-func (eh guildStickersUpdateEventHandler) New() interface{} {
+func (eh guildStickersUpdateEventHandler) New() any {
 	return &GuildStickersUpdate{}
 }
 
 // Handle is the handler for GuildStickersUpdate events.
-func (eh guildStickersUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildStickersUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildStickersUpdate); ok {
 		eh(s, t)
 	}
@@ -934,12 +934,12 @@ func (eh guildUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildUpdate.
-func (eh guildUpdateEventHandler) New() interface{} {
+func (eh guildUpdateEventHandler) New() any {
 	return &GuildUpdate{}
 }
 
 // Handle is the handler for GuildUpdate events.
-func (eh guildUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildUpdate); ok {
 		eh(s, t)
 	}
@@ -954,12 +954,12 @@ func (eh guildAppliedBoostUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildAppliedBoostUpdate.
-func (eh guildAppliedBoostUpdateEventHandler) New() interface{} {
+func (eh guildAppliedBoostUpdateEventHandler) New() any {
 	return &GuildAppliedBoostUpdate{}
 }
 
 // Handle is the handler for GuildAppliedBoostUpdate events.
-func (eh guildAppliedBoostUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildAppliedBoostUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildAppliedBoostUpdate); ok {
 		eh(s, t)
 	}
@@ -974,12 +974,12 @@ func (eh guildPowerupEntitlementsCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildPowerupEntitlementsCreate.
-func (eh guildPowerupEntitlementsCreateEventHandler) New() interface{} {
+func (eh guildPowerupEntitlementsCreateEventHandler) New() any {
 	return &GuildPowerupEntitlementsCreate{}
 }
 
 // Handle is the handler for GuildPowerupEntitlementsCreate events.
-func (eh guildPowerupEntitlementsCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildPowerupEntitlementsCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildPowerupEntitlementsCreate); ok {
 		eh(s, t)
 	}
@@ -994,12 +994,12 @@ func (eh guildSoundboardSoundCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildSoundboardSoundCreate.
-func (eh guildSoundboardSoundCreateEventHandler) New() interface{} {
+func (eh guildSoundboardSoundCreateEventHandler) New() any {
 	return &GuildSoundboardSoundCreate{}
 }
 
 // Handle is the handler for GuildSoundboardSoundCreate events.
-func (eh guildSoundboardSoundCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildSoundboardSoundCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildSoundboardSoundCreate); ok {
 		eh(s, t)
 	}
@@ -1014,12 +1014,12 @@ func (eh guildSoundboardSoundDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildSoundboardSoundDelete.
-func (eh guildSoundboardSoundDeleteEventHandler) New() interface{} {
+func (eh guildSoundboardSoundDeleteEventHandler) New() any {
 	return &GuildSoundboardSoundDelete{}
 }
 
 // Handle is the handler for GuildSoundboardSoundDelete events.
-func (eh guildSoundboardSoundDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildSoundboardSoundDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildSoundboardSoundDelete); ok {
 		eh(s, t)
 	}
@@ -1034,12 +1034,12 @@ func (eh guildSoundboardSoundsUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GuildSoundboardSoundsUpdate.
-func (eh guildSoundboardSoundsUpdateEventHandler) New() interface{} {
+func (eh guildSoundboardSoundsUpdateEventHandler) New() any {
 	return &GuildSoundboardSoundsUpdate{}
 }
 
 // Handle is the handler for GuildSoundboardSoundsUpdate events.
-func (eh guildSoundboardSoundsUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh guildSoundboardSoundsUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GuildSoundboardSoundsUpdate); ok {
 		eh(s, t)
 	}
@@ -1054,12 +1054,12 @@ func (eh giftCodeUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of GiftCodeUpdate.
-func (eh giftCodeUpdateEventHandler) New() interface{} {
+func (eh giftCodeUpdateEventHandler) New() any {
 	return &GiftCodeUpdate{}
 }
 
 // Handle is the handler for GiftCodeUpdate events.
-func (eh giftCodeUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh giftCodeUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*GiftCodeUpdate); ok {
 		eh(s, t)
 	}
@@ -1074,12 +1074,12 @@ func (eh interactionCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of InteractionCreate.
-func (eh interactionCreateEventHandler) New() interface{} {
+func (eh interactionCreateEventHandler) New() any {
 	return &InteractionCreate{}
 }
 
 // Handle is the handler for InteractionCreate events.
-func (eh interactionCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh interactionCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*InteractionCreate); ok {
 		eh(s, t)
 	}
@@ -1094,12 +1094,12 @@ func (eh inviteCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of InviteCreate.
-func (eh inviteCreateEventHandler) New() interface{} {
+func (eh inviteCreateEventHandler) New() any {
 	return &InviteCreate{}
 }
 
 // Handle is the handler for InviteCreate events.
-func (eh inviteCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh inviteCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*InviteCreate); ok {
 		eh(s, t)
 	}
@@ -1114,12 +1114,12 @@ func (eh inviteDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of InviteDelete.
-func (eh inviteDeleteEventHandler) New() interface{} {
+func (eh inviteDeleteEventHandler) New() any {
 	return &InviteDelete{}
 }
 
 // Handle is the handler for InviteDelete events.
-func (eh inviteDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh inviteDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*InviteDelete); ok {
 		eh(s, t)
 	}
@@ -1134,12 +1134,12 @@ func (eh messageAckEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageAck.
-func (eh messageAckEventHandler) New() interface{} {
+func (eh messageAckEventHandler) New() any {
 	return &MessageAck{}
 }
 
 // Handle is the handler for MessageAck events.
-func (eh messageAckEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageAckEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageAck); ok {
 		eh(s, t)
 	}
@@ -1154,12 +1154,12 @@ func (eh messageCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageCreate.
-func (eh messageCreateEventHandler) New() interface{} {
+func (eh messageCreateEventHandler) New() any {
 	return &MessageCreate{}
 }
 
 // Handle is the handler for MessageCreate events.
-func (eh messageCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageCreate); ok {
 		eh(s, t)
 	}
@@ -1174,12 +1174,12 @@ func (eh messageDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageDelete.
-func (eh messageDeleteEventHandler) New() interface{} {
+func (eh messageDeleteEventHandler) New() any {
 	return &MessageDelete{}
 }
 
 // Handle is the handler for MessageDelete events.
-func (eh messageDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageDelete); ok {
 		eh(s, t)
 	}
@@ -1194,12 +1194,12 @@ func (eh messageDeleteBulkEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageDeleteBulk.
-func (eh messageDeleteBulkEventHandler) New() interface{} {
+func (eh messageDeleteBulkEventHandler) New() any {
 	return &MessageDeleteBulk{}
 }
 
 // Handle is the handler for MessageDeleteBulk events.
-func (eh messageDeleteBulkEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageDeleteBulkEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageDeleteBulk); ok {
 		eh(s, t)
 	}
@@ -1214,12 +1214,12 @@ func (eh messageReactionAddEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageReactionAdd.
-func (eh messageReactionAddEventHandler) New() interface{} {
+func (eh messageReactionAddEventHandler) New() any {
 	return &MessageReactionAdd{}
 }
 
 // Handle is the handler for MessageReactionAdd events.
-func (eh messageReactionAddEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageReactionAddEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageReactionAdd); ok {
 		eh(s, t)
 	}
@@ -1234,12 +1234,12 @@ func (eh messageReactionRemoveEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageReactionRemove.
-func (eh messageReactionRemoveEventHandler) New() interface{} {
+func (eh messageReactionRemoveEventHandler) New() any {
 	return &MessageReactionRemove{}
 }
 
 // Handle is the handler for MessageReactionRemove events.
-func (eh messageReactionRemoveEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageReactionRemoveEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageReactionRemove); ok {
 		eh(s, t)
 	}
@@ -1254,12 +1254,12 @@ func (eh messageReactionRemoveAllEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageReactionRemoveAll.
-func (eh messageReactionRemoveAllEventHandler) New() interface{} {
+func (eh messageReactionRemoveAllEventHandler) New() any {
 	return &MessageReactionRemoveAll{}
 }
 
 // Handle is the handler for MessageReactionRemoveAll events.
-func (eh messageReactionRemoveAllEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageReactionRemoveAllEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageReactionRemoveAll); ok {
 		eh(s, t)
 	}
@@ -1274,12 +1274,12 @@ func (eh messageReactionRemoveEmojiEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageReactionRemoveEmoji.
-func (eh messageReactionRemoveEmojiEventHandler) New() interface{} {
+func (eh messageReactionRemoveEmojiEventHandler) New() any {
 	return &MessageReactionRemoveEmoji{}
 }
 
 // Handle is the handler for MessageReactionRemoveEmoji events.
-func (eh messageReactionRemoveEmojiEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageReactionRemoveEmojiEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageReactionRemoveEmoji); ok {
 		eh(s, t)
 	}
@@ -1294,12 +1294,12 @@ func (eh messageUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of MessageUpdate.
-func (eh messageUpdateEventHandler) New() interface{} {
+func (eh messageUpdateEventHandler) New() any {
 	return &MessageUpdate{}
 }
 
 // Handle is the handler for MessageUpdate events.
-func (eh messageUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh messageUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*MessageUpdate); ok {
 		eh(s, t)
 	}
@@ -1314,12 +1314,12 @@ func (eh presenceUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of PresenceUpdate.
-func (eh presenceUpdateEventHandler) New() interface{} {
+func (eh presenceUpdateEventHandler) New() any {
 	return &PresenceUpdate{}
 }
 
 // Handle is the handler for PresenceUpdate events.
-func (eh presenceUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh presenceUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*PresenceUpdate); ok {
 		eh(s, t)
 	}
@@ -1334,12 +1334,12 @@ func (eh presencesReplaceEventHandler) Type() string {
 }
 
 // New returns a new instance of PresencesReplace.
-func (eh presencesReplaceEventHandler) New() interface{} {
+func (eh presencesReplaceEventHandler) New() any {
 	return &PresencesReplace{}
 }
 
 // Handle is the handler for PresencesReplace events.
-func (eh presencesReplaceEventHandler) Handle(s *Session, i interface{}) {
+func (eh presencesReplaceEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*PresencesReplace); ok {
 		eh(s, t)
 	}
@@ -1354,7 +1354,7 @@ func (eh rateLimitEventHandler) Type() string {
 }
 
 // Handle is the handler for RateLimit events.
-func (eh rateLimitEventHandler) Handle(s *Session, i interface{}) {
+func (eh rateLimitEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*RateLimit); ok {
 		eh(s, t)
 	}
@@ -1369,12 +1369,12 @@ func (eh readyEventHandler) Type() string {
 }
 
 // New returns a new instance of Ready.
-func (eh readyEventHandler) New() interface{} {
+func (eh readyEventHandler) New() any {
 	return &Ready{}
 }
 
 // Handle is the handler for Ready events.
-func (eh readyEventHandler) Handle(s *Session, i interface{}) {
+func (eh readyEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*Ready); ok {
 		eh(s, t)
 	}
@@ -1389,12 +1389,12 @@ func (eh relationshipAddEventHandler) Type() string {
 }
 
 // New returns a new instance of RelationshipAdd.
-func (eh relationshipAddEventHandler) New() interface{} {
+func (eh relationshipAddEventHandler) New() any {
 	return &RelationshipAdd{}
 }
 
 // Handle is the handler for RelationshipAdd events.
-func (eh relationshipAddEventHandler) Handle(s *Session, i interface{}) {
+func (eh relationshipAddEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*RelationshipAdd); ok {
 		eh(s, t)
 	}
@@ -1409,12 +1409,12 @@ func (eh relationshipRemoveEventHandler) Type() string {
 }
 
 // New returns a new instance of RelationshipRemove.
-func (eh relationshipRemoveEventHandler) New() interface{} {
+func (eh relationshipRemoveEventHandler) New() any {
 	return &RelationshipRemove{}
 }
 
 // Handle is the handler for RelationshipRemove events.
-func (eh relationshipRemoveEventHandler) Handle(s *Session, i interface{}) {
+func (eh relationshipRemoveEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*RelationshipRemove); ok {
 		eh(s, t)
 	}
@@ -1429,12 +1429,12 @@ func (eh resumedEventHandler) Type() string {
 }
 
 // New returns a new instance of Resumed.
-func (eh resumedEventHandler) New() interface{} {
+func (eh resumedEventHandler) New() any {
 	return &Resumed{}
 }
 
 // Handle is the handler for Resumed events.
-func (eh resumedEventHandler) Handle(s *Session, i interface{}) {
+func (eh resumedEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*Resumed); ok {
 		eh(s, t)
 	}
@@ -1449,12 +1449,12 @@ func (eh stageInstanceCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of StageInstanceCreate.
-func (eh stageInstanceCreateEventHandler) New() interface{} {
+func (eh stageInstanceCreateEventHandler) New() any {
 	return &StageInstanceCreate{}
 }
 
 // Handle is the handler for StageInstanceCreate events.
-func (eh stageInstanceCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh stageInstanceCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*StageInstanceCreate); ok {
 		eh(s, t)
 	}
@@ -1469,12 +1469,12 @@ func (eh stageInstanceDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of StageInstanceDelete.
-func (eh stageInstanceDeleteEventHandler) New() interface{} {
+func (eh stageInstanceDeleteEventHandler) New() any {
 	return &StageInstanceDelete{}
 }
 
 // Handle is the handler for StageInstanceDelete events.
-func (eh stageInstanceDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh stageInstanceDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*StageInstanceDelete); ok {
 		eh(s, t)
 	}
@@ -1489,12 +1489,12 @@ func (eh stageInstanceUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of StageInstanceUpdate.
-func (eh stageInstanceUpdateEventHandler) New() interface{} {
+func (eh stageInstanceUpdateEventHandler) New() any {
 	return &StageInstanceUpdate{}
 }
 
 // Handle is the handler for StageInstanceUpdate events.
-func (eh stageInstanceUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh stageInstanceUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*StageInstanceUpdate); ok {
 		eh(s, t)
 	}
@@ -1509,12 +1509,12 @@ func (eh subscriptionCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of SubscriptionCreate.
-func (eh subscriptionCreateEventHandler) New() interface{} {
+func (eh subscriptionCreateEventHandler) New() any {
 	return &SubscriptionCreate{}
 }
 
 // Handle is the handler for SubscriptionCreate events.
-func (eh subscriptionCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh subscriptionCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*SubscriptionCreate); ok {
 		eh(s, t)
 	}
@@ -1529,12 +1529,12 @@ func (eh subscriptionDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of SubscriptionDelete.
-func (eh subscriptionDeleteEventHandler) New() interface{} {
+func (eh subscriptionDeleteEventHandler) New() any {
 	return &SubscriptionDelete{}
 }
 
 // Handle is the handler for SubscriptionDelete events.
-func (eh subscriptionDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh subscriptionDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*SubscriptionDelete); ok {
 		eh(s, t)
 	}
@@ -1549,12 +1549,12 @@ func (eh subscriptionUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of SubscriptionUpdate.
-func (eh subscriptionUpdateEventHandler) New() interface{} {
+func (eh subscriptionUpdateEventHandler) New() any {
 	return &SubscriptionUpdate{}
 }
 
 // Handle is the handler for SubscriptionUpdate events.
-func (eh subscriptionUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh subscriptionUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*SubscriptionUpdate); ok {
 		eh(s, t)
 	}
@@ -1569,12 +1569,12 @@ func (eh threadCreateEventHandler) Type() string {
 }
 
 // New returns a new instance of ThreadCreate.
-func (eh threadCreateEventHandler) New() interface{} {
+func (eh threadCreateEventHandler) New() any {
 	return &ThreadCreate{}
 }
 
 // Handle is the handler for ThreadCreate events.
-func (eh threadCreateEventHandler) Handle(s *Session, i interface{}) {
+func (eh threadCreateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ThreadCreate); ok {
 		eh(s, t)
 	}
@@ -1589,12 +1589,12 @@ func (eh threadDeleteEventHandler) Type() string {
 }
 
 // New returns a new instance of ThreadDelete.
-func (eh threadDeleteEventHandler) New() interface{} {
+func (eh threadDeleteEventHandler) New() any {
 	return &ThreadDelete{}
 }
 
 // Handle is the handler for ThreadDelete events.
-func (eh threadDeleteEventHandler) Handle(s *Session, i interface{}) {
+func (eh threadDeleteEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ThreadDelete); ok {
 		eh(s, t)
 	}
@@ -1609,12 +1609,12 @@ func (eh threadListSyncEventHandler) Type() string {
 }
 
 // New returns a new instance of ThreadListSync.
-func (eh threadListSyncEventHandler) New() interface{} {
+func (eh threadListSyncEventHandler) New() any {
 	return &ThreadListSync{}
 }
 
 // Handle is the handler for ThreadListSync events.
-func (eh threadListSyncEventHandler) Handle(s *Session, i interface{}) {
+func (eh threadListSyncEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ThreadListSync); ok {
 		eh(s, t)
 	}
@@ -1629,12 +1629,12 @@ func (eh threadMemberUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ThreadMemberUpdate.
-func (eh threadMemberUpdateEventHandler) New() interface{} {
+func (eh threadMemberUpdateEventHandler) New() any {
 	return &ThreadMemberUpdate{}
 }
 
 // Handle is the handler for ThreadMemberUpdate events.
-func (eh threadMemberUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh threadMemberUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ThreadMemberUpdate); ok {
 		eh(s, t)
 	}
@@ -1649,12 +1649,12 @@ func (eh threadMembersUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ThreadMembersUpdate.
-func (eh threadMembersUpdateEventHandler) New() interface{} {
+func (eh threadMembersUpdateEventHandler) New() any {
 	return &ThreadMembersUpdate{}
 }
 
 // Handle is the handler for ThreadMembersUpdate events.
-func (eh threadMembersUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh threadMembersUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ThreadMembersUpdate); ok {
 		eh(s, t)
 	}
@@ -1669,12 +1669,12 @@ func (eh threadUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of ThreadUpdate.
-func (eh threadUpdateEventHandler) New() interface{} {
+func (eh threadUpdateEventHandler) New() any {
 	return &ThreadUpdate{}
 }
 
 // Handle is the handler for ThreadUpdate events.
-func (eh threadUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh threadUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*ThreadUpdate); ok {
 		eh(s, t)
 	}
@@ -1689,12 +1689,12 @@ func (eh typingStartEventHandler) Type() string {
 }
 
 // New returns a new instance of TypingStart.
-func (eh typingStartEventHandler) New() interface{} {
+func (eh typingStartEventHandler) New() any {
 	return &TypingStart{}
 }
 
 // Handle is the handler for TypingStart events.
-func (eh typingStartEventHandler) Handle(s *Session, i interface{}) {
+func (eh typingStartEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*TypingStart); ok {
 		eh(s, t)
 	}
@@ -1709,12 +1709,12 @@ func (eh userGuildSettingsUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of UserGuildSettingsUpdate.
-func (eh userGuildSettingsUpdateEventHandler) New() interface{} {
+func (eh userGuildSettingsUpdateEventHandler) New() any {
 	return &UserGuildSettingsUpdate{}
 }
 
 // Handle is the handler for UserGuildSettingsUpdate events.
-func (eh userGuildSettingsUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh userGuildSettingsUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*UserGuildSettingsUpdate); ok {
 		eh(s, t)
 	}
@@ -1729,12 +1729,12 @@ func (eh userNoteUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of UserNoteUpdate.
-func (eh userNoteUpdateEventHandler) New() interface{} {
+func (eh userNoteUpdateEventHandler) New() any {
 	return &UserNoteUpdate{}
 }
 
 // Handle is the handler for UserNoteUpdate events.
-func (eh userNoteUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh userNoteUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*UserNoteUpdate); ok {
 		eh(s, t)
 	}
@@ -1749,12 +1749,12 @@ func (eh userSettingsUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of UserSettingsUpdate.
-func (eh userSettingsUpdateEventHandler) New() interface{} {
+func (eh userSettingsUpdateEventHandler) New() any {
 	return &UserSettingsUpdate{}
 }
 
 // Handle is the handler for UserSettingsUpdate events.
-func (eh userSettingsUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh userSettingsUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*UserSettingsUpdate); ok {
 		eh(s, t)
 	}
@@ -1769,12 +1769,12 @@ func (eh userUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of UserUpdate.
-func (eh userUpdateEventHandler) New() interface{} {
+func (eh userUpdateEventHandler) New() any {
 	return &UserUpdate{}
 }
 
 // Handle is the handler for UserUpdate events.
-func (eh userUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh userUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*UserUpdate); ok {
 		eh(s, t)
 	}
@@ -1789,12 +1789,12 @@ func (eh voiceChannelEffectSendEventHandler) Type() string {
 }
 
 // New returns a new instance of VoiceChannelEffectSend.
-func (eh voiceChannelEffectSendEventHandler) New() interface{} {
+func (eh voiceChannelEffectSendEventHandler) New() any {
 	return &VoiceChannelEffectSend{}
 }
 
 // Handle is the handler for VoiceChannelEffectSend events.
-func (eh voiceChannelEffectSendEventHandler) Handle(s *Session, i interface{}) {
+func (eh voiceChannelEffectSendEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*VoiceChannelEffectSend); ok {
 		eh(s, t)
 	}
@@ -1809,12 +1809,12 @@ func (eh voiceChannelStatusUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of VoiceChannelStatusUpdate.
-func (eh voiceChannelStatusUpdateEventHandler) New() interface{} {
+func (eh voiceChannelStatusUpdateEventHandler) New() any {
 	return &VoiceChannelStatusUpdate{}
 }
 
 // Handle is the handler for VoiceChannelStatusUpdate events.
-func (eh voiceChannelStatusUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh voiceChannelStatusUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*VoiceChannelStatusUpdate); ok {
 		eh(s, t)
 	}
@@ -1829,12 +1829,12 @@ func (eh voiceChannelStartTimeUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of VoiceChannelStartTimeStatusUpdate.
-func (eh voiceChannelStartTimeUpdateEventHandler) New() interface{} {
+func (eh voiceChannelStartTimeUpdateEventHandler) New() any {
 	return &VoiceChannelStartTimeStatusUpdate{}
 }
 
 // Handle is the handler for VoiceChannelStartTimeStatusUpdate events.
-func (eh voiceChannelStartTimeUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh voiceChannelStartTimeUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*VoiceChannelStartTimeStatusUpdate); ok {
 		eh(s, t)
 	}
@@ -1849,12 +1849,12 @@ func (eh voiceServerUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of VoiceServerUpdate.
-func (eh voiceServerUpdateEventHandler) New() interface{} {
+func (eh voiceServerUpdateEventHandler) New() any {
 	return &VoiceServerUpdate{}
 }
 
 // Handle is the handler for VoiceServerUpdate events.
-func (eh voiceServerUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh voiceServerUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*VoiceServerUpdate); ok {
 		eh(s, t)
 	}
@@ -1869,12 +1869,12 @@ func (eh voiceStateUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of VoiceStateUpdate.
-func (eh voiceStateUpdateEventHandler) New() interface{} {
+func (eh voiceStateUpdateEventHandler) New() any {
 	return &VoiceStateUpdate{}
 }
 
 // Handle is the handler for VoiceStateUpdate events.
-func (eh voiceStateUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh voiceStateUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*VoiceStateUpdate); ok {
 		eh(s, t)
 	}
@@ -1889,20 +1889,20 @@ func (eh webhooksUpdateEventHandler) Type() string {
 }
 
 // New returns a new instance of WebhooksUpdate.
-func (eh webhooksUpdateEventHandler) New() interface{} {
+func (eh webhooksUpdateEventHandler) New() any {
 	return &WebhooksUpdate{}
 }
 
 // Handle is the handler for WebhooksUpdate events.
-func (eh webhooksUpdateEventHandler) Handle(s *Session, i interface{}) {
+func (eh webhooksUpdateEventHandler) Handle(s *Session, i any) {
 	if t, ok := i.(*WebhooksUpdate); ok {
 		eh(s, t)
 	}
 }
 
-func handlerForInterface(handler interface{}) EventHandler {
+func handlerForInterface(handler any) EventHandler {
 	switch v := handler.(type) {
-	case func(*Session, interface{}):
+	case func(*Session, any):
 		return interfaceEventHandler(v)
 	case func(*Session, *ApplicationCommandCreate):
 		return applicationCommandCreateEventHandler(v)

@@ -115,7 +115,7 @@ func (p *Plugin) InitWeb() {
 	web.ServerPublicAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
 }
 
-func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleGetReputation(w http.ResponseWriter, r *http.Request) any {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	if _, ok := templateData["RepSettings"]; !ok {
@@ -263,7 +263,7 @@ func HandleDeleteRepRole(w http.ResponseWriter, r *http.Request) (templateData w
 	return templateData, err
 }
 
-func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) any {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf, err := GetConfig(r.Context(), activeGuild.ID)
@@ -312,7 +312,7 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	return entries
 }
 
-func HandleLogsJson(W http.ResponseWriter, r *http.Request) interface{} {
+func HandleLogsJson(W http.ResponseWriter, r *http.Request) any {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	query := r.URL.Query()

@@ -171,7 +171,7 @@ type Bucket struct {
 
 	lastReset       time.Time
 	customRateLimit *customRateLimit
-	Userdata        interface{}
+	Userdata        any
 
 	lockCounter *int64
 }

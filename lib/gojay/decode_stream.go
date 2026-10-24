@@ -110,6 +110,6 @@ func (dec *StreamDecoder) Err() error {
 }
 
 // Value implements context.Context
-func (dec *StreamDecoder) Value(key interface{}) interface{} {
+func (dec *StreamDecoder) Value(key any) any {
 	return nil
 }

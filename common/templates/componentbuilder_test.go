@@ -125,7 +125,7 @@ func TestComponentBuilderMsgpackRoundTrip(t *testing.T) {
 	if len(buttons) != 1 {
 		t.Fatalf("expected Get to find the buttons entry, got %v", buttons)
 	}
-	if button := (*buttons[0].(*Slice))[0]; reflect.TypeOf(button) != reflect.TypeOf(&discordgo.Button{}) {
+	if button := (*buttons[0].(*Slice))[0]; reflect.TypeOf(button) != reflect.TypeFor[*discordgo.Button]() {
 		t.Errorf("expected a typed button, got %T", button)
 	}
 

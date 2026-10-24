@@ -59,7 +59,7 @@ func init() {
 		digits[i] = i - int8('0')
 	}
 
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		switch i {
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'e', 'E', '+', '-':
 			skipNumberEndCursorIncrement[i] = 1

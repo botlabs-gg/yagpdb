@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "server", Type: dcmd.BigInt},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		err := common.BotSession.GuildLeave(data.Args[0].Int64())
 		if err == nil {
 			return "Left " + data.Args[0].Str(), nil

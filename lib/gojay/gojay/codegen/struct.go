@@ -16,7 +16,7 @@ type Struct struct {
 	Body  string
 }
 
-//Generate generates decoderCode + structRelease + encoderCode
+// Generate generates decoderCode + structRelease + encoderCode
 func (s *Struct) Generate() (string, error) {
 	return s.generateEncoding(s.TypeInfo)
 }
@@ -103,7 +103,7 @@ func (s *Struct) generateFieldReset(fields []*toolbox.FieldInfo) ([]string, erro
 func (s *Struct) generateFieldDecoding(fields []*toolbox.FieldInfo) (string, []string, error) {
 
 	fieldCases := []string{}
-	var initCode = ""
+	var initCode strings.Builder
 	for i := range fields {
 		if isSkipable(s.options, fields[i]) {
 			continue
@@ -127,13 +127,13 @@ func (s *Struct) generateFieldDecoding(fields []*toolbox.FieldInfo) (string, []s
 					if err != nil {
 						return "", nil, err
 					}
-					initCode += init
+					initCode.WriteString(init)
 				}
 				init, embeddedCases, err := s.generateFieldDecoding(fieldTypeInfo.Fields())
 				if err != nil {
 					return "", nil, err
 				}
-				initCode += init
+				initCode.WriteString(init)
 				fieldCases = append(fieldCases, embeddedCases...)
 			}
 			continue
@@ -207,7 +207,7 @@ func (s *Struct) generateFieldDecoding(fields []*toolbox.FieldInfo) (string, []s
 		}
 
 	}
-	return initCode, fieldCases, nil
+	return initCode.String(), fieldCases, nil
 }
 
 func (s *Struct) generateEmbeddedFieldEncoding(field *Field, fieldTypeInfo *toolbox.TypeInfo) ([]string, error) {

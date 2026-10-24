@@ -1,7 +1,8 @@
 package weather
 
 import (
-	"io/ioutil"
+	"io"
+
 	"net/http"
 	"net/url"
 	"regexp"
@@ -32,7 +33,7 @@ var Command = &commands.YAGCommand{
 	},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		where := data.Args[0].Str()
 
 		req, err := http.NewRequest("GET", "http://wttr.in/"+url.PathEscape(where)+"?m", nil)
@@ -47,7 +48,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -70,17 +71,18 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		out := "```\n"
-		for i := 0; i < 7; i++ {
+		var out strings.Builder
+		out.WriteString("```\n")
+		for i := range 7 {
 			if i >= len(split) {
 				break
 			}
 			line := strings.ReplaceAll(split[i], "`", "'")
-			out += strings.TrimRight(line, " ") + "\n"
+			out.WriteString(strings.TrimRight(line, " ") + "\n")
 		}
-		out += "\n```"
+		out.WriteString("\n```")
 
-		return out, nil
+		return out.String(), nil
 	},
 }
 

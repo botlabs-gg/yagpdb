@@ -25,7 +25,7 @@ func TestConcurrencyMarshal(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		go f(i, t)
 	}
 	time.Sleep(2 * time.Second)

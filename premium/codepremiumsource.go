@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"fmt"
+	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -137,15 +138,15 @@ var keyEncoder = base32.StdEncoding.WithPadding(base32.NoPadding)
 
 func encodeKey(rawKey []byte) string {
 	str := keyEncoder.EncodeToString(rawKey)
-	output := ""
+	var output strings.Builder
 	for i, r := range str {
 		if i%6 == 0 && i != 0 {
-			output += "-"
+			output.WriteString("-")
 		}
-		output += string(r)
+		output.WriteString(string(r))
 	}
 
-	return output
+	return output.String()
 }
 
 var cmdGenerateCode = &commands.YAGCommand{
@@ -161,7 +162,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 		{Name: "NumCodes", Type: dcmd.Int},
 		{Name: "Message", Type: dcmd.String},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		numKeys := data.Args[1].Int()
 		duration := data.Args[0].Value.(time.Duration)
 		codes := make([]string, 0, numKeys)
@@ -170,7 +171,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 			duration = -1
 		}
 
-		for i := 0; i < numKeys; i++ {
+		for range numKeys {
 			code, err := TryRetryGenerateCode(data.Context(), data.Args[2].Str(), duration)
 			if err != nil {
 				return nil, err
@@ -179,15 +180,16 @@ var cmdGenerateCode = &commands.YAGCommand{
 			codes = append(codes, code.Code)
 		}
 
-		dm := fmt.Sprintf("Duration: `%s`, Permanent: `%t`, Message: `%s`\n```\n", duration.String(), duration == -1, data.Args[2].Str())
+		var dm strings.Builder
+		dm.WriteString(fmt.Sprintf("Duration: `%s`, Permanent: `%t`, Message: `%s`\n```\n", duration.String(), duration == -1, data.Args[2].Str()))
 
 		for _, v := range codes {
-			dm += v + "\n"
+			dm.WriteString(v + "\n")
 		}
 
-		dm += "```"
+		dm.WriteString("```")
 
-		bot.SendDM(data.Author.ID, dm)
+		bot.SendDM(data.Author.ID, dm.String())
 		return "Check yer dms", nil
 	}),
 }

@@ -9,7 +9,7 @@ import (
 func benchGuildCreate(b *testing.B, n int) {
 	members := make([]*discordgo.Member, n)
 	presences := make([]*discordgo.Presence, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		id := int64(100000 + i)
 		members[i] = createTestMember(5, id, nil)
 		presences[i] = &discordgo.Presence{User: createTestUser(id)}

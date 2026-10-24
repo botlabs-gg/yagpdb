@@ -117,7 +117,7 @@ var configCache = ccache.New(ccache.Configure().MaxSize(15000))
 func BotCachedGetConfig(guildID int64) (*Config, error) {
 	const cacheDuration = 10 * time.Minute
 
-	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
+	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (any, error) {
 		return FetchConfig(guildID)
 	})
 	if err != nil {
@@ -142,7 +142,7 @@ type ScheduledUnbanData struct {
 	UserID int64 `json:"user_id"`
 }
 
-func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
+func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data any) {
 	if evt == bot.EvtMember {
 		ms := data.(*dstate.MemberState)
 		if ms.User.ID == common.BotUser.ID {
@@ -635,7 +635,7 @@ func handleMigrateScheduledUnban(t time.Time, data string) error {
 	})
 }
 
-func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data any) (retry bool, err error) {
 	unmuteData := data.(*ScheduledUnmuteData)
 
 	member, err := bot.GetMember(evt.GuildID, unmuteData.UserID)
@@ -655,7 +655,7 @@ const (
 	scheduledUnbanReason = "Timed ban expired"
 )
 
-func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data any) (retry bool, err error) {
 	unbanData := data.(*ScheduledUnbanData)
 
 	guildID := evt.GuildID

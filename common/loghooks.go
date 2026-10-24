@@ -34,7 +34,7 @@ func (hook ContextHook) Fire(entry *logrus.Entry) error {
 	pc := make([]uintptr, 3)
 	cnt := runtime.Callers(6, pc)
 
-	for i := 0; i < cnt; i++ {
+	for i := range cnt {
 		fu := runtime.FuncForPC(pc[i] - 1)
 		name := fu.Name()
 		if !strings.Contains(name, "github.com/sirupsen/logrus") {
@@ -62,8 +62,8 @@ func (p *STDLogProxy) Write(b []byte) (n int, err error) {
 	stack := filepath.Base(name) + ":" + filepath.Base(file) + ":" + strconv.Itoa(line)
 
 	logLine := string(b)
-	if strings.HasSuffix(logLine, "\n") {
-		logLine = strings.TrimSuffix(logLine, "\n")
+	if before, ok := strings.CutSuffix(logLine, "\n"); ok {
+		logLine = before
 	}
 
 	l := logrus.WithField("stck", stack)
@@ -81,7 +81,7 @@ var metricsHighRatelimits = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Ratelimits above 1000 seconds",
 })
 
-func discordLogger(msgL, caller int, format string, a ...interface{}) {
+func discordLogger(msgL, caller int, format string, a ...any) {
 	pc := make([]uintptr, 3)
 	runtime.Callers(caller+1, pc)
 	fu := runtime.FuncForPC(pc[0] - 1)
@@ -111,7 +111,7 @@ var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.Counte
 	Help: "Total number of request guild members commands sent",
 }, []string{"shard"})
 
-func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...interface{}) {
+func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...any) {
 	if msgf == "Sending request guild members" {
 		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shardID)}).Add(1)
 		return

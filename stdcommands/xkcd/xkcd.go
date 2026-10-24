@@ -3,7 +3,8 @@ package xkcd
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"math/rand"
 	"net/http"
 
@@ -41,7 +42,7 @@ var Command = &commands.YAGCommand{
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 
 		//first query to get latest number
 		latest := false
@@ -114,7 +115,7 @@ func getComic(number ...int64) (*Xkcd, error) {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

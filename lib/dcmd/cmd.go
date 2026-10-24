@@ -35,7 +35,7 @@ type Cmd interface {
 	// response is either string, error, embed or custom that implements CmdResponse
 	// if response is nil, and an error is returned that is not PublicError,
 	// the string "An error occured. Contact bot owner" becomes the response
-	Run(data *Data) (interface{}, error)
+	Run(data *Data) (any, error)
 }
 
 // CmdWithDescriptions commands will have the descriptions used in the standard help generator

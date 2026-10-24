@@ -36,7 +36,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.Post("/notifications/general/"), postHandler)
 }
 
-func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 

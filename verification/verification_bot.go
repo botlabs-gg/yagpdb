@@ -255,8 +255,8 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	p.logAction(guildID, conf.LogChannel, target, "New user joined waiting to be verified as a human", 0x47aaed)
 }
 
-func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (bool, error)) func(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
-	return func(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData any) (bool, error)) func(evt *seventsmodels.ScheduledEvent, data any) (retry bool, err error) {
+	return func(evt *seventsmodels.ScheduledEvent, data any) (retry bool, err error) {
 
 		userID := int64(0)
 
@@ -288,7 +288,7 @@ func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, c
 
 }
 
-func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
+func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData any) (retry bool, err error) {
 	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.User.ID, conf.VerifiedRole)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
@@ -436,7 +436,7 @@ func (p *Plugin) CheckBanned(guildID int64, users []*discordgo.User) (*discordgo
 	return nil, nil
 }
 
-func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
+func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData any) (retry bool, err error) {
 	if p.checkMemberAlreadyVerified(ms, conf) {
 		return false, nil
 	}
@@ -516,7 +516,7 @@ func (p *Plugin) sendVerificationDM(conf *models.VerificationConfig, gs *dstate.
 	}
 }
 
-func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
+func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData any) (retry bool, err error) {
 	if p.checkMemberAlreadyVerified(ms, conf) {
 		return false, nil
 	}

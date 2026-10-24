@@ -190,7 +190,7 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 }
 
 func (p *PostHandlerImpl) getConfigs(subreddit string) ([]*models.RedditFeed, error) {
-	var key interface{}
+	var key any
 	key = KeySlowFeeds(subreddit)
 	if !p.Slow {
 		key = KeyFastFeeds(subreddit)

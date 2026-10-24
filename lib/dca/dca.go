@@ -28,7 +28,7 @@ type OpusReader interface {
 var Logger *log.Logger
 
 // logln logs to assigned logger or standard logger
-func logln(s ...interface{}) {
+func logln(s ...any) {
 	if Logger != nil {
 		Logger.Println(s...)
 		return
@@ -38,7 +38,7 @@ func logln(s ...interface{}) {
 }
 
 // logln logs to assigned logger or standard logger
-func logf(format string, a ...interface{}) {
+func logf(format string, a ...any) {
 	if Logger != nil {
 		Logger.Printf(format, a...)
 		return

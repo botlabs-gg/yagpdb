@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "memstats",
 	Description:          "Full memory statistics. Bot Owner Only",
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 

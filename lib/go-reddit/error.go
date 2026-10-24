@@ -3,7 +3,7 @@ package reddit
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+
 	"net/http"
 )
 
@@ -21,7 +21,7 @@ func (e *Error) Error() string {
 func NewError(resp *http.Response) error {
 	defer resp.Body.Close()
 
-	d, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	d, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 
 	return &Error{
 		Code:    resp.StatusCode,

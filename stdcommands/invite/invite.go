@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	DefaultEnabled:      true,
 	RunInDM:             true,
 
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		return "Please add the bot through the website\nhttps://" + common.ConfHost.GetString(), nil
 	},
 }

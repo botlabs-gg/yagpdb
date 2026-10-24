@@ -113,7 +113,7 @@ func (c *Conn) Listen() {
 
 // Send sends the specified message over the connection, marshaling the data using json
 // this locks the writer
-func (c *Conn) Send(evtID EventType, data interface{}) error {
+func (c *Conn) Send(evtID EventType, data any) error {
 
 	encoded, err := EncodeMessage(evtID, data)
 	if err != nil {
@@ -128,7 +128,7 @@ func (c *Conn) Send(evtID EventType, data interface{}) error {
 }
 
 // Same as Send but logs the error (usefull for launching send in new goroutines)
-func (c *Conn) SendLogErr(evtID EventType, data interface{}) {
+func (c *Conn) SendLogErr(evtID EventType, data any) {
 	err := c.Send(evtID, data)
 	if err != nil {
 		c.Log(LogError, err, "failed sending message")

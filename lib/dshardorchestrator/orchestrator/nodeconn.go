@@ -163,7 +163,7 @@ func (nc *NodeConn) validateTotalShards(data *dshardorchestrator.IdentifyData) (
 		nc.Orchestrator.mu.Unlock()
 
 		if !nc.Orchestrator.SkipSafeStartupDelayMaxShards {
-			for i := 0; i < 100; i++ {
+			for range 100 {
 				time.Sleep(time.Millisecond * 100)
 
 				nc.Orchestrator.mu.Lock()

@@ -29,7 +29,7 @@ var Command = &commands.YAGCommand{
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		computeLock.Lock()
 		defer computeLock.Unlock()
 		toCompute := data.Args[0].Str()

@@ -3,7 +3,7 @@ package patreonapi
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -29,7 +29,7 @@ func NewClient(client *http.Client) *Client {
 	return &Client{httpClient: client}
 }
 
-func (c *Client) Get(path string, dataDst interface{}) error {
+func (c *Client) Get(path string, dataDst any) error {
 	resp, err := c.httpClient.Get(APIBase + path)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *Client) Get(path string, dataDst interface{}) error {
 	}
 
 	if dataDst != nil {
-		fullbody, err := ioutil.ReadAll(resp.Body)
+		fullbody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func (c *Client) Get(path string, dataDst interface{}) error {
 }
 
 func (c *Client) reqError(msg string, resp *http.Response) error {
-	fullbody, _ := ioutil.ReadAll(resp.Body)
+	fullbody, _ := io.ReadAll(resp.Body)
 
 	return errors.New(msg + ": " + string(fullbody))
 }

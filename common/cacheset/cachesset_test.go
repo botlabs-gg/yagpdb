@@ -17,12 +17,12 @@ func TestGuildCacheBasic(t *testing.T) {
 	man := NewManager(time.Second)
 
 	fetchCounter := 0
-	slot := man.RegisterSlot("test", func(key interface{}) (interface{}, error) {
+	slot := man.RegisterSlot("test", func(key any) (any, error) {
 		fetchCounter++
 		return true, nil
 	}, int64(10))
 
-	checkValue := func(v interface{}) {
+	checkValue := func(v any) {
 		cast, ok := v.(bool)
 		if !ok {
 			t.Fatal("value is not bool: ", reflect.TypeOf(v))
@@ -69,7 +69,7 @@ func TestGuildCacheBasic(t *testing.T) {
 
 type resEntry struct {
 	err error
-	v   interface{}
+	v   any
 }
 
 // this tests the waiting and broadcast of the cache
@@ -78,13 +78,13 @@ func TestWaiting(t *testing.T) {
 	man := NewManager(time.Second)
 
 	fetchCounter := 0
-	slot := man.RegisterSlot("test", func(key interface{}) (interface{}, error) {
+	slot := man.RegisterSlot("test", func(key any) (any, error) {
 		fetchCounter++
 		time.Sleep(time.Second)
 		return true, nil
 	}, int64(10))
 
-	checkValue := func(v interface{}) {
+	checkValue := func(v any) {
 		cast, ok := v.(bool)
 		if !ok {
 			t.Fatal("value is not bool: ", reflect.TypeOf(v))
@@ -98,7 +98,7 @@ func TestWaiting(t *testing.T) {
 	resChan := make(chan resEntry)
 	nGoroutines := 100
 
-	for i := 0; i < nGoroutines; i++ {
+	for range nGoroutines {
 		go func() {
 			vg, errg := slot.Get(1)
 			resChan <- resEntry{
@@ -112,7 +112,7 @@ func TestWaiting(t *testing.T) {
 	expectNoErr(t, err)
 	checkValue(v2)
 
-	for i := 0; i < nGoroutines; i++ {
+	for range nGoroutines {
 		// check all results
 		gres := <-resChan
 		expectNoErr(t, gres.err)
@@ -135,7 +135,7 @@ func TestConcurrentFetch(t *testing.T) {
 	fetchCounter := 0
 	var fetchmu sync.Mutex
 	var otherWaiting chan bool
-	slot := man.RegisterSlot("test", func(key interface{}) (interface{}, error) {
+	slot := man.RegisterSlot("test", func(key any) (any, error) {
 		fetchmu.Lock()
 		fetchCounter++
 
@@ -156,7 +156,7 @@ func TestConcurrentFetch(t *testing.T) {
 		return true, nil
 	}, int64(10))
 
-	checkValue := func(v interface{}) {
+	checkValue := func(v any) {
 		cast, ok := v.(bool)
 		if !ok {
 			t.Fatal("value is not bool: ", reflect.TypeOf(v))
@@ -170,7 +170,7 @@ func TestConcurrentFetch(t *testing.T) {
 	resChan := make(chan resEntry)
 	nGoroutines := 100
 
-	for i := 0; i < nGoroutines; i++ {
+	for i := range nGoroutines {
 		go func(id int) {
 			vg, errg := slot.Get(id)
 			resChan <- resEntry{
@@ -184,7 +184,7 @@ func TestConcurrentFetch(t *testing.T) {
 	expectNoErr(t, err)
 	checkValue(v2)
 
-	for i := 0; i < nGoroutines; i++ {
+	for range nGoroutines {
 		// check all results
 		gres := <-resChan
 		expectNoErr(t, gres.err)

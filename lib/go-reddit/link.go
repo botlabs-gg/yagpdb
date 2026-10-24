@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -32,46 +32,46 @@ type Link struct {
 	Domain              string  `json:"domain"`
 	Downs               int     `json:"downs"`
 	// This can be a bool or a timestamp apperentely, what the fuck
-	Edited            interface{}   `json:"edited"`
-	Gilded            int           `json:"gilded"`
-	Hidden            bool          `json:"hidden"`
-	HideScore         bool          `json:"hide_score"`
-	ID                string        `json:"id"`
-	IsSelf            bool          `json:"is_self"`
-	Likes             bool          `json:"likes"`
-	LinkFlairCSSClass string        `json:"link_flair_css_class"`
-	LinkFlairText     string        `json:"link_flair_text"`
-	Locked            bool          `json:"locked"`
-	Media             Media         `json:"media"`
-	MediaEmbed        interface{}   `json:"media_embed"`
-	ModReports        []interface{} `json:"mod_reports"`
-	Name              string        `json:"name"`
-	NumComments       int           `json:"num_comments"`
-	NumReports        int           `json:"num_reports"`
-	Over18            bool          `json:"over_18"`
-	Permalink         string        `json:"permalink"`
-	PostHint          string        `json:"post_hint"`
-	Quarantine        bool          `json:"quarantine"`
-	RemovalReason     interface{}   `json:"removal_reason"`
-	ReportReasons     []interface{} `json:"report_reasons"`
-	Saved             bool          `json:"saved"`
-	Score             int           `json:"score"`
-	SecureMedia       interface{}   `json:"secure_media"`
-	SecureMediaEmbed  interface{}   `json:"secure_media_embed"`
-	SelftextHTML      string        `json:"selftext_html"`
-	Selftext          string        `json:"selftext"`
-	Stickied          bool          `json:"stickied"`
-	Subreddit         string        `json:"subreddit"`
-	SubredditID       string        `json:"subreddit_id"`
-	SuggestedSort     string        `json:"suggested_sort"`
-	Thumbnail         string        `json:"thumbnail"`
-	Title             string        `json:"title"`
-	URL               string        `json:"url"`
-	Ups               int           `json:"ups"`
-	UserReports       []interface{} `json:"user_reports"`
-	Visited           bool          `json:"visited"`
-	IsRobotIndexable  bool          `json:"is_robot_indexable"`
-	Spoiler           bool          `json:"spoiler"`
+	Edited            any    `json:"edited"`
+	Gilded            int    `json:"gilded"`
+	Hidden            bool   `json:"hidden"`
+	HideScore         bool   `json:"hide_score"`
+	ID                string `json:"id"`
+	IsSelf            bool   `json:"is_self"`
+	Likes             bool   `json:"likes"`
+	LinkFlairCSSClass string `json:"link_flair_css_class"`
+	LinkFlairText     string `json:"link_flair_text"`
+	Locked            bool   `json:"locked"`
+	Media             Media  `json:"media"`
+	MediaEmbed        any    `json:"media_embed"`
+	ModReports        []any  `json:"mod_reports"`
+	Name              string `json:"name"`
+	NumComments       int    `json:"num_comments"`
+	NumReports        int    `json:"num_reports"`
+	Over18            bool   `json:"over_18"`
+	Permalink         string `json:"permalink"`
+	PostHint          string `json:"post_hint"`
+	Quarantine        bool   `json:"quarantine"`
+	RemovalReason     any    `json:"removal_reason"`
+	ReportReasons     []any  `json:"report_reasons"`
+	Saved             bool   `json:"saved"`
+	Score             int    `json:"score"`
+	SecureMedia       any    `json:"secure_media"`
+	SecureMediaEmbed  any    `json:"secure_media_embed"`
+	SelftextHTML      string `json:"selftext_html"`
+	Selftext          string `json:"selftext"`
+	Stickied          bool   `json:"stickied"`
+	Subreddit         string `json:"subreddit"`
+	SubredditID       string `json:"subreddit_id"`
+	SuggestedSort     string `json:"suggested_sort"`
+	Thumbnail         string `json:"thumbnail"`
+	Title             string `json:"title"`
+	URL               string `json:"url"`
+	Ups               int    `json:"ups"`
+	UserReports       []any  `json:"user_reports"`
+	Visited           bool   `json:"visited"`
+	IsRobotIndexable  bool   `json:"is_robot_indexable"`
+	Spoiler           bool   `json:"spoiler"`
 }
 
 const linkType = "t3"
@@ -84,8 +84,8 @@ type linkListing struct {
 			Kind string `json:"kind"`
 			Data Link   `json:"data"`
 		} `json:"children"`
-		After  string      `json:"after"`
-		Before interface{} `json:"before"`
+		After  string `json:"after"`
+		Before any    `json:"before"`
 	} `json:"data"`
 }
 
@@ -174,7 +174,7 @@ func (c *Client) getLinks(subreddit string, sort, before, after string) ([]*Link
 
 	defer resp.Body.Close()
 
-	d, err := ioutil.ReadAll(resp.Body)
+	d, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (c *Client) LinksInfo(fullnames []string) ([]*Link, error) {
 
 	logrus.Debugf("Response Headers for %v \n", req.URL)
 	logrus.Debugf("%#v \n", resp.Header)
-	d, err := ioutil.ReadAll(resp.Body)
+	d, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logrus.WithError(err).Error("Failed parsing reddit feed body")
 		return nil, err

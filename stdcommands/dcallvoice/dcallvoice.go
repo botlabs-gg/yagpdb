@@ -16,7 +16,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "dcallvoice",
 	Description:          "Disconnects from all the voice channels the bot is in. Bot Owner Only",
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 
 		vcs := make([]*discordgo.VoiceState, 0)
 

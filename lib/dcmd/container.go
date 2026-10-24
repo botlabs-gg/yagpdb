@@ -11,7 +11,7 @@ import (
 )
 
 type MiddleWareFunc func(next RunFunc) RunFunc
-type RunFunc func(data *Data) (interface{}, error)
+type RunFunc func(data *Data) (any, error)
 
 // Container is the standard muxer
 // Containers can be nested by calling Container.Sub(...)
@@ -66,7 +66,7 @@ func (c *Container) Descriptions(data *Data) (string, string) {
 	return c.Description, c.LongDescription
 }
 
-func (c *Container) Run(data *Data) (interface{}, error) {
+func (c *Container) Run(data *Data) (any, error) {
 
 	var matchingCmd *RegisteredCommand
 
@@ -76,7 +76,7 @@ func (c *Container) Run(data *Data) (interface{}, error) {
 		depth := len(data.ContainerChain)
 		options := data.SlashCommandTriggerData.Interaction.DataCommand.Options
 		name := data.SlashCommandTriggerData.Interaction.DataCommand.Name
-		for i := 0; i < depth; i++ {
+		for range depth {
 			if options[0] == nil {
 				return nil, errors.New("options is nil")
 			}

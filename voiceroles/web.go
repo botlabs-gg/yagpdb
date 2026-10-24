@@ -86,7 +86,7 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Post("/:id/delete"), web.ControllerPostHandler(handleDeleteVoiceRole, getHandler, nil))
 }
 
-func handleGetVoiceRole(w http.ResponseWriter, r *http.Request) interface{} {
+func handleGetVoiceRole(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 

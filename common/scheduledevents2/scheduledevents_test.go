@@ -54,7 +54,7 @@ func TestScheduleHandle(t *testing.T) {
 	}
 
 	doneChan := make(chan bool)
-	RegisterHandler("test", nil, func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
+	RegisterHandler("test", nil, func(evt *models.ScheduledEvent, data any) (retry bool, err error) {
 		doneChan <- true
 		return false, nil
 	})
@@ -86,7 +86,7 @@ func TestScheduleHandleSlow(t *testing.T) {
 	}
 
 	doneChan := make(chan bool)
-	RegisterHandler("test", nil, func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
+	RegisterHandler("test", nil, func(evt *models.ScheduledEvent, data any) (retry bool, err error) {
 		doneChan <- true
 		return false, nil
 	})
@@ -136,7 +136,7 @@ func TestScheduleHandleWithData(t *testing.T) {
 	}
 
 	doneChan := make(chan bool)
-	RegisterHandler("test", TestData{}, func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
+	RegisterHandler("test", TestData{}, func(evt *models.ScheduledEvent, data any) (retry bool, err error) {
 		cast, ok := data.(*TestData)
 		if !ok {
 			t.Error("failed casting data")

@@ -1,5 +1,7 @@
 package gojay
 
+import "slices"
+
 var objKeyStr = []byte(`":"`)
 var objKeyObj = []byte(`":{`)
 var objKeyArr = []byte(`":[`)
@@ -391,10 +393,5 @@ func (enc *Encoder) keyExists(k string) bool {
 	if enc.keys == nil {
 		return false
 	}
-	for _, key := range enc.keys {
-		if key == k {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(enc.keys, k)
 }

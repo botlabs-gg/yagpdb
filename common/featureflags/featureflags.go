@@ -134,7 +134,7 @@ func BatchInitCache(guilds []int64) error {
 	started := time.Now()
 
 	var wg sync.WaitGroup
-	for i := 0; i < len(caches); i++ {
+	for i := range caches {
 		toFetchHere := make([]int64, 0, len(guilds))
 
 		for _, g := range guilds {
@@ -169,7 +169,7 @@ func GetGuildFlags(guildID int64) ([]string, error) {
 func RetryGetGuildFlags(guildID int64) (flags []string, err error) {
 	maxRetry := 120
 
-	for i := 0; i < maxRetry; i++ {
+	for range maxRetry {
 		flags, err = GetGuildFlags(guildID)
 		if err != nil {
 			logger.WithError(err).Error("failed retrieving flags, trying again...")

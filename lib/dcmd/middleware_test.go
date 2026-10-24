@@ -10,7 +10,7 @@ func TestMiddlewareOrder(t *testing.T) {
 	i := 0
 
 	container.AddMiddlewares(func(inner RunFunc) RunFunc {
-		return func(d *Data) (interface{}, error) {
+		return func(d *Data) (any, error) {
 			// This middleware should be ran first
 			if i != 0 {
 				t.Error("Unordered:", i, "expected 0")
@@ -20,7 +20,7 @@ func TestMiddlewareOrder(t *testing.T) {
 			return inner(d)
 		}
 	}, func(inner RunFunc) RunFunc {
-		return func(d *Data) (interface{}, error) {
+		return func(d *Data) (any, error) {
 			// This middleware should be ran second
 			if i != 1 {
 				t.Error("Unordered:", i, "expected 1")
@@ -33,7 +33,7 @@ func TestMiddlewareOrder(t *testing.T) {
 
 	cmd := &TestCommand{}
 	container.AddCommand(cmd, NewTrigger("test").SetMiddlewares(func(inner RunFunc) RunFunc {
-		return func(d *Data) (interface{}, error) {
+		return func(d *Data) (any, error) {
 			// This middleware should be ran before cmd1, but not for anything else
 			if i != 2 {
 				t.Error("Unordered:", i, "expected 2")
@@ -46,7 +46,7 @@ func TestMiddlewareOrder(t *testing.T) {
 
 	sub, _ := container.Sub("sub")
 	sub.AddMiddlewares(func(inner RunFunc) RunFunc {
-		return func(d *Data) (interface{}, error) {
+		return func(d *Data) (any, error) {
 			// This middleware should be ran first in sub1, after the parent container
 			if i != 2 {
 				t.Error("Unordered:", i, "expected 2")
@@ -58,7 +58,7 @@ func TestMiddlewareOrder(t *testing.T) {
 	})
 
 	sub.AddCommand(cmd, NewTrigger("test").SetMiddlewares(func(inner RunFunc) RunFunc {
-		return func(d *Data) (interface{}, error) {
+		return func(d *Data) (any, error) {
 			// This middleware should be ran before cmd in the sub container, but not for anything else
 			if i != 3 {
 				t.Error("Unordered:", i, "expected 3")

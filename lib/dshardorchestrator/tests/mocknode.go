@@ -24,7 +24,7 @@ type MockBot struct {
 	// this should return when all user events has been sent, with the number of user events sent
 	StartShardTransferFromFunc func(shard int) (numEventsSent int)
 
-	HandleUserEventFunc func(evt dshardorchestrator.EventType, data interface{})
+	HandleUserEventFunc func(evt dshardorchestrator.EventType, data any)
 }
 
 var _ node.Interface = (*MockBot)(nil)
@@ -85,7 +85,7 @@ func (mn *MockBot) StartShardTransferFrom(shard int) (numEventsSent int) {
 	return 0
 }
 
-func (mn *MockBot) HandleUserEvent(evt dshardorchestrator.EventType, data interface{}) {
+func (mn *MockBot) HandleUserEvent(evt dshardorchestrator.EventType, data any) {
 	if mn.HandleUserEventFunc != nil {
 		mn.HandleUserEventFunc(evt, data)
 	}

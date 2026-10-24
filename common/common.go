@@ -47,7 +47,7 @@ var (
 	NodeID string
 
 	// if your compile failed at this line, you're likely not compiling for 64bit, which is unsupported.
-	_ interface{} = ensure64bit
+	_ any = ensure64bit
 
 	logger = GetFixedPrefixLogger("common")
 )

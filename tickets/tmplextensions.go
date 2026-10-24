@@ -23,8 +23,8 @@ func init() {
 
 // tmplRunCC either run another custom command immeditely with a max stack depth of 2
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
-func tmplCreateTicket(ctx *templates.Context) interface{} {
-	return func(author interface{}, topic string) (*TemplateTicket, error) {
+func tmplCreateTicket(ctx *templates.Context) any {
+	return func(author any, topic string) (*TemplateTicket, error) {
 		if ctx.ExecutedFrom == templates.ExecutedFromNestedCommandTemplate {
 			return nil, errors.New("cannot nest exec/execAdmin/ticket creation")
 		}

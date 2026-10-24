@@ -136,7 +136,7 @@ func (n *NodeImpl) StartShardTransferFrom(shard int) (numEventsSent int) {
 	return n.SendGuilds(shard)
 }
 
-func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interface{}) {
+func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data any) {
 
 	switch evt {
 	case EvtGuildState:
@@ -191,12 +191,9 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 
 	// spawn runtime.NumCPU - 2 workers
 	numCpu := runtime.NumCPU()
-	numWorkers := numCpu - 2
-	if numWorkers < 2 {
-		numWorkers = 2
-	}
+	numWorkers := max(numCpu-2, 2)
 
-	for i := 0; i < numWorkers; i++ {
+	for range numWorkers {
 		wg.Add(1)
 		go worker()
 	}

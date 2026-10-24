@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlekSi/pointer"
 	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
 	"github.com/pkg/errors"
 )
@@ -68,11 +67,11 @@ func PastTime(s rules.Strategy) rules.Rule {
 					}
 				case strings.Contains(exponent, "month"):
 					if c.Month == nil || overwrite {
-						c.Month = pointer.ToInt((int(ref.Month()) - num) % 12)
+						c.Month = new((int(ref.Month()) - num) % 12)
 					}
 				case strings.Contains(exponent, "year"):
 					if c.Year == nil || overwrite {
-						c.Year = pointer.ToInt(ref.Year() - num)
+						c.Year = new(ref.Year() - num)
 					}
 				}
 			} else {
@@ -96,7 +95,7 @@ func PastTime(s rules.Strategy) rules.Rule {
 					}
 				case strings.Contains(exponent, "year"):
 					if c.Month == nil || overwrite {
-						c.Month = pointer.ToInt((int(ref.Month()) - 6) % 12)
+						c.Month = new((int(ref.Month()) - 6) % 12)
 					}
 				}
 			}

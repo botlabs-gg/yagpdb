@@ -70,7 +70,7 @@ func baseData(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
+func HandlePostStreaming(w http.ResponseWriter, r *http.Request) any {
 	ctx := r.Context()
 	guild, tmpl := web.GetBaseCPContextData(ctx)
 	tmpl["VisibleURL"] = "/manage/" + discordgo.StrID(guild.ID) + "/streaming/"

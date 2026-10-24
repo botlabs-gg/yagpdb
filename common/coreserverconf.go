@@ -29,7 +29,7 @@ func GetCoreServerConfCached(guildID int64) *models.CoreConfig {
 	return CoreServerConfigCache.Get(int(guildID)).(*models.CoreConfig)
 }
 
-func coreServerConfigCacheFetcher(key int) interface{} {
+func coreServerConfigCacheFetcher(key int) any {
 	conf, err := models.FindCoreConfigG(context.Background(), int64(key))
 	if err != nil && err != sql.ErrNoRows {
 		logger.WithError(err).WithField("guild", key).Error("failed fetching core server config")

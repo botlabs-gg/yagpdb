@@ -36,7 +36,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Amount", Type: dcmd.Float}, {Name: "From", Type: dcmd.String}, {Name: "To", Type: dcmd.String},
 	},
 
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		amount := data.Args[0].Float64()
 		var currenciesResult Currencies
 		var exchangeRateResult ExchangeRate
@@ -84,7 +84,7 @@ var Command = &commands.YAGCommand{
 	},
 }
 
-func requestAPI(query string, result interface{}) error {
+func requestAPI(query string, result any) error {
 	req, err := http.NewRequest("GET", query, nil)
 	if err != nil {
 		return err

@@ -297,7 +297,7 @@ func ({{.Receiver}}) Reset()  {
 	}`,
 }
 
-func expandTemplate(namespace string, dictionary map[int]string, key int, data interface{}) (string, error) {
+func expandTemplate(namespace string, dictionary map[int]string, key int, data any) (string, error) {
 	var id = fmt.Sprintf("%v_%v", namespace, key)
 	textTemplate, ok := dictionary[key]
 	if !ok {
@@ -312,10 +312,10 @@ func expandTemplate(namespace string, dictionary map[int]string, key int, data i
 	return writer.String(), err
 }
 
-func expandFieldTemplate(key int, data interface{}) (string, error) {
+func expandFieldTemplate(key int, data any) (string, error) {
 	return expandTemplate("fieldTemplate", fieldTemplate, key, data)
 }
 
-func expandBlockTemplate(key int, data interface{}) (string, error) {
+func expandBlockTemplate(key int, data any) (string, error) {
 	return expandTemplate("blockTemplate", blockTemplate, key, data)
 }

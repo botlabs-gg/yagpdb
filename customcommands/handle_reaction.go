@@ -92,7 +92,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 var cachedCommandsReactionTrigger = common.CacheSet.RegisterSlot("custom_commands_reaction_trigger", nil, int64(0))
 
 func BotCachedGetCommandsWithReactionTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsReactionTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedCommandsReactionTrigger.GetCustomFetch(guildID, func(key any) (any, error) {
 		var cmds []*models.CustomCommand
 		var err error
 

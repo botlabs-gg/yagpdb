@@ -11,10 +11,10 @@ import (
 
 // Each level references the previous one twice, so the serialized size doubles per level
 // while the value itself costs almost nothing to build.
-func doublingSlice(levels int) interface{} {
+func doublingSlice(levels int) any {
 	s := strings.Repeat("0", MaxStringLength)
 	a, _ := CreateSlice(s, s)
-	for i := 0; i < levels; i++ {
+	for range levels {
 		a, _ = CreateSlice(a, a)
 	}
 	return a

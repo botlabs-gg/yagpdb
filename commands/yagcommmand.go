@@ -186,7 +186,7 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Commands the bot executed",
 }, []string{"name", "trigger_type"})
 
-func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
+func (yc *YAGCommand) Run(data *dcmd.Data) (any, error) {
 	if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
 		for _, v := range data.SlashCommandTriggerData.Options {
 			if !v.Focused {
@@ -330,7 +330,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 }
 
 // PostCommandExecuted sends the response and handles the trigger and response deletions
-func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dcmd.Data, resp interface{}, err error) {
+func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dcmd.Data, resp any, err error) {
 	if err != nil {
 		yc.Logger(cmdData).WithError(err).Error("Command returned error")
 	}

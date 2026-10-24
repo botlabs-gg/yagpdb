@@ -22,7 +22,7 @@ var Command = &commands.YAGCommand{
 	ArgumentCombos:      [][]int{{0}, {1}, {}},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		if data.Args[1].Value != nil {
 			// Special dice syntax if string
 			r, _, err := dice.Roll(strings.ToLower(data.Args[1].Str()))

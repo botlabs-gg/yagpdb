@@ -56,7 +56,7 @@ func roleGroupAutocomplete(parsed *dcmd.Data, arg *dcmd.ParsedArg) ([]*discordgo
 	return choices, nil
 }
 
-func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (any, error) {
 	name := parsed.Args[0].Str()
 	panelURL := fmt.Sprintf("%s/rolecommands/", web.ManageServerURL(parsed.GuildData.GS.ID))
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
@@ -156,7 +156,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	return nil, err
 }
 
-func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (any, error) {
 	mID := parsed.Args[0].Int64()
 	menu, err := FindRolemenuFull(parsed.Context(), mID, parsed.GuildData.GS.ID)
 	if err != nil {
@@ -166,7 +166,7 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 	return UpdateMenu(parsed, menu)
 }
 
-func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
+func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (any, error) {
 	if menu.State == RoleMenuStateSettingUp {
 		return "Already setting this menu up, use `rolemenu complete ...` to complete the setup.", nil
 	}
@@ -746,7 +746,7 @@ func FindRolemenuFull(ctx context.Context, mID int64, guildID int64) (*models.Ro
 	return models.RoleMenus(qm.Where("guild_id = ? AND (message_id = ? OR setup_msg_id = ?)", guildID, mID, mID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 }
 
-func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (any, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
@@ -775,7 +775,7 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 	return "Done resetting rolemenu!", nil
 }
 
-func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuRemove(data *dcmd.Data) (any, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
@@ -791,7 +791,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
 }
 
-func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuEditOption(data *dcmd.Data) (any, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
@@ -816,7 +816,7 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	return nil, nil
 }
 
-func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuComplete(data *dcmd.Data) (any, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
@@ -843,7 +843,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	return "Menu marked as done", nil
 }
 
-func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
+func cmdFuncRoleMenuListGroups(data *dcmd.Data) (any, error) {
 	groups, err := models.RoleGroups(qm.Where("guild_id=?", data.GuildData.GS.ID), qm.Select("name")).AllG(data.Context())
 	if err != nil {
 		return err, err

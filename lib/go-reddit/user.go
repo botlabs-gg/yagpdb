@@ -3,7 +3,8 @@ package reddit
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"net/http"
 	"strconv"
 )
@@ -22,7 +23,7 @@ func (c *Client) IsUsernameAvailable(username string) (bool, error) {
 	}
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return false, err
 	}

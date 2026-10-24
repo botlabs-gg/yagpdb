@@ -22,7 +22,7 @@ import (
 )
 
 type Effect interface {
-	Apply(ctxData *TriggeredRuleData, settings interface{}) error
+	Apply(ctxData *TriggeredRuleData, settings any) error
 	IsRoleEffect() bool
 }
 
@@ -34,7 +34,7 @@ func (del *DeleteMessageEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (del *DeleteMessageEffect) DataType() interface{} {
+func (del *DeleteMessageEffect) DataType() any {
 	return nil
 }
 
@@ -54,7 +54,7 @@ func (del *DeleteMessageEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	if ctxData.Message == nil {
 		return nil // no message to delete
 	}
@@ -68,7 +68,7 @@ func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings inter
 	return nil
 }
 
-func (del *DeleteMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+func (del *DeleteMessageEffect) MergeDuplicates(data []any) any {
 	return nil // no user data
 }
 
@@ -85,7 +85,7 @@ func (del *DeleteMessagesEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (del *DeleteMessagesEffect) DataType() interface{} {
+func (del *DeleteMessagesEffect) DataType() any {
 	return &DeleteMessagesEffectData{}
 }
 
@@ -122,7 +122,7 @@ func (del *DeleteMessagesEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 
 	settingsCast := settings.(*DeleteMessagesEffectData)
 	timeLimit := time.Now().Add(-time.Second * time.Duration(settingsCast.TimeLimit))
@@ -169,7 +169,7 @@ func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings inte
 	return nil
 }
 
-func (del *DeleteMessagesEffect) MergeDuplicates(data []interface{}) interface{} {
+func (del *DeleteMessagesEffect) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -185,7 +185,7 @@ func (vio *AddViolationEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (vio *AddViolationEffect) DataType() interface{} {
+func (vio *AddViolationEffect) DataType() any {
 	return &AddViolationEffectData{}
 }
 
@@ -214,7 +214,7 @@ func (vio *AddViolationEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*AddViolationEffectData)
 	violation := &models.AutomodViolation{
 		GuildID: ctxData.GS.ID,
@@ -250,7 +250,7 @@ func (kick *KickUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (kick *KickUserEffect) DataType() interface{} {
+func (kick *KickUserEffect) DataType() any {
 	return &KickUserEffectData{}
 }
 
@@ -278,7 +278,7 @@ func (kick *KickUserEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*KickUserEffectData)
 
 	reason := "Automoderator:\n"
@@ -292,7 +292,7 @@ func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	return err
 }
 
-func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
+func (kick *KickUserEffect) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -310,7 +310,7 @@ func (ban *BanUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (ban *BanUserEffect) DataType() interface{} {
+func (ban *BanUserEffect) DataType() any {
 	return &BanUserEffectData{}
 }
 
@@ -352,7 +352,7 @@ func (ban *BanUserEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*BanUserEffectData)
 
 	reason := "Automoderator:\n"
@@ -367,7 +367,7 @@ func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	return err
 }
 
-func (ban *BanUserEffect) MergeDuplicates(data []interface{}) interface{} {
+func (ban *BanUserEffect) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -384,7 +384,7 @@ func (mute *MuteUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (mute *MuteUserEffect) DataType() interface{} {
+func (mute *MuteUserEffect) DataType() any {
 	return &MuteUserEffectData{}
 }
 
@@ -419,7 +419,7 @@ func (mute *MuteUserEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*MuteUserEffectData)
 
 	reason := "Automoderator:\n"
@@ -433,7 +433,7 @@ func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	return err
 }
 
-func (mute *MuteUserEffect) MergeDuplicates(data []interface{}) interface{} {
+func (mute *MuteUserEffect) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -450,7 +450,7 @@ func (timeout *TimeoutUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (timeout *TimeoutUserEffect) DataType() interface{} {
+func (timeout *TimeoutUserEffect) DataType() any {
 	return &TimeoutUserEffectData{}
 }
 
@@ -486,7 +486,7 @@ func (timeout *TimeoutUserEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	// if a user is timed out, do not apply the effect again.
 	member := ctxData.MS.Member
 	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
@@ -507,7 +507,7 @@ func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings int
 	return err
 }
 
-func (timeout *TimeoutUserEffect) MergeDuplicates(data []interface{}) interface{} {
+func (timeout *TimeoutUserEffect) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -523,7 +523,7 @@ func (warn *WarnUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (warn *WarnUserEffect) DataType() interface{} {
+func (warn *WarnUserEffect) DataType() any {
 	return &WarnUserEffectData{}
 }
 
@@ -551,7 +551,7 @@ func (warn *WarnUserEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*WarnUserEffectData)
 
 	reason := "Automoderator:\n"
@@ -565,7 +565,7 @@ func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	return err
 }
 
-func (warn *WarnUserEffect) MergeDuplicates(data []interface{}) interface{} {
+func (warn *WarnUserEffect) MergeDuplicates(data []any) any {
 	return nil // no user data
 }
 
@@ -581,7 +581,7 @@ func (sn *SetNicknameEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (sn *SetNicknameEffect) DataType() interface{} {
+func (sn *SetNicknameEffect) DataType() any {
 	return &SetNicknameEffectData{}
 }
 
@@ -609,7 +609,7 @@ func (sn *SetNicknameEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*SetNicknameEffectData)
 
 	if ctxData.MS.Member.Nick == settingsCast.NewName {
@@ -622,7 +622,7 @@ func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interfac
 	return err
 }
 
-func (sn *SetNicknameEffect) MergeDuplicates(data []interface{}) interface{} {
+func (sn *SetNicknameEffect) MergeDuplicates(data []any) any {
 	return data[0]
 }
 
@@ -638,7 +638,7 @@ func (rv *ResetViolationsEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (rv *ResetViolationsEffect) DataType() interface{} {
+func (rv *ResetViolationsEffect) DataType() any {
 	return &ResetViolationsEffectData{}
 }
 
@@ -667,7 +667,7 @@ func (rv *ResetViolationsEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*ResetViolationsEffectData)
 	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
 	return err
@@ -686,7 +686,7 @@ func (gr *GiveRoleEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (gf *GiveRoleEffect) DataType() interface{} {
+func (gf *GiveRoleEffect) DataType() any {
 	return &GiveRoleEffectData{}
 }
 
@@ -720,7 +720,7 @@ func (gf *GiveRoleEffect) IsRoleEffect() bool {
 	return true
 }
 
-func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*GiveRoleEffectData)
 
 	err := common.AddRoleDS(ctxData.MS, settingsCast.Role)
@@ -755,7 +755,7 @@ func (rr *RemoveRoleEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (rf *RemoveRoleEffect) DataType() interface{} {
+func (rf *RemoveRoleEffect) DataType() any {
 	return &RemoveRoleEffectData{}
 }
 
@@ -789,7 +789,7 @@ func (rf *RemoveRoleEffect) IsRoleEffect() bool {
 	return true
 }
 
-func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	settingsCast := settings.(*RemoveRoleEffectData)
 
 	if !slices.Contains(ctxData.MS.Member.Roles, settingsCast.Role) {
@@ -830,7 +830,7 @@ func (send *SendChannelMessageEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (send *SendChannelMessageEffect) DataType() interface{} {
+func (send *SendChannelMessageEffect) DataType() any {
 	return &SendChannelMessageEffectData{}
 }
 
@@ -878,7 +878,7 @@ func (send *SendChannelMessageEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	// Ignore bots
 	if ctxData.MS.User.Bot {
 		return nil
@@ -925,7 +925,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 	return nil
 }
 
-func (send *SendChannelMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+func (send *SendChannelMessageEffect) MergeDuplicates(data []any) any {
 	return data[0] // no user data
 }
 
@@ -942,7 +942,7 @@ func (send *SendModeratorAlertMessageEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (send *SendModeratorAlertMessageEffect) DataType() interface{} {
+func (send *SendModeratorAlertMessageEffect) DataType() any {
 	return &SendModeratorAlertMessageData{}
 }
 
@@ -976,7 +976,7 @@ func (send *SendModeratorAlertMessageEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (send *SendModeratorAlertMessageEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (send *SendModeratorAlertMessageEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	// Ignore bots
 	if ctxData.MS.User.Bot {
 		return nil
@@ -1043,7 +1043,7 @@ func (send *SendModeratorAlertMessageEffect) Apply(ctxData *TriggeredRuleData, s
 	return nil
 }
 
-func (send *SendModeratorAlertMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+func (send *SendModeratorAlertMessageEffect) MergeDuplicates(data []any) any {
 	return data[0] // no user data
 }
 
@@ -1063,7 +1063,7 @@ func (slow *EnableChannelSlowmodeEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
-func (slow *EnableChannelSlowmodeEffect) DataType() interface{} {
+func (slow *EnableChannelSlowmodeEffect) DataType() any {
 	return &EnableChannelSlowmodeEffectData{}
 }
 
@@ -1100,7 +1100,7 @@ func (slow *EnableChannelSlowmodeEffect) IsRoleEffect() bool {
 	return false
 }
 
-func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings any) error {
 	if ctxData.CS == nil {
 		return nil
 	}

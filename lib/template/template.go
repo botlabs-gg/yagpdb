@@ -5,6 +5,7 @@
 package template
 
 import (
+	"maps"
 	"reflect"
 	"sync"
 
@@ -120,12 +121,8 @@ func (t *Template) Clone() (*Template, error) {
 	}
 	t.muFuncs.RLock()
 	defer t.muFuncs.RUnlock()
-	for k, v := range t.parseFuncs {
-		nt.parseFuncs[k] = v
-	}
-	for k, v := range t.execFuncs {
-		nt.execFuncs[k] = v
-	}
+	maps.Copy(nt.parseFuncs, t.parseFuncs)
+	maps.Copy(nt.execFuncs, t.execFuncs)
 	nt.sharedFuncs = t.sharedFuncs
 	return nt, nil
 }

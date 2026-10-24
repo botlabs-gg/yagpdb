@@ -337,7 +337,7 @@ type MessageSend struct {
 	TTS             bool                `json:"tts"`
 	Components      []TopLevelComponent `json:"components"`
 	Files           []*File             `json:"-"`
-	AllowedMentions AllowedMentions     `json:"allowed_mentions,omitempty"`
+	AllowedMentions AllowedMentions     `json:"allowed_mentions"`
 	Reference       *MessageReference   `json:"message_reference,omitempty"`
 	Flags           MessageFlags        `json:"flags,omitempty"`
 	StickerIDs      []int64             `json:"sticker_ids"`

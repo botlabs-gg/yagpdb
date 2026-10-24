@@ -168,7 +168,7 @@ func cleanupRecent() error {
 }
 
 func cleanupRecentBatch(ids []int64) error {
-	sqlArgs := make([]interface{}, len(ids))
+	sqlArgs := make([]any, len(ids))
 	for i, v := range ids {
 		sqlArgs[i] = v
 	}

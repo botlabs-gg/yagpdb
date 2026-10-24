@@ -6,24 +6,24 @@ import (
 
 // Message is a private message between users.
 type Message struct {
-	Author           string      `json:"author"`
-	Body             string      `json:"body"`
-	BodyHTML         string      `json:"body_html"`
-	Context          string      `json:"context"`
-	Created          int         `json:"created"`
-	CreatedUtc       int         `json:"created_utc"`
-	Dest             string      `json:"dest"`
-	Distinguished    string      `json:"distinguished"`
-	FirstMessage     interface{} `json:"first_message"`
-	FirstMessageName interface{} `json:"first_message_name"`
-	ID               string      `json:"id"`
-	Name             string      `json:"name"`
-	New              bool        `json:"new"`
-	ParentID         interface{} `json:"parent_id"`
-	Replies          string      `json:"replies"`
-	Subject          string      `json:"subject"`
-	Subreddit        interface{} `json:"subreddit"`
-	WasComment       bool        `json:"was_comment"`
+	Author           string `json:"author"`
+	Body             string `json:"body"`
+	BodyHTML         string `json:"body_html"`
+	Context          string `json:"context"`
+	Created          int    `json:"created"`
+	CreatedUtc       int    `json:"created_utc"`
+	Dest             string `json:"dest"`
+	Distinguished    string `json:"distinguished"`
+	FirstMessage     any    `json:"first_message"`
+	FirstMessageName any    `json:"first_message_name"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	New              bool   `json:"new"`
+	ParentID         any    `json:"parent_id"`
+	Replies          string `json:"replies"`
+	Subject          string `json:"subject"`
+	Subreddit        any    `json:"subreddit"`
+	WasComment       bool   `json:"was_comment"`
 }
 
 const messageType string = "t4"

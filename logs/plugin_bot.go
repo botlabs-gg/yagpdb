@@ -47,7 +47,7 @@ func (p *Plugin) AddCommands() {
 	}
 }
 
-func runDisabledCommand(data *dcmd.Data) (interface{}, error) {
+func runDisabledCommand(data *dcmd.Data) (any, error) {
 	return "This command is disabled on the public instance.", nil
 }
 
@@ -118,7 +118,7 @@ var cmdWhois = &commands.YAGCommand{
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
-	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+	RunFunc: func(parsed *dcmd.Data) (any, error) {
 		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {
 			return nil, err
@@ -246,15 +246,16 @@ var cmdWhois = &commands.YAGCommand{
 					return err, err
 				}
 
-				usernamesStr := "```\n"
+				var usernamesStr strings.Builder
+				usernamesStr.WriteString("```\n")
 				for _, v := range usernames {
-					usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
+					usernamesStr.WriteString(fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String))
 				}
-				usernamesStr += "```"
+				usernamesStr.WriteString("```")
 
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 					Name:  "5 last usernames",
-					Value: usernamesStr,
+					Value: usernamesStr.String(),
 				})
 			} else {
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
@@ -270,19 +271,20 @@ var cmdWhois = &commands.YAGCommand{
 					return err, err
 				}
 
-				nicknameStr := "```\n"
+				var nicknameStr strings.Builder
+				nicknameStr.WriteString("```\n")
 				if len(nicknames) < 1 {
-					nicknameStr += "No nicknames tracked"
+					nicknameStr.WriteString("No nicknames tracked")
 				} else {
 					for _, v := range nicknames {
-						nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+						nicknameStr.WriteString(fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String))
 					}
 				}
-				nicknameStr += "```"
+				nicknameStr.WriteString("```")
 
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 					Name:  "5 last nicknames",
-					Value: nicknameStr,
+					Value: nicknameStr.String(),
 				})
 			} else {
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
@@ -306,7 +308,7 @@ var cmdUsernames = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
-	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+	RunFunc: func(parsed *dcmd.Data) (any, error) {
 		gID := int64(0)
 		if parsed.GuildData != nil {
 			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
@@ -369,7 +371,7 @@ var cmdNicknames = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
-	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+	RunFunc: func(parsed *dcmd.Data) (any, error) {
 		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {
 			return nil, err
@@ -425,7 +427,7 @@ var cmdClearNames = &commands.YAGCommand{
 	RunInDM:              true,
 	HideFromHelp:         true,
 	HideFromCommandsPage: true,
-	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+	RunFunc: func(parsed *dcmd.Data) (any, error) {
 		queries := []string{
 			"DELETE FROM username_listings WHERE user_id=$1",
 			"DELETE FROM nickname_listings WHERE user_id=$1",
@@ -492,7 +494,7 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 	queueEvt(evt.EvtInterface)
 }
 
-func queueEvt(evt interface{}) {
+func queueEvt(evt any) {
 	if !confEnableUsernameTracking.GetBool() {
 		return
 	}
@@ -577,7 +579,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 }
 
 var (
-	evtChan   = make(chan interface{}, 1000)
+	evtChan   = make(chan any, 1000)
 	evtChanGC = make(chan *LightGC)
 )
 
@@ -759,7 +761,7 @@ func GetConfigCached(exec boil.ContextExecutor, gID int64) (*models.GuildLogging
 		return GetConfig(exec, context.Background(), gID)
 	}
 
-	v, err := configCache.GetCustomFetch(gs.ID, func(key interface{}) (interface{}, error) {
+	v, err := configCache.GetCustomFetch(gs.ID, func(key any) (any, error) {
 		conf, err := GetConfig(exec, context.Background(), gID)
 		return conf, err
 	})

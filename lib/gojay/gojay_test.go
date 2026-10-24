@@ -29,7 +29,7 @@ type testObject struct {
 	testBoolNull    *bool
 	testSubObject   *testObject
 	testSubArray    testSliceInts
-	testInterface   interface{}
+	testInterface   any
 }
 
 // make sure it implements interfaces
@@ -136,7 +136,7 @@ type testObject0Keys struct {
 	testBool      bool
 	testSubObject *testObject0Keys
 	testSubArray  testSliceInts
-	testInterface interface{}
+	testInterface any
 }
 
 // make sure it implements interfaces

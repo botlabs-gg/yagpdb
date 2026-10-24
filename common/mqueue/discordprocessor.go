@@ -144,7 +144,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 				return nil, "", err
 			}
 		}
-		whI, err := webhookCache.GetCustomFetch(elem.ChannelID, func(key interface{}) (interface{}, error) {
+		whI, err := webhookCache.GetCustomFetch(elem.ChannelID, func(key any) (any, error) {
 			return findCreateWebhook(elem.GuildID, elem.ChannelID, elem.Source, avatar)
 		})
 		if err != nil {

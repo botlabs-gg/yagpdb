@@ -46,7 +46,7 @@ func setRoleTriggerCooldown(guildID, userID, roleID int64, duration int) error {
 var cachedCommandsRoleTrigger = common.CacheSet.RegisterSlot("custom_commands_role_trigger", nil, int64(0))
 
 func BotCachedGetCommandsWithRoleTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsRoleTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedCommandsRoleTrigger.GetCustomFetch(guildID, func(key any) (any, error) {
 		var cmds []*models.CustomCommand
 		var err error
 

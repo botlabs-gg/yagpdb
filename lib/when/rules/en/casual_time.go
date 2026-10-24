@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlekSi/pointer"
 	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
 )
 
@@ -27,30 +26,30 @@ func CasualTime(s rules.Strategy) rules.Rule {
 				if o.Afternoon != 0 {
 					c.Hour = &o.Afternoon
 				} else {
-					c.Hour = pointer.ToInt(15)
+					c.Hour = new(15)
 				}
-				c.Minute = pointer.ToInt(0)
+				c.Minute = new(0)
 			case strings.Contains(lower, "evening"):
 				if o.Evening != 0 {
 					c.Hour = &o.Evening
 				} else {
-					c.Hour = pointer.ToInt(18)
+					c.Hour = new(18)
 				}
-				c.Minute = pointer.ToInt(0)
+				c.Minute = new(0)
 			case strings.Contains(lower, "morning"):
 				if o.Morning != 0 {
 					c.Hour = &o.Morning
 				} else {
-					c.Hour = pointer.ToInt(8)
+					c.Hour = new(8)
 				}
-				c.Minute = pointer.ToInt(0)
+				c.Minute = new(0)
 			case strings.Contains(lower, "noon"):
 				if o.Noon != 0 {
 					c.Hour = &o.Noon
 				} else {
-					c.Hour = pointer.ToInt(12)
+					c.Hour = new(12)
 				}
-				c.Minute = pointer.ToInt(0)
+				c.Minute = new(0)
 			}
 
 			return true, nil

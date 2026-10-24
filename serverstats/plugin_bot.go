@@ -53,7 +53,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Shows server stats (if public stats are enabled)",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: func(data *dcmd.Data) (any, error) {
 			config, err := GetConfig(data.Context(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "getconfig")
@@ -125,7 +125,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
 var cachedConfig = common.CacheSet.RegisterSlot("serverstats_config", nil, int64(0))
 
 func BotCachedFetchGuildConfig(ctx context.Context, guildID int64) (*ServerStatsConfig, error) {
-	v, err := cachedConfig.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+	v, err := cachedConfig.GetCustomFetch(guildID, func(key any) (any, error) {
 		return GetConfig(ctx, guildID)
 	})
 
@@ -159,10 +159,7 @@ func (p *Plugin) runOnlineUpdater() {
 			guildsToCheck = guildSlice()
 
 			// Hit each guild once per hour more or less
-			numToCheckPerRun = len(guildsToCheck) / 250
-			if numToCheckPerRun < 1 {
-				numToCheckPerRun = 1
-			}
+			numToCheckPerRun = max(len(guildsToCheck)/250, 1)
 		}
 
 		started := time.Now()

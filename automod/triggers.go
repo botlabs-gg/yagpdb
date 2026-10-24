@@ -38,7 +38,7 @@ func (r BaseRegexTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (r BaseRegexTrigger) DataType() interface{} {
+func (r BaseRegexTrigger) DataType() any {
 	return &BaseRegexTriggerData{}
 }
 
@@ -74,7 +74,7 @@ func (mc *MentionsTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (mc *MentionsTrigger) DataType() interface{} {
+func (mc *MentionsTrigger) DataType() any {
 	return &MentionsTriggerData{}
 }
 
@@ -106,7 +106,7 @@ func (mc *MentionsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	return false, nil
 }
 
-func (mc *MentionsTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (mc *MentionsTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -120,7 +120,7 @@ func (alc *AnyLinkTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (alc *AnyLinkTrigger) DataType() interface{} {
+func (alc *AnyLinkTrigger) DataType() any {
 	return nil
 }
 
@@ -147,7 +147,7 @@ func (alc *AnyLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 
 }
 
-func (alc *AnyLinkTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (alc *AnyLinkTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -167,7 +167,7 @@ func (wl *WordListTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (wl *WordListTrigger) DataType() interface{} {
+func (wl *WordListTrigger) DataType() any {
 	return &WorldListTriggerData{}
 }
 
@@ -258,7 +258,7 @@ func (dt *DomainTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (dt *DomainTrigger) DataType() interface{} {
+func (dt *DomainTrigger) DataType() any {
 	return &DomainTriggerData{}
 }
 
@@ -367,7 +367,7 @@ func (vt *ViolationsTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (vt *ViolationsTrigger) DataType() interface{} {
+func (vt *ViolationsTrigger) DataType() any {
 	return &ViolationsTriggerData{}
 }
 
@@ -410,7 +410,7 @@ func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []*models.AutomodViolation, settings interface{}, triggeredOnHigher bool) (isAffected bool, err error) {
+func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []*models.AutomodViolation, settings any, triggeredOnHigher bool) (isAffected bool, err error) {
 	settingsCast := settings.(*ViolationsTriggerData)
 	if triggeredOnHigher && settingsCast.IgnoreIfLesser {
 		return false, nil
@@ -452,7 +452,7 @@ func (caps *AllCapsTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (caps *AllCapsTrigger) DataType() interface{} {
+func (caps *AllCapsTrigger) DataType() any {
 	return &AllCapsTriggerData{}
 }
 
@@ -528,7 +528,7 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	return false, nil
 }
 
-func (caps *AllCapsTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (caps *AllCapsTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -542,7 +542,7 @@ func (inv *ServerInviteTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (inv *ServerInviteTrigger) DataType() interface{} {
+func (inv *ServerInviteTrigger) DataType() any {
 	return nil
 }
 
@@ -563,7 +563,7 @@ func (inv *ServerInviteTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dst
 	return containsBadInvited, nil
 }
 
-func (inv *ServerInviteTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (inv *ServerInviteTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -581,7 +581,7 @@ func (a *AntiPhishingLinkTrigger) Name() string {
 	return "Flagged Scam links"
 }
 
-func (a *AntiPhishingLinkTrigger) DataType() interface{} {
+func (a *AntiPhishingLinkTrigger) DataType() any {
 	return nil
 }
 
@@ -617,7 +617,7 @@ func (g *GoogleSafeBrowsingTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (g *GoogleSafeBrowsingTrigger) DataType() interface{} {
+func (g *GoogleSafeBrowsingTrigger) DataType() any {
 	return nil
 }
 
@@ -647,7 +647,7 @@ func (g *GoogleSafeBrowsingTrigger) CheckMessage(triggerCtx *TriggerContext, cs 
 	return false, nil
 }
 
-func (g *GoogleSafeBrowsingTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (g *GoogleSafeBrowsingTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -672,7 +672,7 @@ func (s *SlowmodeTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (s *SlowmodeTrigger) DataType() interface{} {
+func (s *SlowmodeTrigger) DataType() any {
 	return &SlowmodeTriggerData{}
 }
 
@@ -832,7 +832,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 	return false, nil
 }
 
-func (s *SlowmodeTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (s *SlowmodeTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -854,7 +854,7 @@ func (mt *MultiMsgMentionTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (mt *MultiMsgMentionTrigger) DataType() interface{} {
+func (mt *MultiMsgMentionTrigger) DataType() any {
 	return &MultiMsgMentionTriggerData{}
 }
 
@@ -940,7 +940,7 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 	return false, nil
 }
 
-func (mt *MultiMsgMentionTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (mt *MultiMsgMentionTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -971,7 +971,7 @@ func (r *MessageRegexTrigger) Description() string {
 func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	dataCast := triggerCtx.Data.(*BaseRegexTriggerData)
 
-	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
+	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (any, error) {
 		re, err := regexp.Compile(dataCast.Regex)
 		if err != nil {
 			return nil, err
@@ -1024,7 +1024,7 @@ func (spam *SpamTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (spam *SpamTrigger) DataType() interface{} {
+func (spam *SpamTrigger) DataType() any {
 	return &SpamTriggerData{}
 }
 
@@ -1163,7 +1163,7 @@ func (r *NicknameRegexTrigger) Description() string {
 func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	dataCast := t.Data.(*BaseRegexTriggerData)
 
-	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
+	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (any, error) {
 		re, err := regexp.Compile(dataCast.Regex)
 		if err != nil {
 			return nil, err
@@ -1213,7 +1213,7 @@ func (nwl *NicknameWordlistTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (nwl *NicknameWordlistTrigger) DataType() interface{} {
+func (nwl *NicknameWordlistTrigger) DataType() any {
 	return &NicknameWordlistTriggerData{}
 }
 
@@ -1313,7 +1313,7 @@ func (r *GlobalnameRegexTrigger) Description() string {
 func (r *GlobalnameRegexTrigger) CheckGlobalname(t *TriggerContext) (bool, error) {
 	dataCast := t.Data.(*BaseRegexTriggerData)
 
-	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
+	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (any, error) {
 		re, err := regexp.Compile(dataCast.Regex)
 		if err != nil {
 			return nil, err
@@ -1363,7 +1363,7 @@ func (gwl *GlobalnameWordlistTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (gwl *GlobalnameWordlistTrigger) DataType() interface{} {
+func (gwl *GlobalnameWordlistTrigger) DataType() any {
 	return &GlobalnameWorldlistData{}
 }
 
@@ -1447,7 +1447,7 @@ func (gv *GlobalnameInviteTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (gv *GlobalnameInviteTrigger) DataType() interface{} {
+func (gv *GlobalnameInviteTrigger) DataType() any {
 	return nil
 }
 
@@ -1482,7 +1482,7 @@ func (mj *MemberJoinTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (mj *MemberJoinTrigger) DataType() interface{} {
+func (mj *MemberJoinTrigger) DataType() any {
 	return nil
 }
 
@@ -1514,7 +1514,7 @@ func (mat *MessageAttachmentTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (mat *MessageAttachmentTrigger) DataType() interface{} {
+func (mat *MessageAttachmentTrigger) DataType() any {
 	return nil
 }
 
@@ -1549,7 +1549,7 @@ func (mat *MessageAttachmentTrigger) CheckMessage(triggerCtx *TriggerContext, cs
 	return false, nil
 }
 
-func (mat *MessageAttachmentTrigger) MergeDuplicates(data []interface{}) interface{} {
+func (mat *MessageAttachmentTrigger) MergeDuplicates(data []any) any {
 	return data[0] // no point in having duplicates of this
 }
 
@@ -1568,7 +1568,7 @@ func (ml *MessageLengthTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (ml *MessageLengthTrigger) DataType() interface{} {
+func (ml *MessageLengthTrigger) DataType() any {
 	return &MessageLengthTriggerData{}
 }
 
@@ -1622,7 +1622,7 @@ func (am *AutomodExecution) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (am *AutomodExecution) DataType() interface{} {
+func (am *AutomodExecution) DataType() any {
 	return &AutomodExecutionData{}
 }
 func (am *AutomodExecution) Name() (name string) {

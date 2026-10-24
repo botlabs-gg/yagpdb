@@ -2,6 +2,7 @@ package topcommands
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -22,7 +23,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: util.RequireBotAdmin(cmdFuncTopCommands),
 }
 
-func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
+func cmdFuncTopCommands(data *dcmd.Data) (any, error) {
 	hours := data.Args[0].Int()
 	within := time.Now().Add(time.Duration(-hours) * time.Hour)
 
@@ -39,7 +40,8 @@ ORDER BY COUNT(id) DESC;
 	}
 	defer rows.Close()
 
-	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)
+	var out strings.Builder
+	out.WriteString(fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours))
 	total := 0
 	for k := 1; rows.Next(); k++ {
 		var command string
@@ -49,14 +51,14 @@ ORDER BY COUNT(id) DESC;
 			return nil, err
 		}
 
-		out += fmt.Sprintf("#%02d: %5d - %s\n", k, count, command)
+		out.WriteString(fmt.Sprintf("#%02d: %5d - %s\n", k, count, command))
 		total += count
 	}
 
 	cpm := float64(total) / float64(hours) / 60
 
-	out += fmt.Sprintf("\nTotal: %d, Commands per minute: %.1f", total, cpm)
-	out += "\n```"
+	out.WriteString(fmt.Sprintf("\nTotal: %d, Commands per minute: %.1f", total, cpm))
+	out.WriteString("\n```")
 
-	return out, nil
+	return out.String(), nil
 }

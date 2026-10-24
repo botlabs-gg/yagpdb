@@ -51,7 +51,7 @@ func (e *ErrUnknownTypeID) Error() string {
 	return "Unknown TypeID: " + strconv.Itoa(e.TypeID)
 }
 
-func ParseRulePartData(model *models.AutomodRuleDatum) (interface{}, error) {
+func ParseRulePartData(model *models.AutomodRuleDatum) (any, error) {
 	part, ok := RulePartMap[model.TypeID]
 	if !ok {
 		return nil, &ErrUnknownTypeID{model.TypeID}
@@ -67,8 +67,8 @@ func ParseRulePartData(model *models.AutomodRuleDatum) (interface{}, error) {
 	return settingsDestination, err
 }
 
-func ParseAllRulePartData(dataModels []*models.AutomodRuleDatum) ([]interface{}, error) {
-	dst := make([]interface{}, len(dataModels))
+func ParseAllRulePartData(dataModels []*models.AutomodRuleDatum) ([]any, error) {
+	dst := make([]any, len(dataModels))
 	for i, v := range dataModels {
 		parsed, err := ParseRulePartData(v)
 		if err != nil {
@@ -162,28 +162,33 @@ func PrepareMessageForWordCheck(input string) string {
 
 		// make 2 variants, 1 with all occurences replaced with space and 1 with all the occurences just removed
 		// this i imagine will solve a low of cases
-		w1 := ""
-		w2 := ""
+		var w1 strings.Builder
+		var w2 strings.Builder
 
 		for _, r := range w {
 			// we replace them with spaces instead to make for a more accurate version
 			// e.g "word1*word2" will become "word1 word2" instead of "word1word2"
 			if unicode.IsPunct(r) || unicode.IsSymbol(r) {
 				// replace with spaces for w1, and just remove for w2
-				w1 += " "
+				w1.WriteString(" ")
 			} else {
-				w1 += string(r)
-				w2 += string(r)
+				w1.WriteString(string(r))
+				w2.WriteString(string(r))
 			}
 		}
 
-		out.WriteString(w1)
-		if w1 != w2 && w1 != w {
-			out.WriteString(" " + w2 + " " + w)
-		} else if w1 != w2 {
-			out.WriteString(" " + w2)
-		} else if w1 != w {
-			out.WriteString(" " + w)
+		out.WriteString(w1.String())
+		if w1.String() != w2.String() && w1.String() != w {
+			out.WriteString(" ")
+			out.WriteString(w2.String())
+			out.WriteString(" ")
+			out.WriteString(w)
+		} else if w1.String() != w2.String() {
+			out.WriteString(" ")
+			out.WriteString(w2.String())
+		} else if w1.String() != w {
+			out.WriteString(" ")
+			out.WriteString(w)
 		}
 	}
 

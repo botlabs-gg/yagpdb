@@ -108,12 +108,10 @@ func verifyMessages(t *testing.T, state *InMemoryTracker, messages *list.List, e
 func createGCTestMember(id int64, t time.Time, member *dstate.MemberFields, presence *dstate.PresenceFields) *WrappedMember {
 	return &WrappedMember{
 		lastUpdated: t,
-		MemberState: dstate.MemberState{
-			User:     *createTestUser(id),
-			GuildID:  initialTestGuildID,
-			Member:   member,
-			Presence: presence,
-		},
+		User:        *createTestUser(id),
+		GuildID:     initialTestGuildID,
+		Member:      member,
+		Presence:    presence,
 	}
 }
 

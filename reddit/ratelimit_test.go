@@ -11,7 +11,7 @@ func TestRatelimit(t *testing.T) {
 
 	rl := NewRatelimiter()
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		if !rl.CheckIncrement(now, 1, 7) {
 			t.Error("premature false")
 		}

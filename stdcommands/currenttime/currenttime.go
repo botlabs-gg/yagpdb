@@ -25,7 +25,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: cmdFuncCurrentTime,
 }
 
-func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
+func cmdFuncCurrentTime(data *dcmd.Data) (any, error) {
 	const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
 
 	now := time.Now()

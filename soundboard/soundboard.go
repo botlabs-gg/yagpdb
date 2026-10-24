@@ -3,6 +3,7 @@ package soundboard
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	context0 "context"
 	"fmt"
 	"os"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/soundboard/models"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"golang.org/x/net/context"
 )
 
 type Plugin struct{}
@@ -99,7 +99,7 @@ const (
 	MaxGuildSoundsPremium = 250
 )
 
-func MaxSoundsForContext(ctx context.Context) int {
+func MaxSoundsForContext(ctx context0.Context) int {
 	if premium.ContextPremium(ctx) {
 		return MaxGuildSoundsPremium
 	}
@@ -107,7 +107,7 @@ func MaxSoundsForContext(ctx context.Context) int {
 	return MaxGuildSounds
 }
 
-func GetSoundboardSounds(guildID int64, ctx context.Context) ([]*models.SoundboardSound, error) {
+func GetSoundboardSounds(guildID int64, ctx context0.Context) ([]*models.SoundboardSound, error) {
 	result, err := models.SoundboardSounds(qm.Where("guild_id=?", guildID)).AllG(ctx)
 	return result, err
 }

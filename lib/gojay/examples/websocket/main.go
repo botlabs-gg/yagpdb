@@ -66,8 +66,7 @@ func main() {
 	done := make(chan error)
 	createServer(done)
 	// add our clients connection
-	for i := 0; i < 100; i++ {
-		i := i
+	for i := range 100 {
 		go createClient("ws://localhost:8070/ws", "http://localhost/", i)
 	}
 	// handle server's termination

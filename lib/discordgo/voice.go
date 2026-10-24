@@ -781,12 +781,12 @@ func (v *VoiceConnection) udpOpen() (err error) {
 
 	// Loop over position 4 through 20 to grab the IP address
 	// Should never be beyond position 20.
-	var ip string
+	var ip strings.Builder
 	for i := 8; i < len(rb)-2; i++ {
 		if rb[i] == 0 {
 			break
 		}
-		ip += string(rb[i])
+		ip.WriteString(string(rb[i]))
 	}
 
 	// Grab port from position 72 and 73
@@ -809,11 +809,11 @@ func (v *VoiceConnection) udpOpen() (err error) {
 	// the UDP connection handshake.
 	data := voiceUDPOp{1, voiceUDPD{
 		Protocol:               "udp",
-		Data:                   voiceUDPData{ip, port, VoiceMode(encryptionMode)},
+		Data:                   voiceUDPData{ip.String(), port, VoiceMode(encryptionMode)},
 		MaxDAVEProtocolVersion: 1,
 	}}
 
-	v.log(LogInformational, "External IP: %s, Port: %d", ip, port)
+	v.log(LogInformational, "External IP: %s, Port: %d", ip.String(), port)
 	v.log(LogInformational, "Selected mode: %s (Available: %v)", encryptionMode, v.op2.Modes)
 
 	v.wsMutex.Lock()

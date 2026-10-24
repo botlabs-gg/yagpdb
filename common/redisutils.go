@@ -7,7 +7,7 @@ import (
 )
 
 // GetRedisJson executes a get redis command and unmarshals the value into out
-func GetRedisJson(key string, out interface{}) error {
+func GetRedisJson(key string, out any) error {
 	var resp []byte
 	err := RedisPool.Do(radix.Cmd(&resp, "GET", key))
 	if err != nil {
@@ -23,7 +23,7 @@ func GetRedisJson(key string, out interface{}) error {
 }
 
 // SetRedisJson marshals the value and runs a set redis command for key
-func SetRedisJson(key string, value interface{}) error {
+func SetRedisJson(key string, value any) error {
 	serialized, err := json.Marshal(value)
 	if err != nil {
 		return err

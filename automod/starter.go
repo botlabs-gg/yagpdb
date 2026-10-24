@@ -28,7 +28,7 @@ type StarterProtections struct {
 
 type starterRulePart struct {
 	typeID   int
-	settings interface{}
+	settings any
 }
 
 type starterRule struct {

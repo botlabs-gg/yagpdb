@@ -100,11 +100,11 @@ func (dec *Decoder) decodeObject(j UnmarshalerJSONObject) (int, error) {
 	return 0, dec.raiseInvalidJSONErr(dec.cursor)
 }
 
-func (dec *Decoder) decodeObjectNull(v interface{}) (int, error) {
+func (dec *Decoder) decodeObjectNull(v any) (int, error) {
 	// make sure the value is a pointer
 	vv := reflect.ValueOf(v)
 	vvt := vv.Type()
-	if vvt.Kind() != reflect.Ptr || vvt.Elem().Kind() != reflect.Ptr {
+	if vvt.Kind() != reflect.Pointer || vvt.Elem().Kind() != reflect.Pointer {
 		dec.err = ErrUnmarshalPtrExpected
 		return 0, dec.err
 	}
@@ -363,7 +363,7 @@ func (dec *Decoder) AddObject(v UnmarshalerJSONObject) error {
 }
 
 // AddObjectNull decodes the JSON value within an object or an array to a UnmarshalerJSONObject.
-func (dec *Decoder) AddObjectNull(v interface{}) error {
+func (dec *Decoder) AddObjectNull(v any) error {
 	return dec.ObjectNull(v)
 }
 
@@ -389,7 +389,7 @@ func (dec *Decoder) Object(value UnmarshalerJSONObject) error {
 // v should be a pointer to an UnmarshalerJSONObject,
 // if `null` value is encountered in JSON, it will leave the value v untouched,
 // else it will create a new instance of the UnmarshalerJSONObject behind v.
-func (dec *Decoder) ObjectNull(v interface{}) error {
+func (dec *Decoder) ObjectNull(v any) error {
 	initialKeysDone := dec.keysDone
 	initialChild := dec.child
 	dec.keysDone = 0

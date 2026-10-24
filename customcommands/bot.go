@@ -101,7 +101,7 @@ type DelayedRunCCData struct {
 	Message *discordgo.Message
 	Member  *dstate.MemberState
 
-	UserKey      interface{}             `json:"user_key"`
+	UserKey      any                     `json:"user_key"`
 	CurrentFrame *templates.ContextFrame `json:"current_frame,omitempty"`
 
 	ExecutedFrom templates.ExecutedFromType `json:"executed_from"`
@@ -229,7 +229,7 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 	},
 	RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 	DefaultEnabled:      true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		cmds, err := BotCachedGetCommandsWithMessageTriggers(data.GuildData.GS.ID, data.Context())
 		if err != nil {
 			return "Failed fetching custom commands", err
@@ -327,7 +327,7 @@ var cmdListCommands = &commands.YAGCommand{
 		{Name: "raw", Help: "Force raw output"},
 		{Name: "page", Help: "Page of the command list to show", Type: dcmd.Int},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom commands", err
@@ -543,29 +543,29 @@ func evalTriggerMessage(data *dcmd.Data) *discordgo.Message {
 }
 
 func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
-	out := ""
+	var out strings.Builder
 
 	for _, cc := range ccs {
 		switch cc.TriggerType {
 		case int(CommandTriggerReaction), int(CommandTriggerInterval), int(CommandTriggerNone):
 			if cc.Name.Valid {
-				out += fmt.Sprintf("`#%3d:` - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t` - Public: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.Public)
+				out.WriteString(fmt.Sprintf("`#%3d:` - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t` - Public: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.Public))
 			} else {
-				out += fmt.Sprintf("`#%3d:` - Type: `%s` - Group: `%s` - Disabled: `%t` - Public: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.Public)
+				out.WriteString(fmt.Sprintf("`#%3d:` - Type: `%s` - Group: `%s` - Disabled: `%t` - Public: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.Public))
 			}
 		default:
 			if cc.TextTrigger == "" {
 				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
-				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t` - Public: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit, cc.Public)
+				out.WriteString(fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t` - Public: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit, cc.Public))
 			} else {
-				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t` - Public: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit, cc.Public)
+				out.WriteString(fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t` - Public: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit, cc.Public))
 			}
 		}
 	}
 
-	return out
+	return out.String()
 }
 
 func shouldIgnoreChannel(msg *discordgo.Message, gs *dstate.GuildSet, cState *dstate.ChannelState) bool {
@@ -964,7 +964,7 @@ var cmdFixCommands = &commands.YAGCommand{
 	Name:                 "fixscheduledccs",
 	Description:          "Corrects the next run time of interval CCs globally, fixes issues arising from missed executions due to downtime. Bot Owner Only",
 	HideFromCommandsPage: true,
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		ccs, err := models.CustomCommands(qm.Where("trigger_type = 5"), qm.Where("now() - INTERVAL '1 hour' > next_run"), qm.Where("disabled = false")).AllG(context.Background())
 		if err != nil {
 			return nil, err

@@ -92,7 +92,7 @@ type ShardMigrationSender interface {
 }
 
 type ShardMigrationReceiver interface {
-	ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{})
+	ShardMigrationReceive(evt dshardorchestrator.EventType, data any)
 }
 
 // bot plugin

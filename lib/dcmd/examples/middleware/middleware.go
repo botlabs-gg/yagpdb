@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -73,7 +74,7 @@ var _ dcmd.CmdWithDescriptions = (*StaticCmd)(nil)
 // Descriptions should return a short description (used in the overall help overiview) and one long descriptions for targetted help
 func (s *StaticCmd) Descriptions(d *dcmd.Data) (string, string) { return s.Description, "" }
 
-func (e *StaticCmd) Run(data *dcmd.Data) (interface{}, error) {
+func (e *StaticCmd) Run(data *dcmd.Data) (any, error) {
 	return e.Response, nil
 }
 
@@ -85,22 +86,22 @@ type CommandsStatTracker struct {
 }
 
 func (c *CommandsStatTracker) MiddleWare(inner dcmd.RunFunc) dcmd.RunFunc {
-	return func(d *dcmd.Data) (interface{}, error) {
+	return func(d *dcmd.Data) (any, error) {
 		// Using the container chain to generate a unique name for this command
 		// The container chain is just a slice of all the containers the command is in, the first will always be the root
-		name := ""
+		var name strings.Builder
 		for _, c := range d.ContainerChain {
 			if len(c.Names) < 1 || c.Names[0] == "" {
 				continue
 			}
-			name += c.Names[0] + " "
+			name.WriteString(c.Names[0] + " ")
 		}
 
 		// Finally append the actual command name
-		name += d.Cmd.Trigger.Names[0]
+		name.WriteString(d.Cmd.Trigger.Names[0])
 
 		c.CommandUsagesLock.Lock()
-		c.CommandUsages[name]++
+		c.CommandUsages[name.String()]++
 		c.CommandUsagesLock.Unlock()
 
 		return inner(d)
@@ -112,16 +113,17 @@ func (c *CommandsStatTracker) Descriptions(d *dcmd.Data) (string, string) {
 }
 
 // Sort and dump the stats
-func (c *CommandsStatTracker) Run(d *dcmd.Data) (interface{}, error) {
+func (c *CommandsStatTracker) Run(d *dcmd.Data) (any, error) {
 	c.CommandUsagesLock.RLock()
 	defer c.CommandUsagesLock.RUnlock()
 
-	out := "```\n"
+	var out strings.Builder
+	out.WriteString("```\n")
 
 	for cmdName, usages := range c.CommandUsages {
-		out += fmt.Sprintf("%15s: %d\n", cmdName, usages)
+		out.WriteString(fmt.Sprintf("%15s: %d\n", cmdName, usages))
 	}
 
-	out += "```"
-	return out, nil
+	out.WriteString("```")
+	return out.String(), nil
 }

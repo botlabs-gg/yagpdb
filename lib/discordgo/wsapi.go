@@ -15,7 +15,7 @@ type wsWriter struct {
 	session *Session
 
 	conn               net.Conn
-	closer             chan interface{}
+	closer             chan any
 	incoming           chan outgoingEvent
 	sendCloseQueue     chan []byte
 	readyRecv          chan bool
@@ -27,7 +27,7 @@ type wsWriter struct {
 	sendRatelimiter chan bool
 }
 
-func newWSWriter(conn net.Conn, session *Session, closer chan interface{}) *wsWriter {
+func newWSWriter(conn net.Conn, session *Session, closer chan any) *wsWriter {
 	return &wsWriter{
 		conn:           conn,
 		session:        session,
@@ -108,7 +108,7 @@ func (w *wsWriter) runSendRatelimiter() {
 	}
 }
 
-func (w *wsWriter) writeJson(data interface{}) error {
+func (w *wsWriter) writeJson(data any) error {
 	serialized, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -157,7 +157,7 @@ type wsHeartBeater struct {
 	sequence    *int64
 	receivedAck bool
 	missedAcks  int
-	stop        chan interface{}
+	stop        chan any
 
 	// Called when we received no Ack from last heartbeat
 	onNoAck func()

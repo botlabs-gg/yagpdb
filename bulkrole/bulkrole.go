@@ -8,7 +8,7 @@ import (
 	"github.com/mediocregopher/radix/v3"
 )
 
-var configCache = common.CacheSet.RegisterSlot("bulkrole_config", func(key interface{}) (interface{}, error) {
+var configCache = common.CacheSet.RegisterSlot("bulkrole_config", func(key any) (any, error) {
 	config, err := GetBulkRoleConfig(key.(int64))
 	return config, err
 }, int64(0))

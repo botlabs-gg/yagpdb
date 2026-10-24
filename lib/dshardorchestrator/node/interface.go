@@ -31,5 +31,5 @@ type Interface interface {
 	StartShardTransferFrom(shard int) (numEventsSent int)
 
 	// HandleUserEvent should handle a user event, most commonly used for migrating data between shards during transfers
-	HandleUserEvent(evt dshardorchestrator.EventType, data interface{})
+	HandleUserEvent(evt dshardorchestrator.EventType, data any)
 }

@@ -96,7 +96,7 @@ func (evt EventType) String() string {
 }
 
 // EvtDataMap is a mapping of events to structs for their data
-var EvtDataMap = map[EventType]interface{}{
+var EvtDataMap = map[EventType]any{
 	EvtIdentify:              IdentifyData{},
 	EvtIdentified:            IdentifiedData{},
 	EvtStartShards:           StartShardsData{},
@@ -111,7 +111,7 @@ var EvtDataMap = map[EventType]interface{}{
 // the reccomended way would be to call this in init()
 //
 // panics if id is less than 100, as that's reserved id's for inernal use
-func RegisterUserEvent(name string, id EventType, dataType interface{}) {
+func RegisterUserEvent(name string, id EventType, dataType any) {
 	if id < EvtShardMigrationDataStartID {
 		panic(errors.New("tried registering user event with event type less than 100"))
 	}
@@ -126,11 +126,11 @@ type Message struct {
 
 	// only 1 of RawBody or DecodeBody is present, not both
 	RawBody     []byte
-	DecodedBody interface{}
+	DecodedBody any
 }
 
 // EncodeMessage is the same as EncodeMessageRaw but also encodes the data passed using msgpack
-func EncodeMessage(evtID EventType, data interface{}) ([]byte, error) {
+func EncodeMessage(evtID EventType, data any) ([]byte, error) {
 	if data == nil {
 		return EncodeMessageRaw(evtID, nil), nil
 	}
@@ -177,7 +177,7 @@ func (uee *UnknownEventError) Error() string {
 }
 
 // DecodePayload decodes a event payload according to the specific event
-func DecodePayload(evtID EventType, payload []byte) (interface{}, error) {
+func DecodePayload(evtID EventType, payload []byte) (any, error) {
 	t, ok := EvtDataMap[evtID]
 
 	if !ok {

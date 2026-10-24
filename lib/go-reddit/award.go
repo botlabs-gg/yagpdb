@@ -7,13 +7,13 @@ import (
 )
 
 type Award struct {
-	AwardID     string      `json:"award_id"`
-	Description interface{} `json:"description"`
-	ID          string      `json:"id"`
-	Icon40      string      `json:"icon_40"`
-	Icon70      string      `json:"icon_70"`
-	Name        string      `json:"name"`
-	URL         interface{} `json:"url"`
+	AwardID     string `json:"award_id"`
+	Description any    `json:"description"`
+	ID          string `json:"id"`
+	Icon40      string `json:"icon_40"`
+	Icon70      string `json:"icon_70"`
+	Name        string `json:"name"`
+	URL         any    `json:"url"`
 }
 
 // GetMyTrophies retrieves a list of awards for the currently authenticated user. Requires the 'identity' OAuth scope.

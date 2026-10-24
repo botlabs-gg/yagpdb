@@ -2,6 +2,7 @@ package dshardorchestrator
 
 import (
 	"log"
+	"slices"
 )
 
 type ShardMigrationMode int
@@ -53,13 +54,7 @@ func (stdl *StdLogger) Log(level LogLevel, message string) {
 }
 
 func ContainsInt(slice []int, i int) bool {
-	for _, v := range slice {
-		if v == i {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(slice, i)
 }
 
 // ShardInfo represents basic shard session info

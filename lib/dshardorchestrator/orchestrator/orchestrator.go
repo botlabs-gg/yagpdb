@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"fmt"
 	"net"
+	"slices"
 	"sync"
 	"time"
 
@@ -254,13 +255,7 @@ OUTER:
 	// mark the origin node as busy
 	fromNode.mu.Lock()
 	// make sure the node were migrating from actually holds the shard
-	foundShard := false
-	for _, v := range fromNode.runningShards {
-		if v == shardID {
-			foundShard = true
-			break
-		}
-	}
+	foundShard := slices.Contains(fromNode.runningShards, shardID)
 
 	// it did not hold the shard
 	if !foundShard {
@@ -602,13 +597,7 @@ func (o *Orchestrator) isResponsibleForShard(shard int) bool {
 		return true
 	}
 
-	for _, v := range o.ResponsibleForShards {
-		if v == shard {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(o.ResponsibleForShards, shard)
 }
 
 // BlacklistNode blacklists a node from beign designated new shards
@@ -630,11 +619,5 @@ func (o *Orchestrator) isNodeBlacklisted(lock bool, node string) bool {
 		defer o.mu.Unlock()
 	}
 
-	for _, v := range o.blacklistedNodes {
-		if v == node {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(o.blacklistedNodes, node)
 }

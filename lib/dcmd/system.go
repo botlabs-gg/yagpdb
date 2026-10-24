@@ -308,7 +308,7 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 	return data, nil
 }
 
-func (sys *System) handlePanic(s *discordgo.Session, r interface{}, sendChatNotice bool) {
+func (sys *System) handlePanic(s *discordgo.Session, r any, sendChatNotice bool) {
 	// TODO
 	stack := debug.Stack()
 	log.Printf("[DCMD PANIC] %v\n%s", r, string(stack))
@@ -333,22 +333,22 @@ func (pp *SimplePrefixProvider) Prefix(d *Data) string {
 }
 
 func Indent(depth int) string {
-	indent := ""
-	for i := 0; i < depth; i++ {
-		indent += "-"
+	var indent strings.Builder
+	for range depth {
+		indent.WriteString("-")
 	}
-	return indent
+	return indent.String()
 }
 
 type ResponseSender interface {
-	SendResponse(cmdData *Data, resp interface{}, err error) error
+	SendResponse(cmdData *Data, resp any, err error) error
 }
 
 type StdResponseSender struct {
 	LogErrors bool
 }
 
-func (s *StdResponseSender) SendResponse(cmdData *Data, resp interface{}, err error) error {
+func (s *StdResponseSender) SendResponse(cmdData *Data, resp any, err error) error {
 	if err != nil && s.LogErrors {
 		log.Printf("[DCMD]: Command %q returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
 	}

@@ -22,7 +22,7 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "raw", Help: "Raw roast output, no embed"},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		roast := html.UnescapeString(randomRoast())
 
 		if data.Switches["raw"].Value != nil && data.Switches["raw"].Value.(bool) {

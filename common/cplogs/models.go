@@ -93,7 +93,7 @@ func (r *rawLogEntry) toLogEntry() *LogEntry {
 }
 
 func readParam(paramType uint8, paramInt int64, paramString string) *Param {
-	var value interface{}
+	var value any
 	switch ParamType(paramType) {
 	case ParamTypeInt:
 		value = paramInt
@@ -179,7 +179,7 @@ type LogAction struct {
 
 func (l *LogAction) String() string {
 	f := l.FormatStr
-	args := []interface{}{}
+	args := []any{}
 	for _, v := range l.Params {
 		args = append(args, v.Value)
 	}
@@ -197,5 +197,5 @@ const (
 
 type Param struct {
 	Type  ParamType
-	Value interface{}
+	Value any
 }

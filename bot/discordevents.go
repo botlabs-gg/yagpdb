@@ -61,7 +61,7 @@ func addBotHandlers() {
 }
 
 var (
-	connectedGuildsCache = common.CacheSet.RegisterSlot("bot_connected_guilds", func(_ interface{}) (interface{}, error) {
+	connectedGuildsCache = common.CacheSet.RegisterSlot("bot_connected_guilds", func(_ any) (any, error) {
 		var listedServers []int64
 		err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
 		return listedServers, err

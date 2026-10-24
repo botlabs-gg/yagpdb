@@ -25,7 +25,7 @@ const (
 )
 
 func (e *TestCommand) ShortDescription() string { return "Test Description" }
-func (e *TestCommand) Run(data *Data) (interface{}, error) {
+func (e *TestCommand) Run(data *Data) (any, error) {
 	return TestResponse, nil
 }
 
@@ -35,11 +35,9 @@ func SetupTestSystem() {
 
 	testSession = &discordgo.Session{
 		State: &discordgo.State{
-			Ready: discordgo.Ready{
-				User: &discordgo.SelfUser{
-					User: &discordgo.User{
-						ID: TestUserID,
-					},
+			User: &discordgo.SelfUser{
+				User: &discordgo.User{
+					ID: TestUserID,
 				},
 			},
 		},

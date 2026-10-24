@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "ccreqs",
 	Description:          "Returns the number of concurrent requests currently going on. Bot Owner Only",
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		return fmt.Sprintf("`%d`", common.BotSession.Ratelimiter.CurrentConcurrentLocks()), nil
 	}),
 }

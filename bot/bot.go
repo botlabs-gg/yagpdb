@@ -247,7 +247,7 @@ func GuildCountsFunc() []int {
 	numShards := ShardManager.GetNumShards()
 	result := make([]int, numShards)
 
-	for i := 0; i < numShards; i++ {
+	for i := range numShards {
 		guilds := State.GetShardGuilds(int64(i))
 		result[i] = len(guilds)
 	}
@@ -400,7 +400,7 @@ func botServiceDetailsF() (details *common.BotServiceDetails, err error) {
 	if !UsingOrchestrator {
 		totalShards := ShardManager.GetNumShards()
 		shards := make([]int, totalShards)
-		for i := 0; i < totalShards; i++ {
+		for i := range totalShards {
 			shards[i] = i
 		}
 

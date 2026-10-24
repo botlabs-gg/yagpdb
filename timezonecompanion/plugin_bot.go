@@ -45,7 +45,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "u", Help: "Display current"},
 			{Name: "d", Help: "Delete TZ record"},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 
 			localTZ := time.Now().Location()
 			userZone, userOffset := time.Now().In(localTZ).Zone()
@@ -115,7 +115,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "flags", Type: dcmd.String},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			allStr := parsed.Args[0].Str()
 			all := false
 			if strings.EqualFold(allStr, "all") || strings.EqualFold(allStr, "*") {

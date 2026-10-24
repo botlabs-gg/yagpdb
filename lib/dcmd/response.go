@@ -14,7 +14,7 @@ type Response interface {
 	Send(data *Data) ([]*discordgo.Message, error)
 }
 
-func SendResponseInterface(data *Data, reply interface{}, escapeEveryoneMention bool) ([]*discordgo.Message, error) {
+func SendResponseInterface(data *Data, reply any, escapeEveryoneMention bool) ([]*discordgo.Message, error) {
 
 	allowedMentions := discordgo.AllowedMentions{}
 	if !escapeEveryoneMention {
@@ -27,12 +27,12 @@ func SendResponseInterface(data *Data, reply interface{}, escapeEveryoneMention 
 
 // Temporary response deletes the inner response after Duration
 type TemporaryResponse struct {
-	Response       interface{}
+	Response       any
 	Duration       time.Duration
 	EscapeEveryone bool
 }
 
-func NewTemporaryResponse(d time.Duration, inner interface{}, escapeEveryoneMention bool) *TemporaryResponse {
+func NewTemporaryResponse(d time.Duration, inner any, escapeEveryoneMention bool) *TemporaryResponse {
 	return &TemporaryResponse{
 		Duration: d, Response: inner,
 

@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
+	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -15,7 +17,7 @@ import (
 )
 
 var (
-	fmap  = make(map[string]interface{})
+	fmap  = make(map[string]any)
 	posts = make([]*Post, 0)
 )
 
@@ -77,7 +79,7 @@ func LoadPosts() error {
 }
 
 func readPost(path string) (*Post, error) {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.WithMessage(err, "readPost "+path)
 	}
@@ -96,7 +98,7 @@ func parsePost(data []byte) (*Post, error) {
 		return nil, errors.WithMessage(err, "parsePost")
 	}
 
-	rest, err := ioutil.ReadAll(dec.Buffered())
+	rest, err := io.ReadAll(dec.Buffered())
 	if err != nil {
 		return nil, errors.WithMessage(err, "parsePost")
 	}

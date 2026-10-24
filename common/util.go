@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -172,13 +173,13 @@ func HumanizeDuration(precision DurationFormatPrecision, in time.Duration) strin
 
 	outStr := ""
 
-	for i := len(out) - 1; i >= 0; i-- {
+	for i, o := range slices.Backward(out) {
 		if i == 0 && i != len(out)-1 {
 			outStr += " and "
 		} else if i != len(out)-1 {
 			outStr += " "
 		}
-		outStr += out[i]
+		outStr += o
 	}
 
 	if outStr == "" {
@@ -252,22 +253,18 @@ func MustParseInt(s string) int64 {
 }
 
 func AddRole(member *discordgo.Member, role int64, guildID int64) error {
-	for _, v := range member.Roles {
-		if v == role {
-			// Already has the role
-			return nil
-		}
+	if slices.Contains(member.Roles, role) {
+		// Already has the role
+		return nil
 	}
 
 	return BotSession.GuildMemberRoleAdd(guildID, member.User.ID, role)
 }
 
 func AddRoleDS(ms *dstate.MemberState, role int64) error {
-	for _, v := range ms.Member.Roles {
-		if v == role {
-			// Already has the role
-			return nil
-		}
+	if slices.Contains(ms.Member.Roles, role) {
+		// Already has the role
+		return nil
 	}
 
 	return BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, role)
@@ -347,13 +344,7 @@ func DiscordError(err error) (code int, msg string) {
 func IsDiscordErr(err error, codes ...int) bool {
 	code, _ := DiscordError(err)
 
-	for _, v := range codes {
-		if code == v {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(codes, code)
 }
 
 // for backward compatibility with previous implementations of HumanizePermissions
@@ -439,7 +430,7 @@ func SqlTX(f func(tx *sql.Tx) error) error {
 	return tx.Commit()
 }
 
-func SendOwnerAlert(msgf string, args ...interface{}) {
+func SendOwnerAlert(msgf string, args ...any) {
 	mainOwner := int64(0)
 	if len(BotOwners) > 0 {
 		mainOwner = BotOwners[0]
@@ -453,13 +444,7 @@ func SendOwnerAlert(msgf string, args ...interface{}) {
 }
 
 func IsOwner(userID int64) bool {
-	for _, v := range BotOwners {
-		if v == userID {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(BotOwners, userID)
 }
 
 var AllowedMentionsParseUsers = discordgo.AllowedMentions{
@@ -522,8 +507,9 @@ func FormatList(list []string, conjunction string) string {
 	return sb.String()
 }
 
+//go:fix inline
 func BoolToPointer(b bool) *bool {
-	return &b
+	return new(b)
 }
 
 // Also accepts spaces due to how dcmd reconstructs arguments wrapped in triple backticks.

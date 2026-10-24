@@ -28,7 +28,7 @@ type BasicResponse struct {
 
 func sendBasicResponse(c *gin.Context, err error, successMessage string) {
 	status := http.StatusOK
-	var resp interface{}
+	var resp any
 
 	if err != nil {
 		resp = &BasicResponse{

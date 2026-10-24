@@ -56,7 +56,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "post-id", Type: dcmd.String},
 		},
-		RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 			pID := data.Args[0].Str()
 			if !strings.HasPrefix(pID, "t3_") {
 				pID = "t3_" + pID

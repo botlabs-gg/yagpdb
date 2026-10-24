@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "toggledbg",
 	Description:          "Toggles Debug Logging. Restarting the bot will always reset debug logging. Bot Owner Only",
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (any, error) {
 		if logrus.IsLevelEnabled(logrus.DebugLevel) {
 			common.SetLoggingLevel(logrus.InfoLevel)
 			return "Disabled debug logging", nil

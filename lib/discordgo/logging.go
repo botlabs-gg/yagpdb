@@ -35,16 +35,17 @@ const (
 )
 
 // Logger can be used to replace the standard logging for discordgo
-var Logger func(msgL, caller int, format string, a ...interface{})
-var GatewayLogger func(shardID int, connID int, msgL int, format string, a ...interface{})
+var Logger func(msgL, caller int, format string, a ...any)
+var GatewayLogger func(shardID int, connID int, msgL int, format string, a ...any)
 
 // msglog provides package wide logging consistancy for discordgo
 // the format, a...  portion this command follows that of fmt.Printf
-//   msgL   : LogLevel of the messagez
-//   caller : 1 + the number of callers away from the message source
-//   format : Printf style message format
-//   a ...  : comma separated list of values to pass
-func msglog(msgL, caller int, format string, a ...interface{}) {
+//
+//	msgL   : LogLevel of the messagez
+//	caller : 1 + the number of callers away from the message source
+//	format : Printf style message format
+//	a ...  : comma separated list of values to pass
+func msglog(msgL, caller int, format string, a ...any) {
 
 	if Logger != nil {
 		Logger(msgL, caller, format, a...)
@@ -69,7 +70,7 @@ func msglog(msgL, caller int, format string, a ...interface{}) {
 // This adds a check to insure the message is only logged
 // if the session log level is equal or higher than the
 // message log level
-func (s *Session) log(msgL int, format string, a ...interface{}) {
+func (s *Session) log(msgL int, format string, a ...any) {
 
 	if msgL > s.LogLevel {
 		return
@@ -82,7 +83,7 @@ func (s *Session) log(msgL int, format string, a ...interface{}) {
 // This adds a check to insure the message is only logged
 // if the voice connection log level is equal or higher than the
 // message log level
-func (v *VoiceConnection) log(msgL int, format string, a ...interface{}) {
+func (v *VoiceConnection) log(msgL int, format string, a ...any) {
 	if msgL > v.LogLevel {
 		return
 	}

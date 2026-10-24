@@ -39,7 +39,7 @@ func TestDeleteQueueSplit(t *testing.T) {
 	}
 
 	toDel := make([]int64, 0, 1000)
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		toDel = append(toDel, int64(i))
 	}
 

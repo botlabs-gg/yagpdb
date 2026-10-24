@@ -30,7 +30,7 @@ func (p *Plugin) AddCommands() {
 		},
 		Description:         "Toggles a ruleset on/off",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: func(data *dcmd.Data) (any, error) {
 			rulesetName := data.Args[0].Str()
 			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GuildData.GS.ID, rulesetName)).OneG(data.Context())
 			if err != nil {
@@ -62,7 +62,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryModeration,
 		Description:         "Lists all rulesets and their status",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
-		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		RunFunc: func(data *dcmd.Data) (any, error) {
 			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
 			if err != nil {
 				return nil, err
@@ -157,17 +157,14 @@ func (p *Plugin) AddCommands() {
 			{Name: "skip", Help: "Amount Skipped", Type: dcmd.Int, Default: 0},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			userID := parsed.Args[0].Int64()
 			order := "id desc"
 			limit := 500
 
 			//Check Flags
 			maxAge := parsed.Switches["ma"].Value.(time.Duration)
-			skip := parsed.Switches["skip"].Int()
-			if skip < 0 {
-				skip = 0
-			}
+			skip := max(parsed.Switches["skip"].Int(), 0)
 
 			// retrieve Violations
 			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GuildData.GS.ID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)}
@@ -279,7 +276,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "ID", Type: dcmd.Int},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			ID := parsed.Args[0].Int()
 			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
 
@@ -314,7 +311,7 @@ func (p *Plugin) AddCommands() {
 		ArgumentCombos:      [][]int{{0, 1}, {0}, {1}, {}},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		GuildScopeCooldown:  5,
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			UserID := parsed.Args[0].Int64()
 			VName := parsed.Args[1].Str()
 			order := "id desc"
@@ -322,10 +319,7 @@ func (p *Plugin) AddCommands() {
 			//Check Flags
 			maxAge := parsed.Switches["ma"].Value.(time.Duration)
 			minAge := parsed.Switches["minage"].Value.(time.Duration)
-			skip := parsed.Switches["skip"].Int()
-			if skip < 0 {
-				skip = 0
-			}
+			skip := max(parsed.Switches["skip"].Int(), 0)
 			limit := parsed.Switches["num"].Int()
 			if parsed.Switches["old"].Value != nil && parsed.Switches["old"].Value.(bool) {
 				order = "id asc"

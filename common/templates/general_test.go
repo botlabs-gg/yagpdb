@@ -10,7 +10,7 @@ import (
 func buildLongStr(length int) string {
 	var b strings.Builder
 
-	for i := 0; i < length; i++ {
+	for range length {
 		b.WriteString("A")
 	}
 
@@ -23,15 +23,15 @@ func TestJoinStrings(t *testing.T) {
 
 	cases := []struct {
 		sep            string
-		args           []interface{}
+		args           []any
 		expectedResult string
 		shouldError    bool
 	}{
-		{" ", []interface{}{"hello", "world"}, "hello world", false},
-		{" ", []interface{}{"hello", "world", longString}, "", true},
-		{",", []interface{}{"hello", []string{"world", "!"}}, "hello,world,!", false},
-		{" ", []interface{}{[]string{"hello", "world", "!"}}, "hello world !", false},
-		{" ", []interface{}{[]string{"hello", "world", "!", longString}}, "", true},
+		{" ", []any{"hello", "world"}, "hello world", false},
+		{" ", []any{"hello", "world", longString}, "", true},
+		{",", []any{"hello", []string{"world", "!"}}, "hello,world,!", false},
+		{" ", []any{[]string{"hello", "world", "!"}}, "hello world !", false},
+		{" ", []any{[]string{"hello", "world", "!", longString}}, "", true},
 	}
 
 	for i, c := range cases {
@@ -51,12 +51,12 @@ func TestJoinStrings(t *testing.T) {
 
 func TestSlice(t *testing.T) {
 	cases := []struct {
-		slice         []interface{}
+		slice         []any
 		start, end    int
-		expectedSlice []interface{}
+		expectedSlice []any
 	}{
-		{[]interface{}{"a", "b", "c"}, 1, -1, []interface{}{"b", "c"}},
-		{[]interface{}{"a", "b", "c"}, 0, 2, []interface{}{"a", "b"}},
+		{[]any{"a", "b", "c"}, 1, -1, []any{"b", "c"}},
+		{[]any{"a", "b", "c"}, 0, 2, []any{"a", "b"}},
 	}
 
 	for i, c := range cases {
@@ -73,7 +73,7 @@ func TestSlice(t *testing.T) {
 			if err != nil {
 				t.Errorf("Got error: %s", err)
 			}
-			cast := result.Interface().([]interface{})
+			cast := result.Interface().([]any)
 			if len(cast) != len(c.expectedSlice) {
 				t.Errorf("Unexpected result, differing lengths, got: %v, expected: %v", cast, c.expectedSlice)
 			}

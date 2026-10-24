@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: runPing,
 }
 
-func runPing(data *dcmd.Data) (interface{}, error) {
+func runPing(data *dcmd.Data) (any, error) {
 	gatewayPing := "Unknown"
 	if roundTrip, ok := lastHeartbeatRoundTrip(data); ok {
 		gatewayPing = roundTrip.String()

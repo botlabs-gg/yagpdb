@@ -17,7 +17,7 @@ func TestDecoderFloat64(t *testing.T) {
 		expectedResult float64
 		skipResult     bool
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-float",
@@ -340,7 +340,7 @@ func TestDecoderFloat64Null(t *testing.T) {
 		expectedResult float64
 		resultIsNil    bool
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-float",
@@ -659,7 +659,7 @@ func TestDecoderFloat32(t *testing.T) {
 		expectedResult float32
 		skipResult     bool
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-float",
@@ -978,7 +978,7 @@ func TestDecoderFloat32Null(t *testing.T) {
 		expectedResult float32
 		resultIsNil    bool
 		err            bool
-		errType        interface{}
+		errType        any
 	}{
 		{
 			name:           "basic-float",

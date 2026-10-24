@@ -152,7 +152,7 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 var helpFormatter = &dcmd.StdHelpFormatter{SlashCommandID: SlashCommandIDForName}
 
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
-	return func(data *dcmd.Data) (interface{}, error) {
+	return func(data *dcmd.Data) (any, error) {
 		yc, ok := data.Cmd.Command.(*YAGCommand)
 		if !ok {
 			resp, err := inner(data)
@@ -280,7 +280,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	}
 }
 
-func FilterResp(in interface{}, guildID int64) interface{} {
+func FilterResp(in any, guildID int64) any {
 	switch t := in.(type) {
 	case string:
 		return FilterBadInvites(t, guildID, "[removed-invite]")
@@ -420,7 +420,7 @@ var cmdPrefix = &YAGCommand{
 		{Name: "Server-ID", Type: dcmd.BigInt, Default: 0},
 	},
 
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		targetGuildID := data.Args[0].Int64()
 		if targetGuildID == 0 {
 			targetGuildID = data.GuildData.GS.ID

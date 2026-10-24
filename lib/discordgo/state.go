@@ -49,19 +49,17 @@ type State struct {
 // NewState creates an empty state.
 func NewState() *State {
 	return &State{
-		Ready: Ready{
-			PrivateChannels: []*Channel{},
-			Guilds:          []*Guild{},
-		},
-		TrackChannels:  true,
-		TrackEmojis:    true,
-		TrackMembers:   true,
-		TrackRoles:     true,
-		TrackVoice:     true,
-		TrackPresences: true,
-		guildMap:       make(map[int64]*Guild),
-		channelMap:     make(map[int64]*Channel),
-		memberMap:      make(map[int64]map[int64]*Member),
+		PrivateChannels: []*Channel{},
+		Guilds:          []*Guild{},
+		TrackChannels:   true,
+		TrackEmojis:     true,
+		TrackMembers:    true,
+		TrackRoles:      true,
+		TrackVoice:      true,
+		TrackPresences:  true,
+		guildMap:        make(map[int64]*Guild),
+		channelMap:      make(map[int64]*Channel),
+		memberMap:       make(map[int64]map[int64]*Member),
 	}
 }
 
@@ -158,8 +156,9 @@ func (s *State) GuildRemove(guild *Guild) error {
 
 // Guild gets a guild by ID.
 // Useful for querying if @me is in a guild:
-//     _, err := discordgo.Session.State.Guild(guildID)
-//     isInGuild := err == nil
+//
+//	_, err := discordgo.Session.State.Guild(guildID)
+//	isInGuild := err == nil
 func (s *State) Guild(guildID int64) (*Guild, error) {
 	if s == nil {
 		return nil, ErrNilState
@@ -781,7 +780,7 @@ func (s *State) onReady(se *Session, r *Ready) (err error) {
 }
 
 // OnInterface handles all events related to states.
-func (s *State) OnInterface(se *Session, i interface{}) (err error) {
+func (s *State) OnInterface(se *Session, i any) (err error) {
 	if s == nil {
 		return ErrNilState
 	}

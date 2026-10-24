@@ -49,7 +49,7 @@ var (
 
 	acceptingRequests *int32
 
-	globalTemplateData = TemplateData(make(map[string]interface{}))
+	globalTemplateData = TemplateData(make(map[string]any))
 
 	StartedAt = time.Now()
 
@@ -190,8 +190,8 @@ func loadAd() {
 		Height:  confAdHeight.GetInt(),
 	}
 
-	videos := strings.Split(ConfAdVideos.GetString(), ",")
-	for _, v := range videos {
+	videos := strings.SplitSeq(ConfAdVideos.GetString(), ",")
+	for v := range videos {
 		if v == "" {
 			continue
 		}
@@ -414,7 +414,7 @@ func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
 }
 
-func AddGlobalTemplateData(key string, data interface{}) {
+func AddGlobalTemplateData(key string, data any) {
 	globalTemplateData[key] = data
 }
 

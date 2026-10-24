@@ -889,10 +889,8 @@ func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 	}
 
 	// check command specifc restrictions
-	for _, v := range cc.Channels {
-		if v == channel {
-			return cc.ChannelsWhitelistMode
-		}
+	if slices.Contains(cc.Channels, channel) {
+		return cc.ChannelsWhitelistMode
 	}
 
 	// Not found

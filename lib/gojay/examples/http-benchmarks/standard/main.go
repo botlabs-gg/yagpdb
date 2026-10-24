@@ -33,7 +33,7 @@ type Color struct {
 	Color    string `json:"color,omitempty"`
 	Category string `json:"category,omitempty"`
 	Type     string `json:"type,omitempty"`
-	Code     Code   `json:"code,omitempty"`
+	Code     Code   `json:"code"`
 }
 
 type Code struct {

@@ -33,7 +33,7 @@ var Command = &commands.YAGCommand{
 		{Name: "name", Type: dcmd.String, Default: ""},
 		{Name: "user", Type: dcmd.UserID, Default: 0},
 	},
-	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (any, error) {
 		nameToMatch := strings.ToLower(data.Switch("name").Str())
 		userIDToMatch := data.Switch("user").Int64()
 
@@ -53,14 +53,14 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		resp := ""
+		var resp strings.Builder
 		for _, v := range results {
-			resp += fmt.Sprintf("`%d`: **%s**\n", v.ID, v.Name)
+			resp.WriteString(fmt.Sprintf("`%d`: **%s**\n", v.ID, v.Name))
 		}
 
-		resp += fmt.Sprintf("%d results", len(results))
+		resp.WriteString(fmt.Sprintf("%d results", len(results)))
 
-		return resp, nil
+		return resp.String(), nil
 	}),
 }
 

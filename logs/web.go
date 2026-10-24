@@ -113,10 +113,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		if err != nil {
 			tmpl.AddAlerts(web.ErrorAlert("Failed parsing before id"))
 		}
-		beforeID = int(beforeId64)
-		if beforeID < 1 {
-			beforeID = 1
-		}
+		beforeID = max(int(beforeId64), 1)
 	} else {
 		tmpl["FirstPage"] = true
 	}
@@ -128,10 +125,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		if err != nil {
 			tmpl.AddAlerts(web.ErrorAlert("Failed parsing before id"))
 		}
-		afterID = int(id64)
-		if afterID < 1 {
-			afterID = 1
-		}
+		afterID = max(int(id64), 1)
 		tmpl["FirstPage"] = false
 	}
 
@@ -154,8 +148,8 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	// dealing with legacy code is a pain, gah
 	// so way back i didn't know about arrays in postgres, so i made the blacklisted channels field a single TEXT field, with a comma seperator
 	blacklistedChannels := make([]int64, 0, 10)
-	split := strings.Split(general.BlacklistedChannels.String, ",")
-	for _, v := range split {
+	split := strings.SplitSeq(general.BlacklistedChannels.String, ",")
+	for v := range split {
 		i, err := strconv.ParseInt(v, 10, 64)
 		if i != 0 && err == nil {
 			blacklistedChannels = append(blacklistedChannels, i)
@@ -275,7 +269,7 @@ const (
 )
 
 func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) interface{} {
+	return func(w http.ResponseWriter, r *http.Request) any {
 		g, tmpl := web.GetBaseCPContextData(r.Context())
 
 		idString := pat.Param(r, "id")
@@ -325,7 +319,7 @@ type MessageView struct {
 	Timestamp string
 }
 
-func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleLogsHTML(w http.ResponseWriter, r *http.Request) any {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	logs := r.Context().Value(ctxKeyLogs).(*models.MessageLogs2)
@@ -389,7 +383,7 @@ func SetMessageLogsColors(guildID int64, views []*MessageView) {
 	}
 }
 
-func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) any {
 	g, _ := web.GetBaseCPContextData(r.Context())
 
 	logsId := r.FormValue("LogID")

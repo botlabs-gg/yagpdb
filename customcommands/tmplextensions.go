@@ -51,7 +51,7 @@ func init() {
 	})
 }
 
-func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error) {
+func tmplCArg(typ string, name string, opts ...any) (*dcmd.ArgDef, error) {
 	def := &dcmd.ArgDef{Name: name}
 	switch typ {
 	case "int":
@@ -91,7 +91,7 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 	return def, nil
 }
 
-func tmplExpectArgs(ctx *templates.Context) interface{} {
+func tmplExpectArgs(ctx *templates.Context) any {
 	return func(numRequired int, failedMessage string, args ...*dcmd.ArgDef) (*ParsedArgs, error) {
 		result := &ParsedArgs{}
 		if len(args) == 0 || ctx.Msg == nil || ctx.Data["StrippedMsg"] == nil {
@@ -130,7 +130,7 @@ type ParsedArgs struct {
 	parsed []*dcmd.ParsedArg
 }
 
-func (pa *ParsedArgs) Get(index int) interface{} {
+func (pa *ParsedArgs) Get(index int) any {
 	if len(pa.parsed) <= index {
 		return nil
 	}
@@ -170,14 +170,14 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 	return pa.parsed[index].Value
 }
 
-func (pa *ParsedArgs) IsSet(index int) interface{} {
+func (pa *ParsedArgs) IsSet(index int) any {
 	return pa.Get(index) != nil
 }
 
 // tmplRunCC either run another custom command immeditely with a max stack depth of 2
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
-func tmplRunCC(ctx *templates.Context) interface{} {
-	return func(ccID int, channel interface{}, delaySeconds interface{}, data interface{}) (string, error) {
+func tmplRunCC(ctx *templates.Context) any {
+	return func(ccID int, channel any, delaySeconds any, data any) (string, error) {
 		if ctx.ExecutedFrom == templates.ExecutedFromNestedCommandTemplate {
 			return "", nil
 		}
@@ -290,8 +290,8 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 //
 // for example in a custom mute command you only want 1 scheduled unmute cc per user, to do that you would use the userid as the key
 // then when you use the custom mute command again it will overwrite the mute duration and overwrite the scheduled unmute cc for that user
-func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
-	return func(ccID int, channel interface{}, delaySeconds interface{}, key interface{}, data interface{}) (string, error) {
+func tmplScheduleUniqueCC(ctx *templates.Context) any {
+	return func(ccID int, channel any, delaySeconds any, key any, data any) (string, error) {
 		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -380,8 +380,8 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 }
 
 // tmplCancelUniqueCC cancels a scheduled cc execution in the future with the provided cc id and key
-func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
-	return func(ccID int, key interface{}) (string, error) {
+func tmplCancelUniqueCC(ctx *templates.Context) any {
+	return func(ccID int, key any) (string, error) {
 		if ctx.IncreaseCheckCallCounter("cancelcc", 10) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -406,14 +406,14 @@ type Query struct {
 	Reverse bool        `json:"reverse"`
 }
 
-func tmplDBSet(ctx *templates.Context) interface{} {
-	return func(userID int64, key interface{}, value interface{}) (string, error) {
+func tmplDBSet(ctx *templates.Context) any {
+	return func(userID int64, key any, value any) (string, error) {
 		return (tmplDBSetExpire(ctx))(userID, key, value, -1)
 	}
 }
 
-func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
-	return func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
+func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key any, value any, ttl int) (string, error) {
+	return func(userID int64, key any, value any, ttl int) (string, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -456,8 +456,8 @@ func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{},
 	}
 }
 
-func tmplDBIncr(ctx *templates.Context) interface{} {
-	return func(userID int64, key interface{}, incrBy interface{}) (interface{}, error) {
+func tmplDBIncr(ctx *templates.Context) any {
+	return func(userID int64, key any, incrBy any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -509,8 +509,8 @@ RETURNING value_num`
 	}
 }
 
-func tmplDBGet(ctx *templates.Context) interface{} {
-	return func(userID int64, key interface{}) (interface{}, error) {
+func tmplDBGet(ctx *templates.Context) any {
+	return func(userID int64, key any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -529,13 +529,13 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
+func tmplDBGetPattern(ctx *templates.Context, inverse bool) any {
 	order := "id asc"
 	if inverse {
 		order = "id desc"
 	}
 
-	return func(userID int64, pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
+	return func(userID int64, pattern any, iAmount any, iSkip any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -564,8 +564,8 @@ func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
 	}
 }
 
-func tmplDBDel(ctx *templates.Context) interface{} {
-	return func(userID int64, key interface{}) (interface{}, error) {
+func tmplDBDel(ctx *templates.Context) any {
+	return func(userID int64, key any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -579,8 +579,8 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBDelById(ctx *templates.Context) interface{} {
-	return func(userID int64, id int64) (interface{}, error) {
+func tmplDBDelById(ctx *templates.Context) any {
+	return func(userID int64, id int64) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -592,8 +592,8 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 		return "", err
 	}
 }
-func tmplDBDelMultiple(ctx *templates.Context) interface{} {
-	return func(query interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
+func tmplDBDelMultiple(ctx *templates.Context) any {
+	return func(query any, iAmount any, iSkip any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -607,10 +607,7 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 			return "", err
 		}
 
-		amount := int(templates.ToInt64(iAmount))
-		if amount > 100 {
-			amount = 100
-		}
+		amount := min(int(templates.ToInt64(iAmount)), 100)
 		// LIMIT 0 essentially means LIMIT ALL, or no limit at all.
 		// Make sure we actually cap it at the max documented limit.
 		if amount == 0 {
@@ -641,8 +638,8 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBRank(ctx *templates.Context) interface{} {
-	return func(query interface{}, userID int64, key string) (interface{}, error) {
+func tmplDBRank(ctx *templates.Context) any {
+	return func(query any, userID int64, key string) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -690,8 +687,8 @@ WHERE user_id = $5 AND key = $6`
 	}
 }
 
-func tmplDBCount(ctx *templates.Context) interface{} {
-	return func(variadicArg ...interface{}) (interface{}, error) {
+func tmplDBCount(ctx *templates.Context) any {
+	return func(variadicArg ...any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -735,7 +732,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 	}
 }
 
-func queryFromArg(query interface{}) (*Query, error) {
+func queryFromArg(query any) (*Query, error) {
 
 	querySdict, err := templates.StringKeyDictionary(query)
 	if err != nil {
@@ -774,13 +771,13 @@ func queryFromArg(query interface{}) (*Query, error) {
 	return &q, nil
 }
 
-func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
+func tmplDBTopEntries(ctx *templates.Context, bottom bool) any {
 	orderBy := "value_num DESC, id DESC"
 	if bottom {
 		orderBy = "value_num ASC, id ASC"
 	}
 
-	return func(pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
+	return func(pattern any, iAmount any, iSkip any) (any, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -809,7 +806,7 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 	}
 }
 
-func serializeValue(v interface{}) ([]byte, error) {
+func serializeValue(v any) ([]byte, error) {
 	var b bytes.Buffer
 	enc := msgpack.NewEncoder(templates.LimitWriter(&b, 100000))
 	err := enc.Encode(v)
@@ -841,7 +838,7 @@ func getGuildCCDBNumValues(guildID int64) (int64, error) {
 var cachedDBLimits = common.CacheSet.RegisterSlot("custom_commands_db_limits", nil, int64(0))
 
 func cacheCheckDBLimit(gs *dstate.GuildSet) (int64, error) {
-	v, err := cachedDBLimits.GetCustomFetch(gs.ID, func(key interface{}) (interface{}, error) {
+	v, err := cachedDBLimits.GetCustomFetch(gs.ID, func(key any) (any, error) {
 		n, err := getGuildCCDBNumValues(gs.ID)
 		return n, err
 	})
@@ -879,7 +876,7 @@ type LightDBEntry struct {
 	UpdatedAt time.Time
 
 	Key   string
-	Value interface{}
+	Value any
 
 	ValueSize int
 
@@ -889,7 +886,7 @@ type LightDBEntry struct {
 }
 
 func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
-	var dst interface{}
+	var dst any
 	dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
 
 	var err error
@@ -934,15 +931,15 @@ func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 	dec := msgpack.NewDecoder(buf)
 
-	dec.SetDecodeMapFunc(func(d *msgpack.Decoder) (interface{}, error) {
+	dec.SetDecodeMapFunc(func(d *msgpack.Decoder) (any, error) {
 		n, err := d.DecodeMapLen()
 		if err != nil {
 			return nil, err
 		}
 
 		isStringKeysOnly := true
-		mi := make(map[interface{}]interface{}, n)
-		ms := make(map[string]interface{})
+		mi := make(map[any]any, n)
+		ms := make(map[string]any)
 
 		for range n {
 			mk, err := d.DecodeInterface()

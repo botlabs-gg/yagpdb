@@ -97,37 +97,37 @@ func (w *TestWriter) Write(b []byte) (int, error) {
 }
 
 func feedStreamNil(s chan *testObject, target int) {
-	for i := 0; i < target; i++ {
+	for range target {
 		s <- nil
 	}
 }
 
 func feedStream(s chan *testObject, target int) {
-	for i := 0; i < target; i++ {
+	for range target {
 		s <- &testObject{}
 	}
 }
 
 func feedStreamSlices(s chan *TestEncodingArrStrings, target int) {
-	for i := 0; i < target; i++ {
+	for range target {
 		s <- &TestEncodingArrStrings{"test", "test2"}
 	}
 }
 
 func feedStreamStrings(s chan string, target int) {
-	for i := 0; i < target; i++ {
+	for range target {
 		s <- "hello"
 	}
 }
 
 func feedStreamInt(s chan int, target int) {
-	for i := 0; i < target; i++ {
+	for i := range target {
 		s <- i
 	}
 }
 
 func feedStreamFloat(s chan float64, target int) {
-	for i := 0; i < target; i++ {
+	for i := range target {
 		s <- float64(i)
 	}
 }

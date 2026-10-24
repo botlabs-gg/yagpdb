@@ -134,7 +134,7 @@ func getNodeStatusesClustered() (st *NodeStatusesResponse, err error) {
 	}
 
 	// send requests
-	resultCh := make(chan interface{}, len(nodeIDs))
+	resultCh := make(chan any, len(nodeIDs))
 	for _, n := range nodeIDs {
 		go getNodeStatusCh(n, resultCh)
 	}
@@ -142,7 +142,7 @@ func getNodeStatusesClustered() (st *NodeStatusesResponse, err error) {
 	timeout := time.After(time.Second * 3)
 
 	// fetch responses
-	for index := 0; index < len(nodeIDs); index++ {
+	for index := range nodeIDs {
 		select {
 		case <-timeout:
 			clientLogger.Errorf("Timed out waiting for %d nodes", len(nodeIDs)-index)
@@ -175,7 +175,7 @@ OUTER:
 	return
 }
 
-func getNodeStatusCh(nodeID string, retCh chan interface{}) {
+func getNodeStatusCh(nodeID string, retCh chan any) {
 	status, err := GetNodeStatus(nodeID)
 	if err != nil {
 		retCh <- err

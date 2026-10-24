@@ -134,7 +134,7 @@ func newDAVECipher(key []byte) (cipher.AEAD, error) {
 
 func hashRatchetGetKey(baseSecret []byte, generation uint32) ([]byte, error) {
 	secret := baseSecret
-	for i := uint32(0); i < generation; i++ {
+	for i := range generation {
 		genCtx := make([]byte, 4)
 		binary.BigEndian.PutUint32(genCtx, i)
 		next, err := mls.ExpandWithLabel(secret, "secret", genCtx, 32)

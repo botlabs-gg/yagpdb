@@ -19,7 +19,8 @@ import (
 	_ "image/jpeg" // For JPEG decoding
 	_ "image/png"  // For PNG decoding
 	"io"
-	"io/ioutil"
+	"slices"
+
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -46,12 +47,12 @@ var (
 )
 
 // Request is the same as RequestWithBucketID but the bucket id is the same as the urlStr
-func (s *Session) Request(method, urlStr string, data interface{}, headers map[string]string) (response []byte, err error) {
+func (s *Session) Request(method, urlStr string, data any, headers map[string]string) (response []byte, err error) {
 	return s.RequestWithBucketID(method, urlStr, data, headers, strings.SplitN(urlStr, "?", 2)[0])
 }
 
 // RequestWithBucketID makes a (GET/POST/...) Requests to Discord REST API with JSON data.
-func (s *Session) RequestWithBucketID(method, urlStr string, data interface{}, headers map[string]string, bucketID string) (response []byte, err error) {
+func (s *Session) RequestWithBucketID(method, urlStr string, data any, headers map[string]string, bucketID string) (response []byte, err error) {
 	var body []byte
 	if data != nil {
 		body, err = json.Marshal(data)
@@ -133,7 +134,7 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, header
 		}
 	}()
 
-	response, err = ioutil.ReadAll(resp.Body)
+	response, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, true, false, err
 	}
@@ -268,7 +269,7 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, h
 	return req, resp, err
 }
 
-func unmarshal(data []byte, v interface{}) error {
+func unmarshal(data []byte, v any) error {
 	err := json.Unmarshal(data, v)
 	return err
 }
@@ -539,11 +540,8 @@ func MemberPermissions(guild *Guild, channel *Channel, member *Member) (apermiss
 	}
 
 	for _, role := range guild.Roles {
-		for _, roleID := range member.Roles {
-			if role.ID == roleID {
-				apermissions |= role.Permissions
-				break
-			}
+		if slices.Contains(member.Roles, role.ID) {
+			apermissions |= role.Permissions
 		}
 	}
 
@@ -746,7 +744,7 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 
 	uri := EndpointGuildBan(guildID, userID)
 
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	if days > 0 {
 		data["delete_message_days"] = days
 	}
