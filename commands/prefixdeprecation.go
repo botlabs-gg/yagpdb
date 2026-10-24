@@ -17,7 +17,7 @@ import (
 
 const prefixAlertLifetime = 10 * time.Second
 
-const prefixAlertCooldown = 5 * time.Minute
+const prefixAlertCooldown = 30 * time.Second
 
 const prefixCommandsDocsURL = "https://help.yagpdb.xyz/docs/core/command-settings/#text-commands-have-been-discontinued"
 
