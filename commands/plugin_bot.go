@@ -27,6 +27,8 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
+	logPrefixCommandSettings()
+
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
 
