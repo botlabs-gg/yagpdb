@@ -125,6 +125,7 @@ func handleGetSetup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	templateData["SetupModules"] = views
+	templateData["FromInvite"] = r.FormValue("from") == "invite"
 	templateData["ReadOnly"] = web.GetIsReadOnly(ctx)
 	templateData["DefaultWelcomeMessage"] = DefaultWelcomeMessage
 	templateData["InviteURL"] = web.BotInviteURL(guild.ID)

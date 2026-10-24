@@ -152,6 +152,10 @@ func Run() {
 	AddGlobalTemplateData("Version", common.VERSION)
 	AddGlobalTemplateData("Testing", common.Testing)
 
+	if strings.HasPrefix(confGAID.GetString(), "UA-") {
+		logger.Errorf("yagpdb.ga_id is %q, a Universal Analytics property. Google stopped collecting for those on 2023-07-01, so no analytics are being recorded. Replace it with a GA4 measurement id (G-XXXXXXXXXX).", confGAID.GetString())
+	}
+
 	if properAddresses {
 		ListenAddressHTTP = ":80"
 		ListenAddressHTTPS = ":443"

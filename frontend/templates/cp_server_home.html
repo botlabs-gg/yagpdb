@@ -17,9 +17,9 @@
 		</div>
 		<div class="ml-auto mt-2 d-flex align-items-center">
 			<form method="post" action="/manage/{{.ActiveGuild.ID}}/setup/skip" class="mr-2">
-				<button type="submit" class="btn btn-link text-muted">Dismiss</button>
+				<button type="submit" class="btn btn-link text-muted" data-ga-event="quick_setup_dismissed">Dismiss</button>
 			</form>
-			<a class="btn btn-primary" href="/manage/{{.ActiveGuild.ID}}/setup" data-partial-load="true">Start Quick Setup</a>
+			<a class="btn btn-primary" href="/manage/{{.ActiveGuild.ID}}/setup" data-partial-load="true" data-ga-event="quick_setup_started">Start Quick Setup</a>
 		</div>
 	</div>
 </section>

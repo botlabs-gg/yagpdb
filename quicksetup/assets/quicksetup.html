@@ -303,7 +303,7 @@
                     </div>
                     <footer class="card-footer d-flex align-items-center">
                         <button type="button" class="btn btn-default btn-lg" id="qs-back" hidden><i class="fas fa-arrow-left mr-2"></i>Back</button>
-                        {{if not .ReadOnly}}<button type="submit" class="btn btn-link ml-auto mr-3" form="qs-skip-form">Skip for now</button>{{end}}
+                        {{if not .ReadOnly}}<button type="submit" class="btn btn-link ml-auto mr-3" form="qs-skip-form" data-ga-event="quick_setup_skipped">Skip for now</button>{{end}}
                         <button type="button" class="btn btn-primary btn-lg{{if .ReadOnly}} ml-auto{{end}}" id="qs-next">Next<i class="fas fa-arrow-right ml-2"></i></button>
                         <button type="submit" class="btn btn-success btn-lg" id="qs-apply" {{if .ReadOnly}}disabled{{end}} hidden><i class="fas fa-check mr-2"></i>Set up now</button>
                     </footer>
@@ -337,6 +337,17 @@
 
     <form method="post" action="/manage/{{.ActiveGuild.ID}}/setup/skip" id="qs-skip-form"
         onsubmit="return confirm('Skip Quick Setup for now? You can still run it later from the sidebar.')"></form>
+
+    <script>
+        if (window.gtag) {
+            {{if .SetupResults}}
+            gtag('event', 'quick_setup_completed', { modules_applied: {{len .SetupResults}} });
+            {{else}}
+            {{if .FromInvite}}gtag('event', 'bot_invite_completed');{{end}}
+            gtag('event', 'quick_setup_viewed');
+            {{end}}
+        }
+    </script>
 
     <script>
         (function () {
