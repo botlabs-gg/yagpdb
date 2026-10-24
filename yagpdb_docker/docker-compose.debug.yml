@@ -11,8 +11,10 @@ networks:
 
 services:
 
-  nirn: 
-    image: ghcr.io/germanoeich/nirn-proxy
+  nirn:
+    # Built from source because the published image is amd64 only, and the
+    # amd64 binary segfaults under emulation on arm64 hosts.
+    build: https://github.com/germanoeich/nirn-proxy.git#v1.3.3
     restart: unless-stopped
     networks:
       - default

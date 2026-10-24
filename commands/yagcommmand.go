@@ -380,10 +380,6 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		}
 	}
 
-	if warning := warnPrefixCommandDeprecated(cmdData); warning != nil {
-		replies = append(replies, warning)
-	}
-
 	if settings.DelResponse {
 		go func() {
 			time.Sleep(time.Second * time.Duration(settings.DelResponseDelay))

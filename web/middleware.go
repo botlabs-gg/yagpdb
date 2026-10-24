@@ -99,9 +99,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"GAID":             confGAID.GetString(),
 
 			// Hosts that have already opted out of prefix commands don't need the warning
-			"ShowPrefixCommandsWarning":  common.ShowPrefixCommandsWarning(),
-			"PrefixCommandsDisabled":     common.PrefixCommandsDisabled(),
-			"PrefixCommandsShutdownDate": common.PrefixCommandsShutdownDate.Format("2 January 2006"),
+			"PrefixCommandsDisabled": common.PrefixCommandsDisabled(),
 
 			"CommandPrefix": prfx.DefaultCommandPrefix(),
 		}

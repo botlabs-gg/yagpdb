@@ -3,83 +3,87 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/mediocregopher/radix/v3"
 )
 
-const (
-	prefixCommandUsesPerWarning = 10
-	prefixCommandUsesExpirySecs = 30 * 24 * 60 * 60
-)
+const prefixAlertLifetime = 10 * time.Second
 
-func prefixCommandUsesKey(guildID int64) string {
-	return "prefix_command_uses:" + discordgo.StrID(guildID)
-}
+const prefixCommandsDocsURL = "https://help.yagpdb.xyz/docs/core/command-settings/#text-commands-have-been-discontinued"
 
-func warnPrefixCommandDeprecated(data *dcmd.Data) *discordgo.Message {
-	if !common.ShowPrefixCommandsWarning() {
-		return nil
+const prefixAlertColor = 0xeaed40
+
+// Set by custom commands, which can be named after a built in command and would
+// otherwise be alerted about despite having run.
+var PrefixMessageClaimedBy func(evt *eventsystem.EventData, msg *discordgo.Message) bool
+
+func alertPrefixCommandDisabled(evt *eventsystem.EventData, msg *discordgo.Message, prefix string) {
+	if !common.ShowPrefixCommandsWarning() || prefix == "" || evt.GS == nil {
+		return
 	}
 
-	if data.TriggerType != dcmd.TriggerTypePrefix || data.GuildData == nil || data.TraditionalTriggerData == nil {
-		return nil
+	name := prefixedCommandName(msg.Content, prefix)
+	if name == "" {
+		return
 	}
 
-	if isExecutedByCustomCommand(data) || !isWarnedPrefixCommandUse(data.GuildData.GS.ID) {
-		return nil
+	if PrefixMessageClaimedBy != nil && PrefixMessageClaimedBy(evt, msg) {
+		return
 	}
 
-	name := fullCommandName(data)
-	content := fmt.Sprintf(
-		"**Heads up:** prefixed commands are being discontinued and `%s%s` will stop working. "+
-			"Use %s or mention the bot instead. Custom commands are not affected.",
-		data.TraditionalTriggerData.PrefixUsed, name, SlashCommandMention(name),
-	)
-
-	msg, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, &discordgo.MessageSend{
-		Content:         content,
+	sent, err := common.BotSession.ChannelMessageSendComplex(msg.ChannelID, &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{{
+			Description: fmt.Sprintf("[Prefix commands have been disabled](%s). Use %s instead.",
+				prefixCommandsDocsURL, SlashCommandMention(name)),
+			Color: prefixAlertColor,
+		}},
+		Reference: &discordgo.MessageReference{
+			MessageID: msg.ID,
+			ChannelID: msg.ChannelID,
+			GuildID:   msg.GuildID,
+		},
+		// Zero value leaves replied_user false, so the reply does not ping.
 		AllowedMentions: discordgo.AllowedMentions{},
 	})
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Warn("failed sending prefix deprecation warning")
-		return nil
+		logger.WithError(err).WithField("guild", evt.GS.ID).Warn("failed sending prefix deprecation alert")
+		return
 	}
 
-	return msg
+	time.AfterFunc(prefixAlertLifetime, func() {
+		bot.MessageDeleteQueue.DeleteMessages(msg.GuildID, sent.ChannelID, sent.ID)
+	})
 }
 
-func isExecutedByCustomCommand(data *dcmd.Data) bool {
-	executed, _ := data.Context().Value(CtxKeyExecutedByCC).(bool)
-	return executed
-}
-
-func isWarnedPrefixCommandUse(guildID int64) bool {
-	key := prefixCommandUsesKey(guildID)
-
-	var uses int
-	err := common.RedisPool.Do(radix.Pipeline(
-		radix.Cmd(&uses, "INCR", key),
-		radix.FlatCmd(nil, "EXPIRE", key, prefixCommandUsesExpirySecs),
-	))
-	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Warn("failed counting prefix command uses")
-		return false
+// Returns "" for anything that is not a built in command, which is what keeps
+// plain text and custom command triggers from being alerted about.
+func prefixedCommandName(content, prefix string) string {
+	if !strings.HasPrefix(content, prefix) {
+		return ""
 	}
 
-	return uses%prefixCommandUsesPerWarning == 1
-}
-
-func fullCommandName(data *dcmd.Data) string {
-	name := data.Cmd.FormatNames(false, " ")
-	if len(data.ContainerChain) > 1 {
-		container := data.ContainerChain[len(data.ContainerChain)-1]
-		if len(container.Names) > 0 {
-			name = container.Names[0] + " " + name
-		}
+	stripped := strings.TrimSpace(strings.TrimPrefix(content, prefix))
+	if stripped == "" {
+		return ""
 	}
 
-	return strings.ToLower(name)
+	found, _ := CommandSystem.Root.AbsFindCommand(stripped)
+	if found == nil {
+		return ""
+	}
+
+	cmd, ok := found.Command.(*YAGCommand)
+	if !ok {
+		return ""
+	}
+
+	if canonical := cmd.CanonicalName(); canonical != "" {
+		return strings.ToLower(canonical)
+	}
+
+	return strings.ToLower(cmd.Name)
 }

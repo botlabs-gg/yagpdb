@@ -3,7 +3,6 @@ package common
 import (
 	"strconv"
 	"strings"
-	"time"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
@@ -43,8 +42,6 @@ var (
 
 	BotOwners []int64
 )
-
-var PrefixCommandsShutdownDate = time.Date(2026, time.September, 15, 0, 0, 0, 0, time.UTC)
 
 func PrefixCommandsDisabled() bool {
 	return !ConfEnablePrefixCommands.GetBool()

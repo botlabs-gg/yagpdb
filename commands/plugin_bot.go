@@ -342,7 +342,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 	}
 
 	prefix := ""
-	if !CommandSystem.DisablePrefixTrigger {
+	if !CommandSystem.DisablePrefixTrigger || common.ShowPrefixCommandsWarning() {
 		prefix = prfx.DefaultCommandPrefix()
 		if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 			var err error
@@ -353,8 +353,13 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		}
 	}
 
+	// FindPrefix checks DisablePrefixTrigger before the prefix, so passing one
+	// here still runs nothing.
 	CommandSystem.CheckMessageWtihPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
-	// CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
+
+	if CommandSystem.DisablePrefixTrigger {
+		alertPrefixCommandDisabled(evt, m.Message, prefix)
+	}
 }
 
 func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
