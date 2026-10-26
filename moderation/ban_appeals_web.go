@@ -3,6 +3,7 @@ package moderation
 import (
 	_ "embed"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -80,6 +81,7 @@ func handleGetBanAppealPage(w http.ResponseWriter, r *http.Request) (web.Templat
 	_, templateData := web.GetCreateTemplateData(ctx)
 	templateData["BanAppealMinLength"] = BanAppealMinLength
 	templateData["BanAppealMaxLength"] = BanAppealMaxLength
+	templateData["SwitchAccountURL"] = "/logout?goto=" + url.QueryEscape(r.URL.Path)
 
 	if _, alreadyDecided := templateData["AppealState"]; alreadyDecided {
 		return templateData, nil
