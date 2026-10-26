@@ -17,6 +17,7 @@
 			--border: #e3e5e8;
 			--danger-bg: #fde8e8;
 			--danger-text: #a12d2f;
+			--link: #4752c4;
 		}
 		@media (prefers-color-scheme: dark) {
 			:root {
@@ -28,6 +29,7 @@
 				--border: #3f4147;
 				--danger-bg: #3d2224;
 				--danger-text: #f6a5a7;
+				--link: #a5adff;
 			}
 		}
 		* { box-sizing: border-box; }
@@ -96,7 +98,34 @@
 			cursor: pointer;
 		}
 		button:hover { background: var(--accent-hover); }
-		.signed-in { margin: 12px 0 0; color: var(--muted); font-size: 0.85rem; text-align: center; }
+		a { color: var(--link); }
+		.account {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			margin: -8px 0 24px;
+			padding-bottom: 16px;
+			border-bottom: 1px solid var(--border);
+		}
+		.account-avatar { width: 44px; height: 44px; border-radius: 50%; }
+		.account-label { display: block; color: var(--muted); font-size: 0.8rem; }
+		.account-name { font-weight: 600; }
+		.account-handle { margin-left: 4px; color: var(--muted); font-size: 0.9rem; }
+		.switch-account { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+		.switch-account p { margin-bottom: 12px; color: var(--muted); font-size: 0.85rem; text-align: center; }
+		.button {
+			display: block;
+			padding: 9px;
+			border-radius: 6px;
+			background: var(--accent);
+			color: #fff;
+			font-weight: 600;
+			text-align: center;
+			text-decoration: none;
+		}
+		.button:hover { background: var(--accent-hover); }
+		.button-secondary { border: 1px solid var(--border); background: none; color: var(--text); }
+		.button-secondary:hover { background: var(--field); }
 		.alert {
 			margin-bottom: 16px;
 			padding: 12px;
@@ -110,6 +139,17 @@
 </head>
 <body>
 	<main>
+		{{if .User}}
+		<div class="account">
+			<img class="account-avatar" src="{{.User.AvatarURL "128"}}" alt="">
+			<div>
+				<span class="account-label">Signed in as</span>
+				<span class="account-name">{{or .User.Globalname .User.Username}}</span>
+				{{if .User.Globalname}}<span class="account-handle">@{{.User.Username}}</span>{{end}}
+			</div>
+		</div>
+		{{end}}
+
 		<header>
 			{{if .GuildIcon}}<img src="{{.GuildIcon}}" alt="">{{end}}
 			<h1>{{or .GuildName "Ban Appeal"}}</h1>
@@ -119,7 +159,10 @@
 
 		{{$state := or .AppealState ""}}
 		{{if eq $state "invalid"}}
-		<div class="status"><p>This appeal link isn't valid.</p></div>
+		<div class="status">
+			<p>This appeal link isn't valid for the account you're signed in with. If you were banned on a different
+				Discord account, sign in with that one instead.</p>
+		</div>
 		{{else if eq $state "disabled"}}
 		<div class="status"><p>This server isn't accepting ban appeals.</p></div>
 		{{else if eq $state "pending"}}
@@ -153,7 +196,13 @@
 				placeholder="Explain what happened and why you'd like to be unbanned.">{{.AppealDraft}}</textarea>
 			<button type="submit">Send Appeal</button>
 		</form>
-		<p class="signed-in">Signed in as {{.User.Username}}</p>
+		{{end}}
+		{{if .User}}
+		<div class="switch-account">
+			<p>Wrong account? First log out of <a href="https://discord.com/app" target="_blank" rel="noopener">discord.com</a>
+				in this browser or switch to your other account there, then press Switch account.</p>
+			<a class="button button-secondary" href="{{.SwitchAccountURL}}">Switch account</a>
+		</div>
 		{{end}}
 	</main>
 </body>

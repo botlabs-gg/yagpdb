@@ -48,7 +48,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redir := r.FormValue("goto")
-	if redir != "" && strings.HasPrefix(redir, "/") && !strings.HasPrefix(redir, "//") && !strings.HasPrefix(redir, "/\\") {
+	if isLocalRedirect(redir) {
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 
@@ -105,13 +105,24 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// isLocalRedirect keeps redirects after logging in or out on this site.
+func isLocalRedirect(path string) bool {
+	return strings.HasPrefix(path, "/") && !strings.HasPrefix(path, "//") && !strings.HasPrefix(path, "/\\")
+}
+
+// HandleLogout signs straight back in when given a page to return to, which
+// is how someone switches to another Discord account.
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	rawToken := r.Context().Value(common.ContextKeyYagToken)
 	if rawToken != nil {
 		discorddata.EvictSession(rawToken.(string))
 	}
 
-	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	redirectTo := "/"
+	if returnTo := r.FormValue("goto"); isLocalRedirect(returnTo) {
+		redirectTo = "/login?goto=" + url.QueryEscape(returnTo)
+	}
+	defer http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
 
 	if _, err := r.Cookie(SessionCookieName); err != nil {
 		return
