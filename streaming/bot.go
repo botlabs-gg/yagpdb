@@ -242,6 +242,15 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 	}
 
 	mainActivity := retrieveMainActivity(p)
+	isStreaming := p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1
+
+	// Almost no presence update is a stream, and ending one needs nothing from the member,
+	// so only streams pay for a member lookup that can fall back to the REST API.
+	if !isStreaming {
+		RemoveStreamingSparse(client, config, gs.ID, p.User.ID)
+		return nil
+	}
+
 	ms, err := bot.GetMember(gs.ID, p.User.ID)
 	if err != nil {
 		return err
@@ -249,7 +258,7 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 && !ms.User.Bot {
+	if !ms.User.Bot {
 
 		// Streaming and not a bot
 		if !config.MeetsRequirements(ms.Member.Roles, mainActivity.State, mainActivity.Details) {
@@ -277,7 +286,7 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 			go SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
 	} else {
-		// Not streaming
+		// Bots never count as streaming
 		RemoveStreamingSparse(client, config, gs.ID, p.User.ID)
 	}
 

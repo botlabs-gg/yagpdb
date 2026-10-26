@@ -183,6 +183,7 @@ func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*
 		err := common.BotSession.CreateInteractionResponse(interaction.ID, interaction.Token, def)
 		if err != nil {
 			logger.WithField("guild", interaction.GuildID).WithError(err).Error("Error deferring response")
+			return
 		}
 		interaction.RespondedTo = true
 		interaction.Deferred = true

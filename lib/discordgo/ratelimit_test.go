@@ -114,3 +114,19 @@ func sendBenchReq(endpoint string, rl *RateLimiter) {
 
 	bucket.Release(headers, id)
 }
+
+func interactionIDAt(created time.Time) int64 {
+	return (created.UnixMilli() - discordEpochMillis) << 22
+}
+
+func TestCreateInteractionResponseRejectsExpiredInteractions(t *testing.T) {
+	s := &Session{}
+	err := s.CreateInteractionResponse(interactionIDAt(time.Now().Add(-10*time.Second)), "token", &InteractionResponse{Type: InteractionResponseDeferredChannelMessageWithSource})
+	if err != ErrInteractionExpired {
+		t.Fatalf("expected an interaction older than the deadline to be rejected without a request, got %v", err)
+	}
+
+	if age := interactionAge(interactionIDAt(time.Now())); age > time.Second {
+		t.Fatalf("a fresh interaction must not read as old, got %s", age)
+	}
+}

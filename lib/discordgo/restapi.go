@@ -44,7 +44,18 @@ var (
 	ErrGuildNoSplash           = errors.New("guild does not have a splash set")
 	ErrUnauthorized            = errors.New("HTTP request was unauthorized. This could be because the provided token was not a bot token. Please add \"Bot \" to the start of your token. https://discordapp.com/developers/docs/reference#authentication-example-bot-token-authorization-header")
 	ErrTokenInvalid            = errors.New("Invalid token provided, it has been marked as invalid")
+	ErrInteractionExpired      = errors.New("interaction is too old to respond to")
 )
+
+// Discord only accepts the initial response to an interaction within 3 seconds, the extra margin covers
+// clock drift between this host and discord. Responding later can only fail and counts as an invalid request.
+const InteractionResponseDeadline = 5 * time.Second
+
+const discordEpochMillis = 1420070400000
+
+func interactionAge(interactionID int64) time.Duration {
+	return time.Since(time.UnixMilli((interactionID >> 22) + discordEpochMillis))
+}
 
 // Request is the same as RequestWithBucketID but the bucket id is the same as the urlStr
 func (s *Session) Request(method, urlStr string, data any, headers map[string]string) (response []byte, err error) {
@@ -163,7 +174,8 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, header
 		rl := TooManyRequests{}
 		err = json.Unmarshal(response, &rl)
 		if err != nil {
-			s.log(LogError, "request body rate limit unmarshal error, %s, %q, url: %s", err, string(response), urlStr)
+			// discord always sends a json body with its 429s, so this is cloudflare blocking every request from this IP
+			s.log(LogError, "429 without a discord ratelimit body, cloudflare is most likely blocking this IP, retry after: %qs, body: %q, url: %s", resp.Header.Get("Retry-After"), string(response), urlStr)
 			// get ratelimit from headers in case body doesn't have it.
 			retryAfter := resp.Header.Get("Retry-After")
 			if retryAfter != "" {
@@ -3169,6 +3181,10 @@ func (s *Session) BatchEditGuildApplicationCommandsPermissions(applicationID int
 // CreateInteractionResponse Create a response to an Interaction from the gateway. Takes an Interaction response.
 // POST /interactions/{interaction.id}/{interaction.token}/callback
 func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (err error) {
+	if interactionAge(interactionID) > InteractionResponseDeadline {
+		return ErrInteractionExpired
+	}
+
 	if data.Data != nil && len(data.Data.Embeds) > 0 {
 		data.Data.Embeds = ValidateComplexMessageEmbeds(data.Data.Embeds)
 	}
