@@ -359,3 +359,65 @@ func TestThreadParentPerms(t *testing.T) {
 		t.Fatal("thread should have been removed")
 	}
 }
+
+func TestThreadListSyncDoesNotGrowThreads(t *testing.T) {
+	tracker := createTestState(TrackerConfig{})
+	const otherChannelID = 9001
+
+	for range 10 {
+		tracker.HandleEvent(testSession, &discordgo.ThreadListSync{
+			GuildID:  initialTestGuildID,
+			Channels: discordgo.IDSlice{otherChannelID},
+		})
+	}
+
+	threads := tracker.GetGuild(initialTestGuildID).Threads
+	if len(threads) != 1 || threads[0].ID != intialTestThreadID {
+		t.Fatalf("syncing an unrelated channel must keep the existing thread only, got %d threads", len(threads))
+	}
+}
+
+func TestThreadListSyncReplacesSyncedThreads(t *testing.T) {
+	tracker := createTestState(TrackerConfig{})
+	synced := &discordgo.Channel{
+		ID:             testThreadID,
+		GuildID:        initialTestGuildID,
+		ParentID:       initialTestChannelID,
+		Type:           discordgo.ChannelTypeGuildPublicThread,
+		ThreadMetadata: &discordgo.ThreadMetadata{},
+	}
+
+	tracker.HandleEvent(testSession, &discordgo.ThreadListSync{
+		GuildID:  initialTestGuildID,
+		Channels: discordgo.IDSlice{initialTestChannelID},
+		Threads:  []*discordgo.Channel{synced},
+	})
+
+	threads := tracker.GetGuild(initialTestGuildID).Threads
+	if len(threads) != 1 || threads[0].ID != testThreadID {
+		t.Fatalf("threads of a synced channel must be replaced by the synced list, got %+v", threads)
+	}
+}
+
+func TestThreadListSyncWithoutChannelsReplacesAllThreads(t *testing.T) {
+	tracker := createTestState(TrackerConfig{})
+	synced := &discordgo.Channel{
+		ID:             testThreadID,
+		GuildID:        initialTestGuildID,
+		ParentID:       initialTestChannelID,
+		Type:           discordgo.ChannelTypeGuildPublicThread,
+		ThreadMetadata: &discordgo.ThreadMetadata{},
+	}
+
+	for range 3 {
+		tracker.HandleEvent(testSession, &discordgo.ThreadListSync{
+			GuildID: initialTestGuildID,
+			Threads: []*discordgo.Channel{synced},
+		})
+	}
+
+	threads := tracker.GetGuild(initialTestGuildID).Threads
+	if len(threads) != 1 || threads[0].ID != testThreadID {
+		t.Fatalf("a sync without channel ids covers the whole guild and must replace every thread, got %d threads", len(threads))
+	}
+}

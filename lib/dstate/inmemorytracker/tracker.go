@@ -945,11 +945,13 @@ func (shard *ShardTracker) handleThreadListSync(evt *discordgo.ThreadListSync) {
 
 	newGS := gs.copyGuildSet()
 
-	// keep old un updated threads
-	newGS.Threads = make([]dstate.ChannelState, len(gs.Threads))
-	for _, v := range gs.Threads {
-		if !containsInt64(evt.Channels, v.ParentID) {
-			newGS.Threads = append(newGS.Threads, v)
+	// keep old un updated threads, a sync without channel ids covers the whole guild
+	newGS.Threads = make([]dstate.ChannelState, 0, len(gs.Threads)+len(evt.Threads))
+	if len(evt.Channels) > 0 {
+		for _, v := range gs.Threads {
+			if !containsInt64(evt.Channels, v.ParentID) {
+				newGS.Threads = append(newGS.Threads, v)
+			}
 		}
 	}
 
