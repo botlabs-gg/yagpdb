@@ -118,6 +118,8 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 	tmplCtx.Data["IsSlashCommand"] = true
 	tmplCtx.Data["CommandName"] = data.Name
 	tmplCtx.Data["Cmd"] = data.Name
+	tmplCtx.Data["SlashID"] = data.ID
+	tmplCtx.Data["SlashMention"] = fmt.Sprintf("</%s:%d>", data.Name, data.ID)
 
 	stored := parseSlashCommandData(cc)
 
