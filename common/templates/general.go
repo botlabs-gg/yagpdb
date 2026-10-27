@@ -1069,6 +1069,19 @@ func randInt(args ...any) (int, error) {
 	return int(r + min), nil
 }
 
+func randNorm(args ...any) float64 {
+	mean := float64(0)
+	stddev := float64(1)
+	if len(args) >= 2 {
+		mean = ToFloat64(args[0])
+		stddev = ToFloat64(args[1])
+	} else if len(args) == 1 {
+		mean = ToFloat64(args[0])
+	}
+
+	return rand.NormFloat64()*stddev + mean
+}
+
 func tmplRound(args ...any) float64 {
 	if len(args) < 1 {
 		return 0

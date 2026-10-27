@@ -130,6 +130,7 @@ var (
 		"jsonToSdict": tmplJSONToSDict,
 		"noun":        common.RandomNoun,
 		"randInt":     randInt,
+		"randNorm":    randNorm,
 		"roleAbove":   roleIsAbove,
 		"seq":         sequence,
 
