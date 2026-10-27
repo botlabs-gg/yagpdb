@@ -22,6 +22,7 @@ func (shard *ShardTracker) gcTick(t time.Time, remainingGuilds []int64) []int64 
 	defer shard.mu.Unlock()
 
 	if len(remainingGuilds) < 1 {
+		shard.gcOrphanedChannelMessages()
 		remainingGuilds = shard.getGuildIDs()
 	}
 
@@ -54,6 +55,10 @@ func (shard *ShardTracker) gcGuild(t time.Time, gs *SparseGuildState) {
 	}
 
 	for _, v := range gs.Channels {
+		shard.gcGuildChannel(t, gs, v.ID, limitLen, limitAge)
+	}
+
+	for _, v := range gs.Threads {
 		shard.gcGuildChannel(t, gs, v.ID, limitLen, limitAge)
 	}
 
@@ -111,6 +116,23 @@ func (shard *ShardTracker) gcMessagesAge(t time.Time, gs *SparseGuildState, maxA
 
 	for _, v := range toDel {
 		messages.Remove(v)
+	}
+}
+
+// Threads can leave the state through syncs, archives and lost access without their message lists being removed,
+// and messages can arrive for channels the state never knew about, gcGuild never visits either of those lists.
+func (shard *ShardTracker) gcOrphanedChannelMessages() {
+	for channelID, messages := range shard.channelMessages {
+		front := messages.Front()
+		if front == nil {
+			delete(shard.channelMessages, channelID)
+			continue
+		}
+
+		gs, ok := shard.guilds[front.Value.(*dstate.MessageState).GuildID]
+		if !ok || !gs.hasChannelOrThread(channelID) {
+			delete(shard.channelMessages, channelID)
+		}
 	}
 }
 

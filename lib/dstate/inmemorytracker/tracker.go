@@ -145,6 +145,20 @@ func (s *SparseGuildState) channel(id int64) *dstate.ChannelState {
 	return nil
 }
 
+func (s *SparseGuildState) hasChannelOrThread(id int64) bool {
+	if s.channel(id) != nil {
+		return true
+	}
+
+	for i := range s.Threads {
+		if s.Threads[i].ID == id {
+			return true
+		}
+	}
+
+	return false
+}
+
 type WrappedMember struct {
 	lastUpdated time.Time
 	dstate.MemberState
@@ -382,6 +396,9 @@ func (shard *ShardTracker) handleGuildDelete(gd *discordgo.GuildDelete) {
 	} else {
 		if existing, ok := shard.guilds[gd.ID]; ok {
 			for _, v := range existing.Channels {
+				delete(shard.channelMessages, v.ID)
+			}
+			for _, v := range existing.Threads {
 				delete(shard.channelMessages, v.ID)
 			}
 		}

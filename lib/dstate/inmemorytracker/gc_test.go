@@ -62,6 +62,69 @@ func TestGCMessages(t *testing.T) {
 	verifyGuildMessages(t, state, initialTestGuildID, []int64{})
 }
 
+func createTestMessageIn(channelID, id int64, ts time.Time) *discordgo.Message {
+	msg := createTestMessage(id, ts)
+	msg.ChannelID = channelID
+	return msg
+}
+
+func TestGCThreadMessages(t *testing.T) {
+	state := createTestState(TrackerConfig{
+		ChannelMessageLen: 2,
+		ChannelMessageDur: time.Hour,
+	})
+	shard := state.getShard(0)
+
+	ts := time.Date(2021, 5, 20, 10, 0, 0, 0, time.UTC)
+	for i := int64(0); i < 3; i++ {
+		state.HandleEvent(testSession, &discordgo.MessageCreate{
+			Message: createTestMessageIn(intialTestThreadID, 20000+i, ts.Add(time.Duration(i)*time.Second)),
+		})
+	}
+
+	shard.gcTick(ts, []int64{initialTestGuildID})
+	verifyChannelMessages(t, state, intialTestThreadID, []int64{20001, 20002})
+
+	shard.gcTick(ts.Add(time.Hour+time.Second+500*time.Millisecond), []int64{initialTestGuildID})
+	verifyChannelMessages(t, state, intialTestThreadID, []int64{20002})
+}
+
+func TestGCRemovesOrphanedChannelMessages(t *testing.T) {
+	state := createTestState(TrackerConfig{ChannelMessageLen: 100})
+	shard := state.getShard(0)
+
+	ts := time.Date(2021, 5, 20, 10, 0, 0, 0, time.UTC)
+	state.HandleEvent(testSession, &discordgo.MessageCreate{Message: createTestMessage(30000, ts)})
+	state.HandleEvent(testSession, &discordgo.MessageCreate{Message: createTestMessageIn(intialTestThreadID, 30001, ts)})
+	state.HandleEvent(testSession, &discordgo.MessageCreate{Message: createTestMessageIn(testThreadID, 30002, ts)})
+
+	// a full sync that no longer lists the thread drops it from the state
+	state.HandleEvent(testSession, &discordgo.ThreadListSync{GuildID: initialTestGuildID})
+
+	shard.gcTick(ts, nil)
+
+	verifyChannelMessages(t, state, initialTestChannelID, []int64{30000})
+	for _, id := range []int64{intialTestThreadID, testThreadID} {
+		if _, ok := shard.channelMessages[id]; ok {
+			t.Fatalf("messages for channel %d not in state should have been removed", id)
+		}
+	}
+}
+
+func TestGuildDeleteRemovesThreadMessages(t *testing.T) {
+	state := createTestState(TrackerConfig{})
+	shard := state.getShard(0)
+
+	state.HandleEvent(testSession, &discordgo.MessageCreate{
+		Message: createTestMessageIn(intialTestThreadID, 40000, time.Now()),
+	})
+	state.HandleEvent(testSession, &discordgo.GuildDelete{Guild: &discordgo.Guild{ID: initialTestGuildID}})
+
+	if _, ok := shard.channelMessages[intialTestThreadID]; ok {
+		t.Fatal("thread messages should have been removed with the guild")
+	}
+}
+
 func verifyChannelMessages(t *testing.T, state *InMemoryTracker, channelID int64, expectedResult []int64) {
 	shard := state.getShard(0)
 
