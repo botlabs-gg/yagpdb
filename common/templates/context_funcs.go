@@ -1186,6 +1186,10 @@ func (c *Context) tmplThreadMemberAdd(threadID, memberID any) string {
 	return ""
 }
 
+func (c *Context) tmplLockThread(channel any) (string, error) {
+	return c.tmplCloseThread(channel, true)
+}
+
 func (c *Context) tmplCloseThread(channel any, flags ...bool) (string, error) {
 
 	if c.IncreaseCheckCallCounter("edit_thread", 10) {
