@@ -19,7 +19,16 @@ import (
 	"golang.org/x/text/message"
 )
 
-const currenciesAPIURL = "https://api.frankfurter.app/currencies"
+const (
+	currenciesAPIURL = "https://api.frankfurter.app/currencies"
+	latestAPIURL     = "https://api.frankfurter.app/latest"
+
+	// Frankfurter-compatible fallback (keyless, ECB reference rates), used only when
+	// Frankfurter is unreachable. Rates from it are credited in the embed.
+	fallbackCurrenciesAPIURL = "https://allratestoday.com/api/compat/frankfurter/currencies"
+	fallbackLatestAPIURL     = "https://allratestoday.com/api/compat/frankfurter/latest"
+	fallbackAttribution      = "\n-# Exchange rates by [AllRatesToday](https://allratestoday.com)"
+)
 const currencyPerPage = 16
 
 var Command = &commands.YAGCommand{
@@ -41,9 +50,13 @@ var Command = &commands.YAGCommand{
 		var currenciesResult Currencies
 		var exchangeRateResult ExchangeRate
 
+		usingFallback := false
 		err := requestAPI(currenciesAPIURL, &currenciesResult)
 		if err != nil {
-			return nil, err
+			if fallbackErr := requestAPI(fallbackCurrenciesAPIURL, &currenciesResult); fallbackErr != nil {
+				return nil, err
+			}
+			usingFallback = true
 		}
 
 		from := strings.ToUpper(data.Args[1].Str())
@@ -68,15 +81,34 @@ var Command = &commands.YAGCommand{
 				}), nil
 		}
 
-		err = requestAPI(fmt.Sprintf("https://api.frankfurter.app/latest?amount=%.3f&from=%s&to=%s", amount, from, to), &exchangeRateResult)
+		query := fmt.Sprintf("?amount=%.3f&from=%s&to=%s", amount, from, to)
+		if usingFallback {
+			err = requestAPI(fallbackLatestAPIURL+query, &exchangeRateResult)
+		} else {
+			err = requestAPI(latestAPIURL+query, &exchangeRateResult)
+			if err != nil {
+				var fallbackResult ExchangeRate
+				if fallbackErr := requestAPI(fallbackLatestAPIURL+query, &fallbackResult); fallbackErr == nil {
+					if _, ok := fallbackResult.Rates[to]; ok {
+						exchangeRateResult = fallbackResult
+						usingFallback = true
+						err = nil
+					}
+				}
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
 
 		p := message.NewPrinter(language.English)
+		description := p.Sprintf("\n%.2f **%s** (%s) is %.3f **%s** (%s).", amount, currenciesResult[from], from, exchangeRateResult.Rates[to], currenciesResult[to], to)
+		if usingFallback {
+			description += fallbackAttribution
+		}
 		embed := &discordgo.MessageEmbed{
 			Title:       "💱Currency Exchange Rate",
-			Description: p.Sprintf("\n%.2f **%s** (%s) is %.3f **%s** (%s).", amount, currenciesResult[from], from, exchangeRateResult.Rates[to], currenciesResult[to], to),
+			Description: description,
 			Color:       0xAE27FF,
 			Timestamp:   time.Now().UTC().Format(time.RFC3339),
 		}
