@@ -167,6 +167,10 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (any, error) {
 }
 
 func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (any, error) {
+	if isDropdownMenu(menu) {
+		return dropdownMenuDashboardHint(menu), nil
+	}
+
 	if menu.State == RoleMenuStateSettingUp {
 		return "Already setting this menu up, use `rolemenu complete ...` to complete the setup.", nil
 	}
@@ -481,7 +485,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	if menu == nil {
+	if menu == nil || isDropdownMenu(menu) {
 		return
 	}
 
@@ -752,6 +756,9 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (any, error) {
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
+	if isDropdownMenu(menu) {
+		return dropdownMenuDashboardHint(menu), nil
+	}
 
 	err = common.BotSession.MessageReactionsRemoveAll(menu.ChannelID, menu.MessageID)
 	if err != nil {
@@ -796,6 +803,10 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (any, error) {
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
+	}
+
+	if isDropdownMenu(menu) {
+		return dropdownMenuDashboardHint(menu), nil
 	}
 
 	if menu.State != RoleMenuStateDone {

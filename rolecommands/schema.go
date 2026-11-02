@@ -114,4 +114,10 @@ CREATE INDEX IF NOT EXISTS role_menu_options_role_command_idx ON role_menu_optio
 CREATE INDEX IF NOT EXISTS role_menu_options_role_menu_id_idx ON role_menu_options(role_menu_id);
 `, `
 ALTER TABLE role_groups ADD COLUMN IF NOT EXISTS temporary_role_duration INT NOT NULL DEFAULT 0;
+`, `
+ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS placeholder TEXT NOT NULL DEFAULT '';
+`, `
+ALTER TABLE role_menu_options ADD COLUMN IF NOT EXISTS label TEXT NOT NULL DEFAULT '';
+`, `
+ALTER TABLE role_menu_options ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
 `}

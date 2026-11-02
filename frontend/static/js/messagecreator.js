@@ -80,6 +80,7 @@
         setAction("create");
         setMode("normal");
         renderEmbeds();
+        if (window.YAGEmojiPicker) YAGEmojiPicker.enhance(root);
     }
 
     function base() { return "/manage/" + els.guildID + "/messagecreator"; }
@@ -328,7 +329,7 @@
             el("div", { class: "col-md-4" }, [colorField("Color", e.color, function (v) { e.color = v; refreshPreview(); })])
         ]));
         card.appendChild(field("Title URL", e.url, function (v) { e.url = v; refreshPreview(); }, { placeholder: "https://..." }));
-        card.appendChild(field("Description", e.description, function (v) { e.description = v; refreshPreview(); }, { textarea: true, rows: 3 }));
+        card.appendChild(field("Description", e.description, function (v) { e.description = v; refreshPreview(); }, { textarea: true, rows: 3, emojiPicker: "insert" }));
         card.appendChild(el("div", { class: "form-row" }, [
             el("div", { class: "col-md-6" }, [field("Image URL", e.imageUrl, function (v) { e.imageUrl = v; refreshPreview(); }, { placeholder: "https://..." })]),
             el("div", { class: "col-md-6" }, [field("Thumbnail URL", e.thumbUrl, function (v) { e.thumbUrl = v; refreshPreview(); }, { placeholder: "https://..." })])
@@ -490,7 +491,7 @@
         card.appendChild(nodeHeader(NODE_TITLES[node.type] || ("Type " + node.type), list, idx));
         let body;
         switch (node.type) {
-            case 10: body = field("Text (markdown supported)", node.content, function (v) { node.content = v; refreshPreview(); }, { textarea: true, rows: 2 }); break;
+            case 10: body = field("Text (markdown supported)", node.content, function (v) { node.content = v; refreshPreview(); }, { textarea: true, rows: 2, emojiPicker: "insert" }); break;
             case 14: body = separatorBody(node); break;
             case 1: body = actionRowBody(node); break;
             case 9: body = sectionBody(node); break;
@@ -553,9 +554,10 @@
         } else {
             wrap.appendChild(customIdField(node));
         }
-        wrap.appendChild(field("Emoji (optional)", node.emoji && node.emoji.name, function (v) {
-            if (v) node.emoji = { name: v }; else delete node.emoji; refreshPreview();
-        }, { placeholder: "e.g. 🔥" }));
+        wrap.appendChild(field("Emoji (optional)", formatEmoji(node.emoji), function (v) {
+            let emoji = parseEmoji(v);
+            if (emoji) node.emoji = emoji; else delete node.emoji; refreshPreview();
+        }, { placeholder: "e.g. 🔥", emojiPicker: "replace" }));
         return wrap;
     }
 
@@ -581,6 +583,7 @@
             wrap.appendChild(el("label", { class: "small mb-1 d-block" }, ["Options"]));
             node.options.forEach(function (opt, oi) {
                 wrap.appendChild(el("div", { class: "mc-opt-row" }, [
+                    optionEmojiButton(opt),
                     inlineInput("Label", opt.label, function (v) { opt.label = v; refreshPreview(); }),
                     inlineInput("Value", opt.value, function (v) { opt.value = v; refreshPreview(); }),
                     inlineInput("Description", opt.description, function (v) { if (v) opt.description = v; else delete opt.description; refreshPreview(); }),
@@ -799,7 +802,9 @@
         switch (c.type) {
             case 2:
                 let st = BUTTON_STYLES[c.style] || BUTTON_STYLES[2];
-                let b = div("mc-v2-button", (c.emoji && c.emoji.name ? c.emoji.name + " " : "") + (c.label || (c.style === 5 ? "Link" : "Button")));
+                let b = div("mc-v2-button");
+                if (c.emoji && (c.emoji.id || c.emoji.name)) b.appendChild(emojiNode(c.emoji));
+                b.appendChild(span(c.label || (c.style === 5 ? "Link" : "Button")));
                 b.style.backgroundColor = st.bg; b.style.color = st.fg;
                 if (c.style === 5) { // link buttons show an external-link indicator, like Discord
                     let icon = document.createElement("i");
@@ -902,9 +907,42 @@
         if (opts.maxlength) input.maxLength = opts.maxlength;
         input.value = value == null ? "" : value;
         input.addEventListener("input", function () { oninput(input.value); });
-        let children = [el("label", { class: "small mb-1" }, [labelText]), input];
+        let control = input;
+        if (opts.emojiPicker && window.YAGEmojiPicker) {
+            input.setAttribute("data-emoji-picker", opts.emojiPicker);
+            control = el("div", {}, [input]);
+            YAGEmojiPicker.enhance(control);
+        }
+        let children = [el("label", { class: "small mb-1" }, [labelText]), control];
         if (opts.help) children.push(el("small", { class: "form-text text-muted" }, [opts.help]));
         return el("div", { class: "form-group mb-2" }, children);
+    }
+
+    function parseEmoji(text) { return window.YAGEmojiPicker ? YAGEmojiPicker.parse(text) : (text ? { name: text } : null); }
+    function formatEmoji(emoji) {
+        if (!emoji) return "";
+        return window.YAGEmojiPicker ? YAGEmojiPicker.format(emoji) : (emoji.name || "");
+    }
+
+    function emojiNode(emoji) {
+        if (window.YAGEmojiPicker) return YAGEmojiPicker.render(emoji, "mc-emoji");
+        return span(emoji.name || "");
+    }
+
+    function optionEmojiButton(opt) {
+        let b = btn("", "btn-sm btn-outline-primary mc-opt-emoji", function () {
+            if (!window.YAGEmojiPicker) return;
+            YAGEmojiPicker.open(b, function (emoji) { opt.emoji = emoji; rebuildEditor(); });
+        }, { noconfirm: true, title: "Option emoji" });
+        b.setAttribute("aria-label", opt.emoji ? "Change option emoji" : "Pick option emoji");
+        if (opt.emoji && (opt.emoji.id || opt.emoji.name)) {
+            b.appendChild(emojiNode(opt.emoji));
+            b.addEventListener("contextmenu", function (e) { e.preventDefault(); delete opt.emoji; rebuildEditor(); });
+            b.title = "Option emoji (right click to remove)";
+        } else {
+            b.innerHTML = '<i class="far fa-smile" aria-hidden="true"></i>';
+        }
+        return b;
     }
 
     function readonlyField(labelText, value, help) {
@@ -979,8 +1017,13 @@
         { regex: /_([^_]+?)_/, tag: "em", recurse: true },
         { regex: /~~([\s\S]+?)~~/, tag: "s", recurse: true },
         { regex: /`([^`\n]+)`/, tag: "code", className: "mc-md-code", recurse: false },
-        { regex: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/, build: buildLinkNode }
+        { regex: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/, build: buildLinkNode },
+        { regex: /<(a?):(\w{2,32}):(\d{15,22})>/, build: buildCustomEmojiNode }
     ];
+
+    function buildCustomEmojiNode(match) {
+        return emojiNode({ id: match[3], name: match[2], animated: match[1] === "a" });
+    }
 
     function buildBoldItalicNode(match) {
         let strong = document.createElement("strong");

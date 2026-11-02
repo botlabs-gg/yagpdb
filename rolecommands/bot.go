@@ -180,6 +180,7 @@ type ScheduledEventUpdateMenuMessageData struct {
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+	eventsystem.AddHandlerAsyncLast(p, handleRoleMenuDropdownInteraction, eventsystem.EventInteractionCreate)
 
 	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 	scheduledevents2.RegisterHandler("rolemenu_update_message", ScheduledEventUpdateMenuMessageData{}, handleUpdateRolemenuMessage)
@@ -311,7 +312,11 @@ func handleUpdateRolemenuMessage(evt *schEvtsModels.ScheduledEvent, data any) (r
 		return false, err
 	}
 
-	err = UpdateRoleMenuMessage(context.Background(), fullMenu)
+	if isDropdownMenu(fullMenu) {
+		err = updateRoleMenuDropdownMessage(fullMenu, nil)
+	} else {
+		err = UpdateRoleMenuMessage(context.Background(), fullMenu)
+	}
 	if err != nil {
 		return false, err
 	}
@@ -338,6 +343,10 @@ func handleRemoveMemberRole(evt *schEvtsModels.ScheduledEvent, data any) (retry 
 
 OUTER:
 	for _, v := range menus {
+		if isDropdownMenu(v) {
+			continue
+		}
+
 		for _, opt := range v.R.RoleMenuOptions {
 			if opt.R.RoleCommand.Role == dataCast.RoleID {
 				// remove it

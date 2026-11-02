@@ -121,6 +121,8 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, getIndexpPostHandler, FormGroup{}))
 	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, getIndexpPostHandler, FormGroup{}))
 	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, getIndexpPostHandler, nil))
+
+	initRoleMenusWeb(subMux, getIndexpPostHandler)
 }
 
 func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
@@ -170,6 +172,9 @@ func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl
 		sort.Slice(commands, RoleCommandsLessFunc(commands))
 
 		tmpl["Commands"] = commands
+		if err := setGroupRoleMenusData(r.Context(), g, tmpl, currentGroup, commands); err != nil {
+			return tmpl, err
+		}
 	} else {
 		// Fallback
 		return HandleGetIndex(w, r)
