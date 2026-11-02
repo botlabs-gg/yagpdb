@@ -1,0 +1,257 @@
+{{define "rolecommands_menus"}}
+<style>
+    .rm-option {
+        gap: .5rem;
+    }
+
+    .rm-option-role {
+        flex: 0 0 10rem;
+        min-width: 0;
+    }
+
+    .rm-option-text {
+        flex: 1 1 12rem;
+        width: auto;
+    }
+
+    .rm-col-toggle {
+        flex: 0 0 4.25em;
+    }
+
+    .rm-col-emoji {
+        flex: 0 0 2.75rem;
+    }
+
+    .rm-option-text::placeholder {
+        opacity: .6;
+    }
+
+    .rm-option.rm-off .rm-option-role {
+        opacity: .5;
+    }
+
+    .rm-more summary {
+        cursor: pointer;
+    }
+</style>
+
+{{$guild := .ActiveGuild.ID}}
+{{$group := .CurrentGroup}}
+{{$draft := .RoleMenuDraft}}
+{{$draftChannel := 0}}{{$draftContent := ""}}{{$draftLink := ""}}{{$draftKind := 1}}{{$draftPlaceholder := ""}}
+{{$sendDM := false}}{{$removeOnUnreact := true}}
+{{with $draft}}{{$draftChannel = .Channel}}{{$draftContent = .Content}}{{$draftLink = .MessageLink}}{{$draftKind = .Kind}}{{$draftPlaceholder = .Placeholder}}{{$sendDM = .SendDM}}{{$removeOnUnreact = .RemoveRoleOnReactionRemove}}{{end}}
+{{$editing := 0}}{{with .EditMenu}}{{$editing = .Menu.MessageID}}{{end}}
+
+<div class="row">
+    <div class="col">
+        <section class="card card-featured card-featured-primary" id="role-menus">
+            <header class="card-header">
+                <h2 class="card-title">Role menus</h2>
+            </header>
+            <div class="card-body">
+                <p class="help-block mt-0">Post this group's roles in a channel so members can pick them from a select menu or with reactions. The group settings above apply.</p>
+
+                {{if .RoleMenus}}
+                <table class="table table-sm mb-4">
+                    <tbody>
+                        {{range .RoleMenus}}
+                        <tr>
+                            <td class="align-middle">{{if eq .Menu.Kind 1}}Select menu{{else}}Reactions{{end}} in {{if .ChannelName}}#{{.ChannelName}}{{else}}a deleted channel{{end}}</td>
+                            <td class="align-middle d-none d-md-table-cell">{{len .Menu.R.RoleMenuOptions}} roles</td>
+                            <td class="align-middle text-right text-nowrap">
+                                <form class="no-unsaved-popup d-inline" method="post" data-async-form action="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete">
+                                    <input type="hidden" name="GroupID" value="{{$group.ID}}">
+                                    {{if .Menu.OwnMessage}}<input type="hidden" name="DeleteMessage" value="true">{{end}}
+                                    {{if .Editable}}
+                                    <a class="btn btn-primary {{if eq $editing .Menu.MessageID}}disabled{{end}}" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}/menu/{{.Menu.MessageID}}#role-menus">Edit</a>
+                                    {{else}}
+                                    <span class="mr-2">Not finished setting up</span>
+                                    {{end}}
+                                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete"
+                                        title="this role menu{{if .Menu.OwnMessage}} and its message{{end}}" aria-label="Delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{end}}
+
+                {{if not .RoleMenuCommands}}
+                <p class="mb-0">Add role commands to this group first, they become the menu's roles.</p>
+                {{else}}
+                <h4 class="mt-0">{{with .EditMenu}}Edit the menu in #{{.ChannelName}}{{else}}Post a new menu{{end}}</h4>
+                <form id="rm-form" method="post" action="/manage/{{$guild}}/rolecommands/menus/{{if $editing}}{{$editing}}/update{{else}}new{{end}}" data-async-form
+                    data-guild-emojis="{{json .ActiveGuild.Emojis}}" data-commands="{{json .RoleMenuCommands}}" data-options="{{json .RoleMenuDraftOptions}}"
+                    data-max-dropdown="{{.MaxDropdownOptions}}" data-max-reactions="{{.MaxReactionMenuOptions}}">
+                    <input type="hidden" name="Group" value="{{$group.ID}}">
+
+                    {{if .EditMenu}}
+                    <input type="hidden" name="Kind" value="{{.EditMenu.Menu.Kind}}">
+                    {{else}}
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="rm-channel">Channel</label>
+                            <select class="form-control" id="rm-channel" name="Channel" data-requireperms-send>
+                                {{textOnlyChannelOptions .ActiveGuild.Channels $draftChannel true "Select a channel"}}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="rm-kind">Style</label>
+                            <select class="form-control" id="rm-kind" name="Kind">
+                                <option value="1" {{if eq $draftKind 1}}selected{{end}}>Select menu</option>
+                                <option value="0" {{if eq $draftKind 0}}selected{{end}}>Reactions</option>
+                            </select>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    <label>Roles <span id="rm-count" class="font-weight-normal"></span></label>
+                    <div class="d-none d-md-flex rm-option font-weight-bold pb-1 border-bottom border-secondary">
+                        <span class="rm-col-toggle"><small>Show</small></span>
+                        <span class="rm-col-emoji"><small>Emoji</small></span>
+                        <span class="rm-option-role"><small>Role</small></span>
+                        <span class="rm-option-text rm-dropdown-only pl-2"><small>Label in the select menu</small></span>
+                        <span class="rm-option-text rm-dropdown-only pl-2"><small>Description under the label</small></span>
+                    </div>
+                    <div class="border-top border-secondary d-md-none"></div>
+                    <div id="rm-options-list"></div>
+
+                    <details class="rm-more mt-3" {{if not .EditMenu}}{{if or $draftContent $draftLink $draftPlaceholder}}open{{end}}{{end}}>
+                        <summary class="mb-3">More options</summary>
+                        {{if or (not .EditMenu) .EditMenu.Menu.OwnMessage}}
+                        <div class="form-group">
+                            <label for="rm-content">Message text</label>
+                            <textarea class="form-control" id="rm-content" name="Content" rows="3" maxlength="2000" data-emoji-picker>{{$draftContent}}</textarea>
+                            <p class="help-block">Leave empty to list the roles.</p>
+                        </div>
+                        {{end}}
+                        <div class="form-group rm-dropdown-only">
+                            <label for="rm-placeholder">Select menu placeholder</label>
+                            <input type="text" class="form-control" id="rm-placeholder" name="Placeholder" maxlength="150" value="{{$draftPlaceholder}}">
+                        </div>
+                        <div class="rm-reactions-only">
+                            {{checkbox "SendDM" "rm-send-dm" "DM members when their roles change" $sendDM}}
+                            {{checkbox "RemoveRoleOnReactionRemove" "rm-remove-on-unreact" "Remove the role when the reaction is removed" $removeOnUnreact}}
+                        </div>
+                        {{if not .EditMenu}}
+                        <div class="form-group">
+                            <label for="rm-link">Add it to a message that's already posted</label>
+                            <input type="text" class="form-control" id="rm-link" name="MessageLink" value="{{$draftLink}}">
+                            <p class="help-block">Paste the message link instead of picking a channel. Select menus only work on messages sent by the bot.</p>
+                        </div>
+                        {{end}}
+                    </details>
+
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">{{if .EditMenu}}Save menu{{else}}Post menu{{end}}</button>
+                        {{if .EditMenu}}<a class="btn btn-link" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}#role-menus">Cancel</a>{{end}}
+                    </div>
+                </form>
+                {{end}}
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="/static/js/emojipicker.js?{{.StartedAtUnix}}"></script>
+<script>
+    (function () {
+        let form = document.getElementById("rm-form");
+        if (!form) return;
+
+        let commands = JSON.parse(form.getAttribute("data-commands") || "[]") || [];
+        let saved = JSON.parse(form.getAttribute("data-options") || "{}") || {};
+        let maxDropdown = parseInt(form.getAttribute("data-max-dropdown"), 10);
+        let maxReactions = parseInt(form.getAttribute("data-max-reactions"), 10);
+        let list = document.getElementById("rm-options-list");
+        let counter = document.getElementById("rm-count");
+        let kindSelect = document.getElementById("rm-kind");
+
+        function dropdown() { return form.elements.Kind.value === "1"; }
+        function limit() { return dropdown() ? maxDropdown : maxReactions; }
+
+        function el(tag, attrs, children) {
+            let node = document.createElement(tag);
+            Object.keys(attrs || {}).forEach(function (k) {
+                if (k === "class") node.className = attrs[k];
+                else node.setAttribute(k, attrs[k]);
+            });
+            (children || []).forEach(function (c) { node.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+            return node;
+        }
+
+        function emojiButton(input) {
+            let button = el("button", { type: "button", class: "btn btn-outline-primary rm-option-field", noconfirm: "true", title: "Pick an emoji", "aria-label": "Pick an emoji" });
+            function show() {
+                button.textContent = "";
+                let emoji = YAGEmojiPicker.parse(input.value);
+                if (emoji) button.appendChild(YAGEmojiPicker.render(emoji));
+                else button.innerHTML = '<i class="far fa-smile" aria-hidden="true"></i>';
+            }
+            button.addEventListener("click", function () {
+                YAGEmojiPicker.open(button,
+                    function (emoji) { input.value = YAGEmojiPicker.format(emoji); show(); },
+                    function () { input.value = ""; show(); });
+            });
+            show();
+            return button;
+        }
+
+        function optionRow(cmd, index, state) {
+            let prefix = "Options." + index + ".";
+            let id = "rm-opt-" + cmd.id;
+            let include = el("input", { type: "checkbox", class: "tgl tgl-flat", id: id, name: prefix + "Include", value: "true" });
+            include.checked = !!state.include;
+            let emoji = el("input", { type: "hidden", name: prefix + "Emoji" });
+            emoji.value = state.emoji || "";
+            let label = el("input", { type: "text", class: "form-control rm-option-text rm-option-field rm-dropdown-only", name: prefix + "Label", maxlength: "100", placeholder: "Label, empty uses " + cmd.name, "aria-label": "Label for " + cmd.name });
+            label.value = state.label || "";
+            let description = el("input", { type: "text", class: "form-control rm-option-text rm-option-field rm-dropdown-only", name: prefix + "Description", maxlength: "100", placeholder: "Description (optional)", "aria-label": "Description for " + cmd.name });
+            description.value = state.description || "";
+
+            let row = el("div", { class: "d-flex flex-wrap align-items-center py-2 border-bottom border-secondary rm-option" }, [
+                el("input", { type: "hidden", name: prefix + "RoleCommand", value: String(cmd.id) }),
+                emoji,
+                el("div", { class: "rm-col-toggle d-flex" }, [include, el("label", { class: "tgl-btn mb-0", for: id, title: "Show " + cmd.name + " in the menu" })]),
+                el("div", { class: "rm-col-emoji" }, [emojiButton(emoji)]),
+                el("label", { class: "rm-option-role font-weight-bold text-truncate mb-0", for: id, title: cmd.name }, [cmd.name]),
+                label,
+                description
+            ]);
+
+            function sync() {
+                row.classList.toggle("rm-off", !include.checked);
+                row.querySelectorAll(".rm-option-field").forEach(function (n) { n.style.visibility = include.checked ? "" : "hidden"; });
+                update();
+            }
+            include.addEventListener("change", sync);
+            row.sync = sync;
+            return row;
+        }
+
+        function update() {
+            let dd = dropdown();
+            document.querySelectorAll(".rm-dropdown-only").forEach(function (n) { n.style.display = dd ? "" : "none"; });
+            document.querySelectorAll(".rm-reactions-only").forEach(function (n) { n.style.display = dd ? "none" : ""; });
+
+            let count = form.querySelectorAll("input[name$='.Include']:checked").length;
+            counter.textContent = "(" + count + " of at most " + limit() + ")";
+            counter.className = "font-weight-normal" + (count > limit() || count === 0 ? " text-danger" : "");
+        }
+
+        let hasSaved = Object.keys(saved).length > 0;
+        commands.forEach(function (cmd, i) {
+            let state = saved[String(cmd.id)] || { include: !hasSaved && i < limit() };
+            let row = optionRow(cmd, i, state);
+            list.appendChild(row);
+            row.sync();
+        });
+
+        if (kindSelect) kindSelect.addEventListener("change", update);
+        update();
+        YAGEmojiPicker.enhance(form);
+    })();
+</script>
+{{end}}
