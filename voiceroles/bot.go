@@ -42,11 +42,6 @@ func handleVoiceStateUpdate(evt *eventsystem.EventData) (retry bool, err error) 
 		return false, nil
 	}
 
-	ms := bot.State.GetMember(gs.ID, vs.UserID)
-	if ms == nil {
-		return false, nil
-	}
-
 	oldVs := gs.GetVoiceState(vs.UserID)
 	beforeChannelID := int64(0)
 	if oldVs != nil {

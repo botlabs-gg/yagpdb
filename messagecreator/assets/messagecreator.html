@@ -18,6 +18,7 @@
     .mc-node-tools .btn { padding: 1px 7px; line-height: 1.4; }
     .mc-add-bar .btn { margin: 0 4px 4px 0; }
     .mc-opt-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+    .mc-opt-row .mc-opt-emoji { flex: 0 0 auto; min-width: 2.4rem; }
 
     .mc-color-swatch { width: 26px; height: 26px; border-radius: 4px; border: 1px solid rgba(128, 128, 128, .5); display: inline-block; flex: 0 0 auto; }
     .mc-color-preset { width: 22px; height: 22px; cursor: pointer; }
@@ -56,6 +57,7 @@
     .mc-v2-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
     .mc-v2-button { display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: .875rem; cursor: default; }
     .mc-v2-link-icon { margin-left: 8px; font-size: .8em; opacity: .85; }
+    .mc-v2-button .mc-emoji { margin-right: 6px; }
     .mc-v2-select { background: #1e1f22; border: 1px solid #1e1f22; border-radius: 4px; padding: 8px 12px; color: #b5bac1; max-width: 400px; }
     .mc-v2-separator { height: 1px; margin: 12px 0; }
     .mc-v2-separator.mc-divider { background: #3f4147; }
@@ -101,7 +103,7 @@
 
 {{template "cp_alerts" .}}
 
-<div id="mc-root" class="row" data-guildid="{{.ActiveGuild.ID}}">
+<div id="mc-root" class="row" data-guildid="{{.ActiveGuild.ID}}" data-guild-emojis="{{json .ActiveGuild.Emojis}}">
     <div class="col-lg-12">
         <section class="card">
             <header class="card-header">
@@ -168,7 +170,7 @@
                             <div id="normal-fields">
                                 <div class="form-group">
                                     <label>Message content <span class="text-muted">(optional)</span></label>
-                                    <textarea class="form-control mc-input" id="embed-content" rows="2" maxlength="2000"></textarea>
+                                    <textarea class="form-control mc-input" id="embed-content" rows="2" maxlength="2000" data-emoji-picker></textarea>
                                 </div>
 
                                 <label class="d-block mb-1">Embeds <span class="text-muted">(up to 10)</span></label>
@@ -218,6 +220,7 @@
     </div>
 </div>
 
+<script src="/static/js/emojipicker.js?{{.StartedAtUnix}}"></script>
 <script src="/static/js/messagecreator.js?{{.StartedAtUnix}}"></script>
 
 {{template "cp_footer" .}}
