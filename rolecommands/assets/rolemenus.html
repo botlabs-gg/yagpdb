@@ -4,6 +4,24 @@
         gap: .5rem;
     }
 
+    .rm-option + .rm-option {
+        margin-top: .5rem;
+    }
+
+    @media (max-width: 767px) {
+        .rm-option + .rm-option {
+            margin-top: 1.25rem;
+        }
+    }
+
+    .rm-menu-item {
+        gap: .5rem;
+    }
+
+    .rm-menu-item + .rm-menu-item {
+        margin-top: .5rem;
+    }
+
     .rm-option-role {
         flex: 0 0 10rem;
         min-width: 0;
@@ -30,6 +48,10 @@
         opacity: .5;
     }
 
+    html.dark .rm-strong {
+        color: #EEE;
+    }
+
     .rm-more summary {
         cursor: pointer;
     }
@@ -53,29 +75,25 @@
                 <p class="help-block mt-0">Post this group's roles in a channel so members can pick them from a select menu or with reactions. The group settings above apply.</p>
 
                 {{if .RoleMenus}}
-                <table class="table table-sm mb-4">
-                    <tbody>
-                        {{range .RoleMenus}}
-                        <tr>
-                            <td class="align-middle">{{if eq .Menu.Kind 1}}Select menu{{else}}Reactions{{end}} in {{if .ChannelName}}#{{.ChannelName}}{{else}}a deleted channel{{end}}</td>
-                            <td class="align-middle d-none d-md-table-cell">{{len .Menu.R.RoleMenuOptions}} roles</td>
-                            <td class="align-middle text-right text-nowrap">
-                                <form class="no-unsaved-popup d-inline" method="post" data-async-form action="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete">
-                                    <input type="hidden" name="GroupID" value="{{$group.ID}}">
-                                    {{if .Menu.OwnMessage}}<input type="hidden" name="DeleteMessage" value="true">{{end}}
-                                    {{if .Editable}}
-                                    <a class="btn btn-primary {{if eq $editing .Menu.MessageID}}disabled{{end}}" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}/menu/{{.Menu.MessageID}}#role-menus">Edit</a>
-                                    {{else}}
-                                    <span class="mr-2">Not finished setting up</span>
-                                    {{end}}
-                                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete"
-                                        title="this role menu{{if .Menu.OwnMessage}} and its message{{end}}" aria-label="Delete"><i class="fas fa-trash"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+                <div class="mb-4">
+                    {{range .RoleMenus}}
+                    <div class="d-flex flex-wrap align-items-center rm-menu-item">
+                        <div class="mr-auto rm-strong">
+                            <b>{{if eq .Menu.Kind 1}}Select menu{{else}}Reactions{{end}}</b> in {{if .ChannelName}}#{{.ChannelName}}{{else}}a deleted channel{{end}},
+                            {{len .Menu.R.RoleMenuOptions}} roles{{if not .Editable}}, not finished setting up{{end}}
+                        </div>
+                        <form class="no-unsaved-popup" method="post" data-async-form action="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete">
+                            <input type="hidden" name="GroupID" value="{{$group.ID}}">
+                            {{if .Menu.OwnMessage}}<input type="hidden" name="DeleteMessage" value="true">{{end}}
+                            {{if .Editable}}
+                            <a class="btn btn-sm btn-primary {{if eq $editing .Menu.MessageID}}disabled{{end}}" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}/menu/{{.Menu.MessageID}}#role-menus">Edit</a>
+                            {{end}}
+                            <button type="submit" class="btn btn-sm btn-danger" formaction="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete"
+                                title="this role menu{{if .Menu.OwnMessage}} and its message{{end}}" aria-label="Delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                    {{end}}
+                </div>
                 {{end}}
 
                 {{if not .RoleMenuCommands}}
@@ -108,14 +126,13 @@
                     {{end}}
 
                     <label>Roles <span id="rm-count" class="font-weight-normal"></span></label>
-                    <div class="d-none d-md-flex rm-option font-weight-bold pb-1 border-bottom border-secondary">
+                    <div class="d-none d-md-flex rm-option font-weight-bold mb-1">
                         <span class="rm-col-toggle"><small>Show</small></span>
                         <span class="rm-col-emoji"><small>Emoji</small></span>
                         <span class="rm-option-role"><small>Role</small></span>
                         <span class="rm-option-text rm-dropdown-only pl-2"><small>Label in the select menu</small></span>
                         <span class="rm-option-text rm-dropdown-only pl-2"><small>Description under the label</small></span>
                     </div>
-                    <div class="border-top border-secondary d-md-none"></div>
                     <div id="rm-options-list"></div>
 
                     <details class="rm-more mt-3" {{if not .EditMenu}}{{if or $draftContent $draftLink $draftPlaceholder}}open{{end}}{{end}}>
@@ -211,12 +228,12 @@
             let description = el("input", { type: "text", class: "form-control rm-option-text rm-option-field rm-dropdown-only", name: prefix + "Description", maxlength: "100", placeholder: "Description (optional)", "aria-label": "Description for " + cmd.name });
             description.value = state.description || "";
 
-            let row = el("div", { class: "d-flex flex-wrap align-items-center py-2 border-bottom border-secondary rm-option" }, [
+            let row = el("div", { class: "d-flex flex-wrap align-items-center rm-option" }, [
                 el("input", { type: "hidden", name: prefix + "RoleCommand", value: String(cmd.id) }),
                 emoji,
                 el("div", { class: "rm-col-toggle d-flex" }, [include, el("label", { class: "tgl-btn mb-0", for: id, title: "Show " + cmd.name + " in the menu" })]),
                 el("div", { class: "rm-col-emoji" }, [emojiButton(emoji)]),
-                el("label", { class: "rm-option-role font-weight-bold text-truncate mb-0", for: id, title: cmd.name }, [cmd.name]),
+                el("span", { class: "rm-option-role rm-strong font-weight-bold text-truncate", title: cmd.name }, [cmd.name]),
                 label,
                 description
             ]);

@@ -98,6 +98,12 @@ html.dark .tabs .nav-link:hover {
 	border-color: #1d2127;
 }
 
+/* Bootstrap 4.2+ gives tables dark text, the dark theme expects them to inherit its light text. */
+html.dark .table,
+html.dark .table-hover tbody tr:hover {
+	color: inherit;
+}
+
 html.dark .tabs .nav-link:focus {
 	background-color: #2e353e;
 	border-color: #1d2127;
