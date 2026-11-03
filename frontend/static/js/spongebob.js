@@ -61,6 +61,12 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
 
 	console.log("Navigating to " + url);
 	var shownURL = url;
+	// The fragment never reaches the server, so the partial param has to go before it
+	var hashIndex = url.indexOf("#");
+	if (hashIndex !== -1) {
+		url = url.slice(0, hashIndex);
+	}
+	var shownPath = url;
 	// Add the partial param
 	var index = url.indexOf("?")
 	if (index !== -1) {
@@ -91,7 +97,7 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
 		if (updateHistory) {
 			window.history.pushState("", "", shownURL);
 		}
-		lastLoc = shownURL;
+		lastLoc = shownPath;
 		lastHash = window.location.hash;
 
 		if (alertsOnly) {

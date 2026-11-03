@@ -86,7 +86,7 @@
                             <input type="hidden" name="GroupID" value="{{$group.ID}}">
                             {{if .Menu.OwnMessage}}<input type="hidden" name="DeleteMessage" value="true">{{end}}
                             {{if .Editable}}
-                            <a class="btn btn-sm btn-primary {{if eq $editing .Menu.MessageID}}disabled{{end}}" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}/menu/{{.Menu.MessageID}}#role-menus">Edit</a>
+                            <a class="btn btn-sm btn-primary {{if eq $editing .Menu.MessageID}}disabled{{end}}" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}/menu/{{.Menu.MessageID}}">Edit</a>
                             {{end}}
                             <button type="submit" class="btn btn-sm btn-danger" formaction="/manage/{{$guild}}/rolecommands/menus/{{.Menu.MessageID}}/delete"
                                 title="this role menu{{if .Menu.OwnMessage}} and its message{{end}}" aria-label="Delete"><i class="fas fa-trash"></i></button>
@@ -163,7 +163,7 @@
 
                     <div class="mt-3">
                         <button type="submit" class="btn btn-success">{{if .EditMenu}}Save menu{{else}}Post menu{{end}}</button>
-                        {{if .EditMenu}}<a class="btn btn-link" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}#role-menus">Cancel</a>{{end}}
+                        {{if .EditMenu}}<a class="btn btn-link" data-partial-load="true" href="/manage/{{$guild}}/rolecommands/group/{{$group.ID}}">Cancel</a>{{end}}
                     </div>
                 </form>
                 {{end}}
