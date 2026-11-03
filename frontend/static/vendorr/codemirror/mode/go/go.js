@@ -1,5 +1,5 @@
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
-// Distributed under an MIT license: http://codemirror.net/LICENSE
+// Distributed under an MIT license: https://codemirror.net/5/LICENSE
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
@@ -15,18 +15,24 @@ CodeMirror.defineMode("go", function(config) {
   var indentUnit = config.indentUnit;
 
   var keywords = {
-    "block":true, "break":true, "catch":true, "continue":true, "define":true, "else":true, "end":true,
-    "if":true,"range":true, "return":true, "template":true, "try":true, "while":true, "with":true
+    "break":true, "case":true, "chan":true, "const":true, "continue":true,
+    "default":true, "defer":true, "else":true, "fallthrough":true, "for":true,
+    "func":true, "go":true, "goto":true, "if":true, "import":true,
+    "interface":true, "map":true, "package":true, "range":true, "return":true,
+    "select":true, "struct":true, "switch":true, "type":true, "var":true,
+    "bool":true, "byte":true, "complex64":true, "complex128":true,
+    "float32":true, "float64":true, "int8":true, "int16":true, "int32":true,
+    "int64":true, "string":true, "uint8":true, "uint16":true, "uint32":true,
+    "uint64":true, "int":true, "uint":true, "uintptr":true, "error": true,
+    "rune":true, "any":true, "comparable":true
   };
 
   var atoms = {
-    "true":true, "false":true, "nil":true,
-    "print":true, "printf":true, "println":true,
-    "and":true, "call":true, "html":true, "index":true, "js":true,
-    "len":true, "not":true, "or":true,"urlquery":true, "eq":true, "ne":true,
-    "lt":true, "le":true, "gt":true, "ge":true
+    "true":true, "false":true, "iota":true, "nil":true, "append":true,
+    "cap":true, "close":true, "complex":true, "copy":true, "delete":true, "imag":true,
+    "len":true, "make":true, "new":true, "panic":true, "print":true,
+    "println":true, "real":true, "recover":true
   };
-
 
   var isOperatorChar = /[+\-*&^%:=<>!|\/]/;
 
@@ -40,11 +46,11 @@ CodeMirror.defineMode("go", function(config) {
     }
     if (/[\d\.]/.test(ch)) {
       if (ch == ".") {
-        stream.match(/^[0-9]+([eE][\-+]?[0-9]+)?/);
+        stream.match(/^[0-9_]+([eE][\-+]?[0-9_]+)?/);
       } else if (ch == "0") {
-        stream.match(/^[xX][0-9a-fA-F]+/) || stream.match(/^0[0-7]+/);
+        stream.match(/^[xX][0-9a-fA-F_]+/) || stream.match(/^[0-7_]+/);
       } else {
-        stream.match(/^[0-9]*\.?[0-9]*([eE][\-+]?[0-9]+)?/);
+        stream.match(/^[0-9_]*\.?[0-9_]*([eE][\-+]?[0-9_]+)?/);
       }
       return "number";
     }
@@ -73,7 +79,6 @@ CodeMirror.defineMode("go", function(config) {
       return "keyword";
     }
     if (atoms.propertyIsEnumerable(cur)) return "atom";
-    if (yagFuncs.propertyIsEnumerable(cur)) return "variable-2";
     return "variable";
   }
 
@@ -150,14 +155,14 @@ CodeMirror.defineMode("go", function(config) {
       else if (curPunc == "[") pushContext(state, stream.column(), "]");
       else if (curPunc == "(") pushContext(state, stream.column(), ")");
       else if (curPunc == "case") ctx.type = "case";
-      else if (curPunc == "}" && ctx.type == "}") ctx = popContext(state);
+      else if (curPunc == "}" && ctx.type == "}") popContext(state);
       else if (curPunc == ctx.type) popContext(state);
       state.startOfLine = false;
       return style;
     },
 
     indent: function(state, textAfter) {
-      if (state.tokenize != tokenBase && state.tokenize != null) return 0;
+      if (state.tokenize != tokenBase && state.tokenize != null) return CodeMirror.Pass;
       var ctx = state.context, firstChar = textAfter && textAfter.charAt(0);
       if (ctx.type == "case" && /^(?:case|default)\b/.test(textAfter)) {
         state.context.type = "}";
