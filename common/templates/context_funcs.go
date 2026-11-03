@@ -1187,11 +1187,23 @@ func (c *Context) tmplThreadMemberAdd(threadID, memberID any) string {
 }
 
 func (c *Context) tmplLockThread(channel any) (string, error) {
-	return c.tmplCloseThread(channel, true)
+	return c.editThreadStatus(channel, true, false)
 }
 
 func (c *Context) tmplCloseThread(channel any, flags ...bool) (string, error) {
+	var lock bool
+	switch len(flags) {
+	case 0:
+	case 1:
+		lock = flags[0]
+	default:
+		return "", errors.New("too many flags")
+	}
 
+	return c.editThreadStatus(channel, lock, true)
+}
+
+func (c *Context) editThreadStatus(channel any, lock, archive bool) (string, error) {
 	if c.IncreaseCheckCallCounter("edit_thread", 10) {
 		return "", ErrTooManyCalls
 	}
@@ -1211,21 +1223,11 @@ func (c *Context) tmplCloseThread(channel any, flags ...bool) (string, error) {
 	}
 
 	edit := &discordgo.ChannelEdit{}
-	var lock bool
-	switch len(flags) {
-	case 0:
-		lock = false
-	case 1:
-		lock = flags[0]
-	default:
-		return "", errors.New("too many flags")
-	}
-
 	if lock {
 		edit.Locked = &lock
-	} else {
-		archived := true
-		edit.Archived = &archived
+	}
+	if archive {
+		edit.Archived = &archive
 	}
 
 	threadReturn, err := common.BotSession.ChannelEditComplex(cID, edit)
