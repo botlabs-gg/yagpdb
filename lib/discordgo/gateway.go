@@ -1372,6 +1372,7 @@ func (g *GatewayConnection) identify() error {
 		Shard:              nil,
 		GuildSubscriptions: true,
 		Intents:            intents,
+		Capabilities:       GatewayCapabilityChannelObfuscation,
 	}
 
 	if g.manager.shardCount > 1 {
@@ -1464,7 +1465,12 @@ type identifyData struct {
 	GuildSubscriptions bool               `json:"guild_subscriptions"`
 	Shard              *[2]int            `json:"shard,omitempty"`
 	Intents            *int               `json:"intents,omitempty"`
+	Capabilities       int                `json:"capabilities,omitempty"`
 }
+
+// GatewayCapabilityChannelObfuscation opts into receiving obfuscated channels the bot cannot view,
+// which discord applies to every bot regardless starting November 16, 2026
+const GatewayCapabilityChannelObfuscation = 1 << 15
 
 type identifyProperties struct {
 	OS              string `json:"$os"`
