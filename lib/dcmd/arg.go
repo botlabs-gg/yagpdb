@@ -884,6 +884,10 @@ func (u *UserIDArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCom
 // The type of the ID is parsed into a int64
 type ChannelArg struct {
 	AllowThreads bool
+
+	// AllowUnknown accepts channels that are not in state, such as channels the bot cannot view.
+	// Those only have the partial data resolved by slash commands, or just the ID for message commands.
+	AllowUnknown bool
 }
 
 var _ ArgType = (*ChannelArg)(nil)
@@ -932,6 +936,10 @@ func (ca *ChannelArg) ParseFromMessage(def *ArgDef, part string, data *Data) (an
 		}
 	}
 
+	if ca.AllowUnknown {
+		return &dstate.ChannelState{ID: cID, GuildID: data.GuildData.GS.ID}, nil
+	}
+
 	return nil, &ImproperMention{part}
 }
 
@@ -955,7 +963,12 @@ func (ca *ChannelArg) ParseFromInteraction(def *ArgDef, data *Data, options *Sla
 		}
 	}
 
-	return ErrChannelNotFound, nil
+	if ca.AllowUnknown && (ca.AllowThreads || !channel.Type.IsThread()) {
+		cs := dstate.ChannelStateFromDgo(channel)
+		return &cs, nil
+	}
+
+	return nil, NewSimpleUserError("Channel not found")
 }
 
 func (ca *ChannelArg) HelpName() string {

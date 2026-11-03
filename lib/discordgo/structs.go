@@ -294,6 +294,12 @@ type Channel struct {
 	// The default forum layout view used to display posts in forum channels.
 	// Defaults to ForumLayoutNotSet, which indicates a layout view has not been set by a channel admin.
 	DefaultForumLayout ForumLayout `json:"default_forum_layout"`
+
+	// The invoking member's permissions in the channel, only set on channels resolved in interactions.
+	Permissions int64 `json:"permissions,string,omitempty"`
+
+	// The bot's permissions in the channel, only set on channels resolved in interactions.
+	AppPermissions int64 `json:"app_permissions,string,omitempty"`
 }
 
 func (c *Channel) GetChannelID() int64 {
@@ -321,6 +327,8 @@ const (
 	ChannelFlagsRequireTag ChannelFlags = 1 << 4
 	// ChannelFlagsHideMediaDownloadOptions when set hides the embedded media download options. Available only for media channels.
 	ChannelFlagsHideMediaDownloadOptions ChannelFlags = 1 << 15
+	// ChannelFlagsObfuscated is set on channels the bot cannot view, all fields other than id, type, position and parent_id are unreliable.
+	ChannelFlagsObfuscated ChannelFlags = 1 << 17
 )
 
 // A ChannelEdit holds Channel Field data for a channel edit.
