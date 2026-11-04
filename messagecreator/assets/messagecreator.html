@@ -5,6 +5,24 @@
     .mc-section-label { letter-spacing: .04em; }
     .mc-action-toggle, .mc-mode-toggle { display: flex; width: 100%; }
     .mc-mode-toggle .btn, .mc-action-toggle .btn { flex: 1 1 0; }
+    .mc-view-bar { gap: 8px; }
+    .mc-view-toggle { width: auto; }
+    .mc-pane-tabs { display: none; }
+
+    /* Below lg the editor and preview stack, so phones and tablets switch between them with tabs instead. */
+    @media (max-width: 991px) {
+        .mc-pane-tabs {
+            display: flex; position: sticky; top: 60px; z-index: 10;
+            margin: -4px -4px 12px; padding: 4px; background: inherit;
+        }
+        html.dark .mc-pane-tabs { background: #2e353e; }
+        .mc-pane-tabs .btn { flex: 1 1 0; }
+        #mc-root .mc-view-toggle, .mc-preview-col > hr { display: none; }
+        #mc-root[data-pane="edit"] .mc-preview-col,
+        #mc-root:not([data-pane="edit"]) .mc-editor-col { display: none; }
+        #mc-root[data-pane="preview"] .mc-view-bar { display: none !important; }
+        .mc-preview-wrap { position: static; }
+    }
     .mc-action-toggle .btn.active, .mc-mode-toggle .btn.active { font-weight: 600; }
     .btn-group label.disabled { opacity: .5; pointer-events: none; }
     .mc-editor-scroll { max-height: 68vh; overflow-y: auto; padding-right: 6px; }
@@ -65,6 +83,10 @@
     .mc-v2-gallery-item { max-width: 48%; border-radius: 4px; }
     .mc-v2-unknown, .mc-v2-file { color: #b5bac1; font-style: italic; }
     .mc-preview-error { color: #fa777c; font-family: monospace; white-space: pre-wrap; }
+    .mc-code {
+        background: #1e1f22; color: #dbdee1; border-radius: 8px; padding: 12px; margin: 0;
+        max-height: 68vh; overflow: auto; font-size: .8rem; tab-size: 4; white-space: pre;
+    }
 
     .mc-discord-preview .mc-md-h { font-weight: 700; color: #f2f3f5; margin: 4px 0; line-height: 1.3; }
     .mc-discord-preview .mc-md-h1 { font-size: 1.5em; }
@@ -103,7 +125,7 @@
 
 {{template "cp_alerts" .}}
 
-<div id="mc-root" class="row" data-guildid="{{.ActiveGuild.ID}}" data-guild-emojis="{{json .ActiveGuild.Emojis}}">
+<div id="mc-root" class="row" data-pane="edit" data-guildid="{{.ActiveGuild.ID}}" data-guild-emojis="{{json .ActiveGuild.Emojis}}">
     <div class="col-lg-12">
         <section class="card">
             <header class="card-header">
@@ -114,6 +136,18 @@
                 <form id="mc-form" method="post" action="/manage/{{.ActiveGuild.ID}}/messagecreator/send" data-async-form data-async-form-alertsonly>
                     <input type="hidden" name="mode" id="mc-f-mode">
                     <input type="hidden" name="payload" id="mc-f-payload">
+
+                    <div class="btn-group mc-pane-tabs">
+                        <label class="btn btn-outline-primary text-nowrap active">
+                            <input type="radio" name="mc-pane" value="edit" checked hidden> <i class="fas fa-pen"></i> Edit
+                        </label>
+                        <label class="btn btn-outline-primary text-nowrap">
+                            <input type="radio" name="mc-pane" value="preview" hidden> <i class="fas fa-eye"></i> Preview
+                        </label>
+                        <label class="btn btn-outline-primary text-nowrap">
+                            <input type="radio" name="mc-pane" value="code" hidden> <i class="fas fa-code"></i> Code
+                        </label>
+                    </div>
 
                     <div class="row">
                         <div class="col-lg-7 mc-editor-col">
@@ -208,8 +242,22 @@
                         <div class="col-lg-5 mc-preview-col">
                             <hr class="d-lg-none mt-0">
                             <div class="mc-preview-wrap">
-                                <label class="text-muted text-uppercase small font-weight-bold mc-section-label">Live preview</label>
+                                <div class="d-flex flex-wrap align-items-center mb-2 mc-view-bar">
+                                    <div class="btn-group btn-group-sm mc-view-toggle">
+                                        <label class="btn btn-outline-primary text-nowrap active">
+                                            <input type="radio" name="mc-view" value="preview" checked hidden> <i class="fas fa-eye"></i> Preview
+                                        </label>
+                                        <label class="btn btn-outline-primary text-nowrap" title="Custom command code">
+                                            <input type="radio" name="mc-view" value="code" hidden> <i class="fas fa-code"></i> Code
+                                        </label>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ml-auto" id="mc-code-copy" style="display:none;"><i class="fas fa-copy"></i> Copy</button>
+                                </div>
                                 <div id="mc-preview" class="mc-discord-preview"></div>
+                                <div id="mc-code-view" style="display:none;">
+                                    <pre id="mc-code" class="mc-code"></pre>
+                                    <small class="form-text text-muted">Sends this message from a custom command. Component ids get the <code>templates-</code> prefix automatically.</small>
+                                </div>
                             </div>
                         </div>
                     </div>

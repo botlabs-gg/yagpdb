@@ -49,6 +49,27 @@
         els.submitIcon = document.getElementById("mc-submit-icon");
         els.editHint = document.getElementById("mc-edit-hint");
         els.typeLockNote = document.getElementById("mc-type-lock-note");
+        els.code = document.getElementById("mc-code");
+        els.codeCopy = document.getElementById("mc-code-copy");
+        els.codeView = document.getElementById("mc-code-view");
+        if (els.codeCopy) els.codeCopy.addEventListener("click", copyCode);
+        root.querySelectorAll(".mc-pane-tabs label").forEach(function (label) {
+            label.addEventListener("click", function (e) {
+                e.preventDefault();
+                let input = label.querySelector("input");
+                if (input) setPane(input.value);
+            });
+        });
+        root.querySelectorAll(".mc-view-toggle label").forEach(function (label) {
+            label.addEventListener("click", function (e) {
+                e.preventDefault();
+                let input = label.querySelector("input");
+                if (input) setView(input.value);
+            });
+        });
+        root.addEventListener("change", function (e) {
+            if (e.target.type === "checkbox") renderPreview();
+        });
 
         root.querySelectorAll(".mc-action-toggle label").forEach(function (label) {
             label.addEventListener("click", function (e) {
@@ -113,6 +134,23 @@
             els.submit.disabled = !loadedForEdit;
             show(els.editHint, !loadedForEdit);
         }
+    }
+
+    function setPane(pane) {
+        els.root.setAttribute("data-pane", pane);
+        els.root.querySelectorAll("input[name=mc-pane]").forEach(function (r) { r.checked = r.value === pane; });
+        syncToggle("mc-pane");
+        if (pane !== "edit") setView(pane);
+        window.scrollTo(0, els.root.getBoundingClientRect().top + window.scrollY - 70);
+    }
+
+    function setView(view) {
+        let code = view === "code";
+        els.root.querySelectorAll("input[name=mc-view]").forEach(function (r) { r.checked = r.value === view; });
+        syncToggle("mc-view");
+        show(els.preview, !code);
+        show(els.codeView, code);
+        show(els.codeCopy, code);
     }
 
     function setMode(mode) {
@@ -723,6 +761,194 @@
         if (msg.embeds) msg.embeds.forEach(function (e) { els.preview.appendChild(renderEmbed(e)); });
         if (msg.components) renderComponents(msg.components, els.preview);
         if (!els.preview.childNodes.length) els.preview.appendChild(div("text-muted", "Nothing to preview yet."));
+        renderCode(msg);
+    }
+
+    // ---- Custom command code ----
+    // The generated code is a tree of calls: {fn, entries}, where each entry is one line of items,
+    // so key/value pairs stay together.
+
+    let CODE_INDENT = "\t";
+    let BUTTON_STYLE_NAMES = { 1: "primary", 2: "secondary", 3: "success", 4: "danger", 5: "link" };
+    let MENU_TYPE_NAMES = { 5: "user", 6: "role", 7: "mentionable", 8: "channel" };
+
+    function codeString(s) {
+        s = String(s);
+        if (s.indexOf("\n") !== -1 && s.indexOf("`") === -1) return "`" + s + "`";
+        return JSON.stringify(s);
+    }
+
+    function codeCall(fn, entries) { return { fn: fn, entries: entries }; }
+    function codePairs(fn, pairs) { return codeCall(fn, pairs.map(function (p) { return [codeString(p[0]), p[1]]; })); }
+    function codeSlice(items) { return codeCall("cslice", items.map(function (i) { return [i]; })); }
+
+    function codeRender(x, depth) {
+        if (typeof x === "string") return x;
+        if (!x.entries.length) return "(" + x.fn + ")";
+        let pad = CODE_INDENT.repeat(depth + 1);
+        return "(" + x.fn + "\n" + x.entries.map(function (e) {
+            return pad + e.map(function (i) { return codeRender(i, depth + 1); }).join(" ");
+        }).join("\n") + "\n" + CODE_INDENT.repeat(depth) + ")";
+    }
+
+    function codeSend(call) { return "{{ sendMessage nil " + codeRender(call, 0) + " }}"; }
+
+    function codeValue(v) {
+        if (Array.isArray(v)) return codeSlice(v.map(codeValue));
+        if (v && typeof v === "object") return codePairs("sdict", Object.keys(v).map(function (k) { return [k, codeValue(v[k])]; }));
+        if (typeof v === "string") return codeString(v);
+        return String(v);
+    }
+
+    function codeEmoji(emoji) {
+        let pairs = [];
+        if (emoji.id) pairs.push(["id", codeString(emoji.id)]);
+        pairs.push(["name", codeString(emoji.name || "")]);
+        if (emoji.animated) pairs.push(["animated", "true"]);
+        return codePairs("sdict", pairs);
+    }
+
+    function codeCustomID(id) {
+        id = id || "";
+        return id.indexOf(TEMPLATE_PREFIX) === 0 ? id.slice(TEMPLATE_PREFIX.length) : id;
+    }
+
+    function codeButton(b) {
+        let pairs = [];
+        if (b.label) pairs.push(["label", codeString(b.label)]);
+        if (b.emoji) pairs.push(["emoji", codeEmoji(b.emoji)]);
+        pairs.push(["style", codeString(BUTTON_STYLE_NAMES[b.style] || "primary")]);
+        if (b.style === 5) pairs.push(["url", codeString(b.url || "")]);
+        else if (codeCustomID(b.custom_id)) pairs.push(["custom_id", codeString(codeCustomID(b.custom_id))]);
+        if (b.disabled) pairs.push(["disabled", "true"]);
+        return codePairs("cbutton", pairs);
+    }
+
+    function codeMenu(m) {
+        let pairs = [];
+        if (MENU_TYPE_NAMES[m.type]) pairs.push(["type", codeString(MENU_TYPE_NAMES[m.type])]);
+        if (codeCustomID(m.custom_id)) pairs.push(["custom_id", codeString(codeCustomID(m.custom_id))]);
+        if (m.placeholder) pairs.push(["placeholder", codeString(m.placeholder)]);
+        if (m.min_values != null) pairs.push(["min_values", String(m.min_values)]);
+        if (m.max_values != null) pairs.push(["max_values", String(m.max_values)]);
+        if (m.disabled) pairs.push(["disabled", "true"]);
+        if (m.options && m.options.length) {
+            pairs.push(["options", codeSlice(m.options.map(function (o) {
+                let opt = [["label", codeString(o.label || "")], ["value", codeString(o.value || "")]];
+                if (o.description) opt.push(["description", codeString(o.description)]);
+                if (o.emoji) opt.push(["emoji", codeEmoji(o.emoji)]);
+                if (o.default) opt.push(["default", "true"]);
+                return codePairs("sdict", opt);
+            }))]);
+        }
+        return codePairs("cmenu", pairs);
+    }
+
+    function codeInteractive(c) { return c.type === 2 ? codeButton(c) : codeMenu(c); }
+
+    function codeEmbed(e) {
+        return codePairs("cembed", Object.keys(e).map(function (k) {
+            return [k, k === "timestamp" ? "currentTime" : codeValue(e[k])];
+        }));
+    }
+
+    function codeAllowedMentions() {
+        let parse = ["users"];
+        let roles = document.getElementById("mc-allow-role-mentions");
+        let everyone = document.getElementById("mc-allow-everyone-mentions");
+        if (roles && roles.checked) parse.push("roles");
+        if (everyone && everyone.checked) parse.push("everyone");
+        if (parse.length === 1) return null;
+        return codePairs("sdict", [["parse", codeSlice(parse.map(codeString))]]);
+    }
+
+    function codeV2Entries(comps) {
+        let entries = [];
+        comps.forEach(function (c) {
+            if (c.type === 10) {
+                entries.push(["text", codeString(c.content || "")]);
+            } else if (c.type === 9) {
+                let texts = (c.components || []).map(function (t) { return codeString(t.content || ""); });
+                let pairs = [["text", texts.length === 1 ? texts[0] : codeSlice(texts)]];
+                let acc = c.accessory;
+                if (acc && acc.type === 2) pairs.push(["button", codeButton(acc)]);
+                else if (acc && acc.type === 11) {
+                    let thumb = [["media", codeString((acc.media && acc.media.url) || "")]];
+                    if (acc.description) thumb.push(["description", codeString(acc.description)]);
+                    if (acc.spoiler) thumb.push(["spoiler", "true"]);
+                    pairs.push(["thumbnail", codePairs("sdict", thumb)]);
+                }
+                entries.push(["section", codePairs("sdict", pairs)]);
+            } else if (c.type === 12) {
+                entries.push(["gallery", codeSlice((c.items || []).map(function (it) {
+                    let item = [["media", codeString((it.media && it.media.url) || "")]];
+                    if (it.description) item.push(["description", codeString(it.description)]);
+                    if (it.spoiler) item.push(["spoiler", "true"]);
+                    return codePairs("sdict", item);
+                }))]);
+            } else if (c.type === 14) {
+                entries.push(["separator", c.spacing === 2 ? "true" : "false"]);
+            } else if (c.type === 17) {
+                let pairs = [];
+                if (typeof c.accent_color === "number") pairs.push(["color", String(c.accent_color)]);
+                if (c.spoiler) pairs.push(["spoiler", "true"]);
+                pairs.push(["components", codePairs("componentBuilder", codeV2Entries(c.components || []))]);
+                entries.push(["container", codePairs("sdict", pairs)]);
+            } else if (c.type === 1) {
+                entries.push(["interactive_components", codeSlice((c.components || []).map(codeInteractive))]);
+            }
+        });
+        return entries;
+    }
+
+    function generateCode(msg) {
+        let mentions = codeAllowedMentions();
+        if (currentMode === "componentsv2") {
+            let entries = codeV2Entries(msg.components || []);
+            if (!entries.length) return "";
+            if (mentions) entries.push(["allowed_mentions", mentions]);
+            return codeSend(codePairs("componentBuilder", entries));
+        }
+
+        let pairs = [];
+        let embeds = (msg.embeds || []).map(codeEmbed);
+        if (msg.content) pairs.push(["content", codeString(msg.content)]);
+        if (embeds.length) pairs.push(["embed", embeds.length === 1 ? embeds[0] : codeSlice(embeds)]);
+        if (msg.components && msg.components.length) {
+            pairs.push(["components", codeSlice(msg.components.map(function (row) {
+                return codeSlice((row.components || []).map(codeInteractive));
+            }))]);
+        }
+        if (mentions) pairs.push(["allowed_mentions", mentions]);
+        if (!pairs.length) return "";
+        return codeSend(codePairs("complexMessage", pairs));
+    }
+
+    function renderCode(msg) {
+        if (!els.code) return;
+        els.code.textContent = generateCode(msg) || "Add some content to get its code.";
+    }
+
+    function copyCode() {
+        let text = generateCode(computeMessage().message);
+        if (!text) return;
+        let done = function () {
+            els.codeCopy.textContent = "Copied";
+            setTimeout(function () { els.codeCopy.textContent = "Copy"; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () { selectCode(); });
+        } else {
+            selectCode();
+        }
+    }
+
+    function selectCode() {
+        let range = document.createRange();
+        range.selectNodeContents(els.code);
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
     }
 
     function renderEmbed(e) {
