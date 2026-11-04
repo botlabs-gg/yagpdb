@@ -36,9 +36,9 @@
                                 </select>
                             </div>
 
-                            {{template "codemirror_toggle"}}
                             <div class="form-group">
-                                <label>Verify Page content</label>
+                                <label>Page content</label>
+                                {{template "codemirror_toggle"}}
                                 <textarea rows="5" class="form-control template-editor" name="PageContent"
                                     placeholder="{{.DefaultPageContent}}">{{or .PluginSettings.PageContent .DefaultPageContent}}</textarea>
                                 <p class="help-block">

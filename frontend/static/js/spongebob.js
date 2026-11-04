@@ -143,8 +143,10 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
 	}
 }
 
+var lastAlertsHadError = false;
 function showAlerts(alertsJson) {
 	var alerts = JSON.parse(alertsJson);
+	lastAlertsHadError = !!alerts && alerts.some(function (a) { return a.Style === "danger"; });
 	if (!alerts) return;
 
 	const stack_bar_top = { "dir1": "down", "dir2": "right", "push": "top", "spacing1": 0, "spacing2": 0 };
@@ -317,6 +319,14 @@ function initPlugins(partial) {
 
 	$(selectorPrefix + '[data-toggle="popover"]').popover()
 	$(selectorPrefix + '[data-toggle="tooltip"]').tooltip();
+
+	// On phones the tab row scrolls, so bring the active tab into view.
+	$(selectorPrefix + '.tabs .nav-tabs').each(function () {
+		var active = $(this).find('.nav-link.active')[0];
+		if (!active || this.scrollWidth <= this.clientWidth) return;
+		var row = this.getBoundingClientRect(), tab = active.getBoundingClientRect();
+		this.scrollLeft += (tab.left - row.left) - (row.width - tab.width) / 2;
+	});
 
 	$('.entry:not(:last-of-type) .btn-add')
 		.removeClass('btn-add').addClass('btn-remove')
@@ -498,7 +508,8 @@ function formSubmissionEvents() {
 			action = window.location.pathname;
 		}
 
-		submitForm($(event.target), action, false);
+		var submitter = event.originalEvent && event.originalEvent.submitter;
+		submitForm($(event.target), action, false, submitter);
 	});
 
 	$(document).on("click", 'button', function (event) {
@@ -553,13 +564,14 @@ function formSubmissionEvents() {
 		}
 
 		event.preventDefault();
-		submitForm(parentForm, target.attr("formaction"), alertsOnly);
+		submitForm(parentForm, target.attr("formaction"), alertsOnly, target[0]);
 
 	});
 }
 
-function submitForm(form, url, alertsOnly) {
+function submitForm(form, url, alertsOnly, button) {
 	var serialized = serializeForm(form);
+	var saveFeedback = prepareSaveFeedback(form, button);
 
 	if (!alertsOnly) {
 		alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
@@ -575,14 +587,55 @@ function submitForm(form, url, alertsOnly) {
 		}
 	}
 
-	navigate(url, "POST", serialized, false, true, alertsOnly, function () {
+	navigate(url, "POST", serialized, false, true, alertsOnly, function (success) {
 		markFormClean($(form)[0])
 		if (currentTab) {
 			$(".tabs a[href='" + currentTab + "']").tab("show");
 		}
+		if (saveFeedback) saveFeedback(success);
 	});
 
 	$.magnificPopup.close();
+}
+
+// The page is usually re-rendered after a save, so the clicked button is found again through its
+// form's action and hidden id fields, which identify a row on pages with one form per row.
+function formSignature(form) {
+	var ids = $(form).find("input[type=hidden], input.hidden").map(function () { return this.name + "=" + this.value; }).get();
+	return ($(form).attr("action") || "") + "|" + ids.join("&");
+}
+
+function prepareSaveFeedback(form, button) {
+	if (!button || $(button).hasClass("btn-danger")) return null;
+
+	var signature = formSignature(form);
+	var buttonIndex = $(form).find("button").index(button);
+	lastAlertsHadError = false;
+
+	return function (success) {
+		// Alerts in a re-rendered page are shown from a ready handler, which jQuery runs asynchronously.
+		setTimeout(function () {
+			var target = button;
+			if (!document.body.contains(target)) {
+				var matches = $("#main-content form").filter(function () { return formSignature(this) === signature; });
+				target = matches.length === 1 ? matches.find("button").get(buttonIndex) : null;
+			}
+			if (target) flashSaveResult(target, success && !lastAlertsHadError);
+		}, 50);
+	};
+}
+
+function flashSaveResult(button, ok) {
+	var $button = $(button);
+	if ($button.data("save-flash")) return;
+
+	var iconOnly = $button.text().trim() === "";
+	var original = $button.html();
+	var icon = ok ? "fa-check" : "fa-times";
+	$button.data("save-flash", true).html('<i class="fas ' + icon + '"></i>' + (iconOnly ? "" : (ok ? " Saved" : " Not saved")));
+	setTimeout(function () {
+		$button.html(original).removeData("save-flash");
+	}, 1500);
 }
 
 function serializeForm(form) {

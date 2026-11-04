@@ -33,7 +33,7 @@
     }
 
     .rm-col-toggle {
-        flex: 0 0 4.25em;
+        flex: 0 0 3em;
     }
 
     .rm-col-emoji {
@@ -219,7 +219,7 @@
         function optionRow(cmd, index, state) {
             let prefix = "Options." + index + ".";
             let id = "rm-opt-" + cmd.id;
-            let include = el("input", { type: "checkbox", class: "tgl tgl-flat", id: id, name: prefix + "Include", value: "true" });
+            let include = el("input", { type: "checkbox", class: "tgl tgl-flat tgl-sm", id: id, name: prefix + "Include", value: "true" });
             include.checked = !!state.include;
             let emoji = el("input", { type: "hidden", name: prefix + "Emoji" });
             emoji.value = state.emoji || "";

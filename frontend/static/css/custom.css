@@ -98,10 +98,44 @@ html.dark .tabs .nav-link:hover {
 	border-color: #1d2127;
 }
 
+/* Pages with many tabs (groups, rulesets, menus) keep them on one scrollable row on phones instead of wrapping. */
+@media (max-width: 767px) {
+	.tabs .nav-tabs {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: thin;
+	}
+
+	.tabs .nav-tabs .nav-item {
+		flex: 0 0 auto;
+	}
+
+	.tabs .nav-tabs .nav-link {
+		white-space: nowrap;
+	}
+}
+
 /* Bootstrap 4.2+ gives tables dark text, the dark theme expects them to inherit its light text. */
 html.dark .table,
 html.dark .table-hover tbody tr:hover {
 	color: inherit;
+}
+
+/* The theme's dark text colors are below WCAG AA contrast on the card background. */
+html.dark body {
+	color: #abb4be;
+}
+
+html.dark label:not(.btn):not(.custom-file-label) {
+	color: #c9cdd6;
+}
+
+html.dark .text-muted,
+html.dark .help-block,
+html.dark .form-text {
+	color: #9ba3af !important;
 }
 
 html.dark .tabs .nav-link:focus {
@@ -502,6 +536,30 @@ html.dark select optgroup {
   left: 50%;
   background: #7FC6A6;
 } */
+
+/* Compact switches for dense rows: tgl-sm on the input, or tgl-compact on a container of checkbox template switches. */
+.tgl-flat.tgl-sm + .tgl-btn,
+.tgl-compact .tgl-flat + .tgl-btn {
+	width: 2.75em;
+	height: 1.5em;
+	min-width: 2.75em;
+	flex-shrink: 0;
+	padding: 1px;
+	border-width: 3px;
+}
+
+.tgl-compact .form-group {
+	margin-bottom: 0;
+}
+
+.tgl-compact .tgl-btn,
+.tgl-compact .tgl-desc {
+	margin-bottom: 0 !important;
+}
+
+.tgl-compact .tgl-desc:empty {
+	display: none;
+}
 
 .tgl-flat + .tgl-btn {
 	padding: 2px;

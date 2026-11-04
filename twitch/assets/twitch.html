@@ -63,22 +63,23 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Custom Announcement</h3>
+            {{$announcementEnabled := false}}
+            {{if .TwitchAnnouncement}}
+            {{$announcementEnabled = .TwitchAnnouncement.Enabled}}
+            {{end}}
+            <div class="card-header d-flex align-items-center">
+                <h3 class="card-title mb-0 mr-auto">Custom Announcement</h3>
+                <input type="checkbox" class="tgl tgl-flat" name="Enabled" id="announcement-enabled" form="twitch-announcement-form"
+                    aria-label="Use the custom announcement" {{if $announcementEnabled}}checked{{end}} {{if not .IsGuildPremium}}disabled{{end}}>
+                <label for="announcement-enabled" class="tgl-btn mb-0 ml-2" title="Use the custom announcement"></label>
             </div>
             <div class="card-body">
-                <form role="form" class="no-unsaved-popup" method="post"
+                <form id="twitch-announcement-form" role="form" class="no-unsaved-popup" method="post"
                     action="/manage/{{.ActiveGuild.ID}}/twitch/announcement">
                     <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
                         <div class="form-group col mb-0">
-                            {{$announcementEnabled := false}}
-                            {{if .TwitchAnnouncement}}
-                            {{$announcementEnabled = .TwitchAnnouncement.Enabled}}
-                            {{end}}
-                            {{checkbox "Enabled" "announcement-enabled" `<h2 class="card-title">Enable</h2>`
-                            $announcementEnabled}}
 
-                            <label>Twitch Announcement Message (<span class="twitch-announcement-length-counter">{{if
+                            <label>Custom message (<span class="twitch-announcement-length-counter">{{if
                                     .TwitchAnnouncement}}{{toRune
                                     .TwitchAnnouncement.Message|len}}{{else}}0{{end}}</span>/5000)</label>
 
@@ -155,7 +156,7 @@
                 <form id="feed-item-{{.ID}}" class="no-unsaved-popup" method="post"
                     action="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"></form>
                 {{end}}
-                <table class="table table-responsive-md table-sm mb-0">
+                <table class="table table-responsive-md table-sm mb-0 tgl-compact">
                     <thead>
                         <tr>
                             <th>Twitch User</th>
@@ -180,8 +181,7 @@
                                 </select>
                             </td>
                             <td>
-                                {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `Mention everyone`
-                                .MentionEveryone (print `form="feed-item-` .ID `"`)}}
+                                {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `` .MentionEveryone (print `form="feed-item-` .ID `"`) `aria-label="Mention everyone"`}}
                             </td>
                             <td>
                                 <select form="feed-item-{{.ID}}" name="MentionRoles" class="multiselect form-control"
@@ -190,12 +190,10 @@
                                 </select>
                             </td>
                             <td>
-                                {{checkbox "PublishVOD" (print "publish-vod-" .ID) `Publish VOD` .PublishVod (print
-                                `form="feed-item-` .ID `"`)}}
+                                {{checkbox "PublishVOD" (print "publish-vod-" .ID) `` .PublishVod (print `form="feed-item-` .ID `"`) `aria-label="Publish VOD"`}}
                             </td>
                             <td>
-                                {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID
-                                `"`)}}
+                                {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID `"`) `aria-label="Enabled"`}}
                             </td>
                             <td class="tbl-actions-column">
                                 <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success"

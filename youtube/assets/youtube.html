@@ -94,15 +94,16 @@
             </div>
         </div>
         <div class="card col-md-6 col-sm-12">
-            <header class="card-header">
-                <h2 class="card-title">Custom Announcement</h2>
+            <header class="card-header d-flex align-items-center">
+                <h2 class="card-title mb-0 mr-auto">Custom Announcement</h2>
+                <input type="checkbox" class="tgl tgl-flat" name="Enabled" id="yt-announcement-enabled" form="yt-announcement-form"
+                    aria-label="Use the custom announcement" {{if .Announcement.Enabled}}checked{{end}}>
+                <label for="yt-announcement-enabled" class="tgl-btn mb-0 ml-2" title="Use the custom announcement"></label>
             </header>
             <div class="card-body">
-                <form  method="post" action="/manage/{{.ActiveGuild.ID}}/youtube/announcement">
+                <form id="yt-announcement-form" method="post" action="/manage/{{.ActiveGuild.ID}}/youtube/announcement">
                   <div class="form-group col mb-0">
-                        {{checkbox "Enabled" "yt-announcement-enabled" `<h2 class="card-title">Enable</h2>` .Announcement.Enabled}}
-                        
-                        <label>YouTube Announcement Message (<span class="yt-announcement-length-counter">{{toRune .Announcement.Message|len}}</span>/5000)</label>
+                        <label>Custom message (<span class="yt-announcement-length-counter">{{toRune .Announcement.Message|len}}</span>/5000)</label>
 
                         {{template "codemirror_toggle"}}
                         <textarea class="form-control template-editor" rows="10" id="yt-announcement-msg" name="Message" oninput="OnAnnouncementChange(this)">{{.Announcement.Message}}</textarea>
@@ -143,7 +144,7 @@
         <div class="card-body">
             {{$dot := .}} {{range .Subs}}
             <form id="sub-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text" class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
-            <table class="table table-responsive-md table-sm mb-0">
+            <table class="table table-responsive-md table-sm mb-0 tgl-compact">
                 <thead>
                     <tr>
                         <th>Youtube</th>
@@ -169,7 +170,7 @@
                         </td>
                         <td class="yt-tbl-column custom-announcement-disables">
                             <span class="custom-announcement-popover">
-                            {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (print `form="sub-item-` .ID `"`)}}
+                            {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `` .MentionEveryone (print `form="sub-item-` .ID `"`) `aria-label="Mention everyone"`}}
                             </span>
                         </td>
                         <td class="yt-tbl-column custom-announcement-disables">
@@ -181,13 +182,13 @@
                             </span>
                         </td>
                         <td class="yt-tbl-column">
-                            {{checkbox "PublishLivestream" (print "publish-livestream-" .ID) `Publish Livestreams` .PublishLivestream (print `form="sub-item-` .ID `"`)}}
+                            {{checkbox "PublishLivestream" (print "publish-livestream-" .ID) `` .PublishLivestream (print `form="sub-item-` .ID `"`) `aria-label="Publish livestreams"`}}
                         </td>
                         <td class="yt-tbl-column">
-                            {{checkbox "PublishShorts" (print "publish-shorts-" .ID) `Publish Shorts` .PublishShorts (print `form="sub-item-` .ID `"`)}}
+                            {{checkbox "PublishShorts" (print "publish-shorts-" .ID) `` .PublishShorts (print `form="sub-item-` .ID `"`) `aria-label="Publish shorts"`}}
                         </td>
                         <td class="yt-tbl-column">
-                            {{checkbox "Enabled" (print "feed-enabled-" .ID) `` .Enabled (print `form="sub-item-` .ID `"`)}}
+                            {{checkbox "Enabled" (print "feed-enabled-" .ID) `` .Enabled (print `form="sub-item-` .ID `"`) `aria-label="Enabled"`}}
                         </td>
                         <td class="yt-tbl-column yt-tbl-actions-column">
                             <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>

@@ -534,16 +534,15 @@ $(function(){
             column.append(input)
             break;
         case "bool":
-            // <div class="form-check">
-            //             <input type="checkbox" class="form-check-input" name="$name" checked>
-            //         </div>
-            var input = $("<input type='checkbox' class='form-check-input' name='"+key+"'>")
+            // Rule parts get renumbered when one is removed, so the id can't be based on the field name.
+            var boolID = "am-new-" + Date.now() + "-" + Math.floor(Math.random() * 1e6)
+            var input = $("<input type='checkbox' class='tgl tgl-flat tgl-sm' name='"+key+"'>").attr("id", boolID)
             if(opt.Default){
                 input.attr("checked", true)
             }
 
-            var container = $("<div class='form-check'>")
-            container.append(input)
+            var container = $("<div class='d-flex align-items-center'>")
+            container.append(input, $("<label class='tgl-btn mb-0'>").attr("for", boolID))
             column.append(container)
             break;
         case "multi_role":
@@ -653,8 +652,9 @@ $(function(){
                         {{end}}
                     </select>
                     {{else if eq .Kind "bool"}}
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" name="{{$name}}" {{if  (index $dot.settings .Key)}}checked{{end}}>
+                    <div class="d-flex align-items-center">
+                        <input type="checkbox" class="tgl tgl-flat tgl-sm" id="am-{{$name}}" name="{{$name}}" {{if  (index $dot.settings .Key)}}checked{{end}}>
+                        <label for="am-{{$name}}" class="tgl-btn mb-0"></label>
                     </div>
                     {{end}}
                 </div>

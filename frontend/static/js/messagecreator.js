@@ -380,21 +380,17 @@
             el("div", { class: "col-md-8" }, [field("Footer text", e.footerText, function (v) { e.footerText = v; refreshPreview(); })]),
             el("div", { class: "col-md-4" }, [field("Footer icon URL", e.footerIcon, function (v) { e.footerIcon = v; refreshPreview(); }, { placeholder: "https://..." })])
         ]));
-        let tsCb = el("input", { type: "checkbox" }); tsCb.className = "mr-2"; tsCb.checked = !!e.ts;
-        tsCb.addEventListener("change", function () { e.ts = tsCb.checked; refreshPreview(); });
-        card.appendChild(el("label", { class: "d-flex align-items-center mb-2" }, [tsCb, "Include current timestamp in footer"]));
+        card.appendChild(switchField("Include current timestamp in footer", !!e.ts, function (on) { e.ts = on; refreshPreview(); }, "mb-2"));
 
         card.appendChild(el("hr", { class: "my-2" }));
         card.appendChild(el("label", { class: "small d-block mb-1" }, ["Fields"]));
         e.fields = e.fields || [];
         e.fields.forEach(function (f, fi) {
-            let inlineCb = el("input", { type: "checkbox" }); inlineCb.checked = !!f.inline;
-            inlineCb.addEventListener("change", function () { f.inline = inlineCb.checked; refreshPreview(); });
             card.appendChild(el("div", { class: "mc-opt-row" }, [
                 inlineInput("Field name", f.name, function (v) { f.name = v; refreshPreview(); }),
                 inlineInput("Field value", f.value, function (v) { f.value = v; refreshPreview(); }),
-                el("label", { class: "mb-0 small text-nowrap", title: "Display inline" }, [inlineCb, " in"]),
-                btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { e.fields.splice(fi, 1); renderEmbeds(); renderPreview(); }, { noconfirm: true })
+                switchField("Inline", !!f.inline, function (on) { f.inline = on; refreshPreview(); }, "small text-nowrap", true),
+                removeBtn("Remove field", function () { e.fields.splice(fi, 1); renderEmbeds(); renderPreview(); })
             ]));
         });
         if (e.fields.length < 25) {
@@ -453,12 +449,11 @@
     function colorField(labelText, value, oninput) {
         let selected = (typeof value === "number") ? value : hexToInt("#5865f2");
         let enabled = typeof value === "number";
-        let cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = enabled;
-        let pickerWrap = el("div", { class: "mt-1" }, [colorPicker(value, function (v) { selected = v; if (cb.checked) oninput(v); })]);
+        let on = enabled;
+        let pickerWrap = el("div", { class: "mt-1" }, [colorPicker(value, function (v) { selected = v; if (on) oninput(v); })]);
         show(pickerWrap, enabled);
-        cb.addEventListener("change", function () { show(pickerWrap, cb.checked); oninput(cb.checked ? selected : undefined); });
         return el("div", { class: "form-group mb-2" }, [
-            el("label", { class: "small mb-1 d-block" }, [cb, labelText]),
+            switchField(labelText, enabled, function (checked) { on = checked; show(pickerWrap, on); oninput(on ? selected : undefined); }, "small", true),
             pickerWrap
         ]);
     }
@@ -543,9 +538,7 @@
 
     function separatorBody(node) {
         let wrap = el("div");
-        let cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = node.divider !== false;
-        cb.addEventListener("change", function () { node.divider = cb.checked; refreshPreview(); });
-        wrap.appendChild(el("label", { class: "small d-block mb-2" }, [cb, "Show divider line"]));
+        wrap.appendChild(switchField("Show divider line", node.divider !== false, function (on) { node.divider = on; refreshPreview(); }, "small mb-2"));
         wrap.appendChild(selectField("Spacing", [{ v: 1, t: "Small" }, { v: 2, t: "Large" }], node.spacing || 1, function (v) { node.spacing = parseInt(v); refreshPreview(); }));
         return wrap;
     }
@@ -625,7 +618,7 @@
                     inlineInput("Label", opt.label, function (v) { opt.label = v; refreshPreview(); }),
                     inlineInput("Value", opt.value, function (v) { opt.value = v; refreshPreview(); }),
                     inlineInput("Description", opt.description, function (v) { if (v) opt.description = v; else delete opt.description; refreshPreview(); }),
-                    node.options.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.options.splice(oi, 1); rebuildEditor(); }, { noconfirm: true }) : null
+                    node.options.length > 1 ? removeBtn("Remove option", function () { node.options.splice(oi, 1); rebuildEditor(); }) : null
                 ]));
             });
             if (node.options.length < 25) {
@@ -646,7 +639,7 @@
             ta.addEventListener("input", function () { td.content = ta.value; refreshPreview(); });
             body.appendChild(el("div", { class: "mc-opt-row" }, [
                 ta,
-                node.components.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.components.splice(ti, 1); rebuildEditor(); }, { noconfirm: true }) : null
+                node.components.length > 1 ? removeBtn("Remove text", function () { node.components.splice(ti, 1); rebuildEditor(); }) : null
             ]));
         });
         if (node.components.length < 3) body.appendChild(btn("+ Text", "btn-block btn-outline-secondary", function () { node.components.push(defText()); rebuildEditor(); }));
@@ -680,7 +673,7 @@
             body.appendChild(el("div", { class: "mc-opt-row" }, [
                 inlineInput("Image / video URL", it.media.url, function (v) { it.media.url = v; refreshPreview(); }),
                 inlineInput("Description (optional)", it.description, function (v) { if (v) it.description = v; else delete it.description; refreshPreview(); }),
-                node.items.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.items.splice(ii, 1); rebuildEditor(); }, { noconfirm: true }) : null
+                node.items.length > 1 ? removeBtn("Remove item", function () { node.items.splice(ii, 1); rebuildEditor(); }) : null
             ]));
         });
         if (node.items.length < 10) body.appendChild(btn("+ Item", "btn-block btn-outline-secondary", function () { node.items.push({ media: { url: "" } }); rebuildEditor(); }));
@@ -1101,6 +1094,20 @@
     }
 
 
+    // switchField builds the dashboard's standard on/off switch with its label.
+    let switchCount = 0;
+    function switchField(labelText, checked, onchange, cls, compact) {
+        let id = "mc-switch-" + (switchCount++);
+        let input = el("input", { type: "checkbox", class: "tgl tgl-flat" + (compact ? " tgl-sm" : ""), id: id });
+        input.checked = checked;
+        input.addEventListener("change", function () { onchange(input.checked); });
+        return el("div", { class: "d-flex align-items-center " + (cls || "") }, [
+            input,
+            el("label", { class: "tgl-btn mb-0", for: id }),
+            el("label", { class: "mb-0 ml-2", for: id }, [labelText])
+        ]);
+    }
+
     function el(tag, attrs, children) {
         let e = document.createElement(tag);
         if (attrs) Object.keys(attrs).forEach(function (k) {
@@ -1121,6 +1128,12 @@
         if (opts.noconfirm) b.setAttribute("noconfirm", "true");
         if (opts.title) b.title = opts.title;
         b.addEventListener("click", onclick);
+        return b;
+    }
+
+    function removeBtn(title, onclick) {
+        let b = btn('<i class="fas fa-times"></i>', "btn-sm btn-outline-danger mc-remove", onclick, { noconfirm: true, title: title });
+        b.setAttribute("aria-label", title);
         return b;
     }
 

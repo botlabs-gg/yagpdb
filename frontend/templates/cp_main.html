@@ -267,9 +267,19 @@ For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
 
 {{/* Show/hide toggle for CodeMirror editors. Controls every .template-editor on the page. */}}
 {{define "codemirror_toggle"}}
-<span style="float: right">
-    <input type="checkbox" class="toggle-code-mirror" id="toggle-code-mirror" checked>
-    <label for="toggle-code-mirror" class="mb-0">Show CodeMirror Editor</label>
+<span class="d-inline-flex align-items-center" style="float: right" title="Show CodeMirror editor">
+    <input type="checkbox" class="tgl tgl-flat tgl-sm toggle-code-mirror" id="toggle-code-mirror" checked>
+    <label for="toggle-code-mirror" class="tgl-btn mb-0"></label>
+    <label for="toggle-code-mirror" class="mb-0 ml-2 small">Code editor</label>
+</span>
+{{end}}
+
+{{/* Show/hide toggle for the CodeMirror editors inside the closest element with data-cm-scope, called with that scope's name. */}}
+{{define "codemirror_toggle_for"}}
+<span class="d-inline-flex align-items-center" style="float: right" title="Show CodeMirror editor">
+    <input type="checkbox" class="tgl tgl-flat tgl-sm toggle-code-mirror" id="toggle-code-mirror-{{.}}" checked>
+    <label for="toggle-code-mirror-{{.}}" class="tgl-btn mb-0"></label>
+    <label for="toggle-code-mirror-{{.}}" class="mb-0 ml-2 small">Code editor</label>
 </span>
 {{end}}
 

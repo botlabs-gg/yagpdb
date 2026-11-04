@@ -13,6 +13,43 @@
         display: none;
     }
 
+    @media (max-width: 991px) {
+        .rc-split {
+            border-right: 0 !important;
+            border-bottom-width: 1px;
+            border-bottom-style: solid;
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    /* Role pickers fill their column like the other fields. */
+    .multiselect-native-select,
+    .multiselect-native-select > .btn-group {
+        display: block;
+        width: 100%;
+    }
+
+    .multiselect-native-select .multiselect {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        text-align: left;
+    }
+
+    .multiselect-native-select .multiselect-selected-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    html.dark .rc-cmd-prefix {
+        background: #1d2127;
+        border-color: #1d2127;
+        color: #9ba3af;
+    }
+
     @media (max-width: 767px) {
         .rc-cmd-summary {
             display: flex;
@@ -94,17 +131,17 @@
                 <div class="tab-pane active">
                     <!-- /.row -->
                     <div class="row">
-                        <div class="col-lg-6 border-right border-primary">
+                        <div class="col-lg-6 d-flex flex-column border-right border-primary rc-split">
                             <!-- Add new role command -->
-                            <h3>Create new role command</h2>
-                                <form data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_cmd"
+                            <h3>Create new role command</h3>
+                                <form class="d-flex flex-column flex-grow-1" data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_cmd"
                                     method="post">
                                     <div class="form-row">
-                                        <div class="form-group col">
+                                        <div class="form-group mb-3 col">
                                             <label for="new-role-command-name">Name</label>
-                                            <div class="input-group input-group-sm">
+                                            <div class="input-group">
                                                 <span class="input-group-prepend">
-                                                    <span class="input-group-text"><small>/role</small></span>
+                                                    <span class="input-group-text rc-cmd-prefix">/role</span>
                                                 </span>
                                                 <input type="text" class="form-control" id="new-role-command-name"
                                                     name="Name" oninput="rolecmdNameInputChanged()">
@@ -112,13 +149,13 @@
                                         </div>
                                     </div>
                                     <div class="form-row">
-                                        <div class="form-group col-12 col-sm-6">
-                                            <label for="new-role-command-group">Group</label><br>
+                                        <div class="form-group mb-3 col-12 col-sm-6">
+                                            <label for="new-role-command-group">Group</label>
                                             <select name="Group" class="form-control" id="new-role-command-group">
                                                 {{mTemplate "rolecommands_groupopts" "Groups" .Groups "Selected" .CurrentGroup.ID}}
                                             </select>
                                         </div>
-                                        <div class="form-group col-12 col-sm-6">
+                                        <div class="form-group mb-3 col-12 col-sm-6">
                                             <label for="new-role-command-role">Role</label>
                                             <select class="form-control" name="Role" id="new-role-command-role"
                                                 onchange="rolecmdRoleDropdownChanged()">
@@ -127,16 +164,16 @@
                                         </div>
                                     </div>
                                     <div class="form-row">
-                                        <div class="form-group col-12 col-sm-6">
-                                            <label for="new-role-command-require-roles">Requires roles</label><br>
+                                        <div class="form-group mb-3 col-12 col-sm-6">
+                                            <label class="d-block" for="new-role-command-require-roles">Requires roles</label>
                                             <select name="RequireRoles" data-plugin-multiselect
                                                 class="multiselect form-control" multiple="multiple"
                                                 id="new-role-command-require-roles">
                                                 {{roleOptions .ActiveGuild.Roles nil}}
                                             </select>
                                         </div>
-                                        <div class="form-group col-12 col-sm-6">
-                                            <label for="new-role-command-ignore-roles">Ignore roles</label><br>
+                                        <div class="form-group mb-3 col-12 col-sm-6">
+                                            <label class="d-block" for="new-role-command-ignore-roles">Ignore roles</label>
                                             <select name="IgnoreRoles" data-plugin-multiselect
                                                 class="multiselect form-control" multiple="multiple"
                                                 id="new-role-command-ignore-roles">
@@ -144,22 +181,26 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-success">Create new role command</button>
+                                    <div class="mt-auto">
+                                        <button type="submit" class="btn btn-success">Create new role command</button>
+                                    </div>
                                 </form>
                         </div>
                         <!-- /.col-lg-6 -->
-                        <div class="col-lg-6">
+                        <div class="col-lg-6 d-flex flex-column">
                             <!-- Add new role command group -->
                             <h3>Create new group</h3>
-                            <form data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_group"
+                            <form class="d-flex flex-column flex-grow-1" data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_group"
                                 method="post">
                                 <div class="form-row">
-                                    <div class="form-group col-12 col-sm-6">
+                                    <div class="form-group mb-3 col">
                                         <label for="new-group-name">Name</label>
                                         <input type="text" class="form-control" id="new-group-name" name="Name">
                                     </div>
-                                    <div class="form-group col-12 col-sm-6">
-                                        <label for="new-group-mode">Mode</label><br>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group mb-3 col">
+                                        <label for="new-group-mode">Mode</label>
                                         <select name="Mode" class="form-control" id="new-group-mode"
                                             onchange="ModeChanged(this,'new-')">
                                             <option value="0">Standard</option>
@@ -169,16 +210,16 @@
                                     </div>
                                 </div>
                                 <div class="form-row">
-                                    <div class="form-group col-12 col-sm-6">
-                                        <label for="new-group-require-roles">Requires roles</label><br>
+                                    <div class="form-group mb-3 col-12 col-sm-6">
+                                        <label class="d-block" for="new-group-require-roles">Requires roles</label>
                                         <select name="RequireRoles" data-plugin-multiselect
                                             class="multiselect form-control" multiple="multiple"
                                             id="new-group-require-roles">
                                             {{roleOptions .ActiveGuild.Roles nil}}
                                         </select>
                                     </div>
-                                    <div class="form-group col-12 col-sm-6">
-                                        <label for="new-group-ignore-roles">Ignore roles</label><br>
+                                    <div class="form-group mb-3 col-12 col-sm-6">
+                                        <label class="d-block" for="new-group-ignore-roles">Ignore roles</label>
                                         <select name="IgnoreRoles" data-plugin-multiselect
                                             class="multiselect form-control" multiple="multiple"
                                             id="new-group-ignore-roles">
@@ -195,18 +236,20 @@
                                     </div>
                                 </div>
                                 <div class="form-row hidden" id="new-group-multi-opts">
-                                    <div class="form-group col-12 col-sm-6">
-                                        <label for="new-group-min-roles">Minimum number of roles</label><br>
+                                    <div class="form-group mb-3 col-12 col-sm-6">
+                                        <label for="new-group-min-roles">Minimum number of roles</label>
                                         <input type="number" min="0" max="250" class="form-control" id="new-group-min-roles"
                                             name="MultipleMin">
                                     </div>
-                                    <div class="form-group col-12 col-sm-6">
-                                        <label for="new-group-max-roles">Maximum number of roles</label><br>
+                                    <div class="form-group mb-3 col-12 col-sm-6">
+                                        <label for="new-group-max-roles">Maximum number of roles</label>
                                         <input type="number" min="0" max="250" class="form-control" id="new-group-max-roles"
                                             name="MultipleMax">
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-success">Create new group</button>
+                                <div class="mt-auto">
+                                    <button type="submit" class="btn btn-success">Create new group</button>
+                                </div>
                             </form>
                         </div>
                         <!-- /.col-lg-6 -->

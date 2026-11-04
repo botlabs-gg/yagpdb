@@ -78,7 +78,7 @@
                         action="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/update" data-async-form></form>
                     {{end}}
 
-                    <table class="table table-responsive-md table-sm mb-0">
+                    <table class="table table-responsive-md table-sm mb-0 tgl-compact">
                         <thead>
                             <tr>
                                 <th>Channel</th>
@@ -101,7 +101,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    {{checkbox "Enabled" (print "enabled-" .ID) "" .Enabled (print `form="item-` .ID `"`)}}
+                                    {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="item-` .ID `"`) `aria-label="Enabled"`}}
                                 </td>
                                 <td class="tbl-actions-column">
                                     <button form="item-{{.ID}}" type="submit" class="btn btn-success"

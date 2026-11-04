@@ -8,6 +8,28 @@
 
 {{template "cp_alerts" .}}
 
+<style>
+	/* Widgets in a row share its height, so their footers line up. */
+	.home-widget {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.home-widget > .card {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.home-widget > .card > .card-body {
+		flex: 1 1 auto;
+	}
+
+	.home-widget > .card:not(.card-featured) {
+		border-top: 3px solid transparent;
+	}
+</style>
+
 {{if .QuickSetupPending}}
 <section class="card card-featured card-featured-primary mb-4">
 	<div class="card-body d-flex flex-wrap align-items-center">
@@ -29,7 +51,7 @@
 <h2>{{.Category.Name}}</h2>
 <div class="row">
 	{{range .Widgets}}
-    <div class="col-12 col-sm-6 col-md-4" id="home-widget-{{.PluginName}}">
+    <div class="col-12 col-sm-6 col-md-4 home-widget" id="home-widget-{{.PluginName}}">
     	<section class="card">
 		    <header class="card-header">
 		        <h2 class="card-title">{{.HumanName}}</h2>

@@ -222,6 +222,7 @@
     </div>
     <div class="form-row">
         {{$desc := "All commands enabled?"}}
+        {{$switchSuffix := print .Override.ID}}{{if .Override.Global}}{{$switchSuffix = "global"}}{{end}}
         {{$commandsEnabled := true}}
         {{if .Override}}{{$commandsEnabled = .Override.CommandsEnabled}}{{end}}
 
@@ -242,8 +243,9 @@
             <div class="input-group mb-3">
                 <span class="input-group-prepend">
                     <span class="input-group-text">
-                        <input type="checkbox" name="AutodeleteTrigger"
+                        <input type="checkbox" class="tgl tgl-flat tgl-sm" name="AutodeleteTrigger" id="autodelete-trigger-{{$switchSuffix}}"
                             {{if .Override.AutodeleteTrigger}}checked{{end}}>
+                        <label for="autodelete-trigger-{{$switchSuffix}}" class="tgl-btn mb-0"></label>
                     </span>
                 </span>
                 <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
@@ -256,8 +258,9 @@
             <div class="input-group mb-3">
                 <span class="input-group-prepend">
                     <span class="input-group-text">
-                        <input type="checkbox" name="AutodeleteResponse"
+                        <input type="checkbox" class="tgl tgl-flat tgl-sm" name="AutodeleteResponse" id="autodelete-response-{{$switchSuffix}}"
                             {{if .Override.AutodeleteResponse}}checked{{end}}>
+                        <label for="autodelete-response-{{$switchSuffix}}" class="tgl-btn mb-0"></label>
                     </span>
                 </span>
                 <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
@@ -373,8 +376,9 @@
                         <div class="input-group mb-3">
                             <span class="input-group-prepend">
                                 <span class="input-group-text">
-                                    <input type="checkbox" name="AutodeleteTrigger"
+                                    <input type="checkbox" class="tgl tgl-flat tgl-sm" name="AutodeleteTrigger" id="{{$id}}-autodelete-trigger"
                                         {{if .Override.AutodeleteTrigger}}checked{{end}}>
+                                    <label for="{{$id}}-autodelete-trigger" class="tgl-btn mb-0"></label>
                                 </span>
                             </span>
                             <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
@@ -387,8 +391,9 @@
                         <div class="input-group mb-3">
                             <span class="input-group-prepend">
                                 <span class="input-group-text">
-                                    <input type="checkbox" name="AutodeleteResponse"
+                                    <input type="checkbox" class="tgl tgl-flat tgl-sm" name="AutodeleteResponse" id="{{$id}}-autodelete-response"
                                         {{if .Override.AutodeleteResponse}}checked{{end}}>
+                                    <label for="{{$id}}-autodelete-response" class="tgl-btn mb-0"></label>
                                 </span>
                             </span>
                             <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."

@@ -27,6 +27,94 @@
       text-decoration: line-through;
       color: #d2322d !important;
     }
+
+    .cc-row .card-header {
+        padding: 0;
+    }
+
+    .cc-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .accordion .cc-title a {
+        display: block;
+        padding: 12px 16px !important;
+    }
+
+    .cc-title-main {
+        overflow-wrap: anywhere;
+    }
+
+    .cc-title-type {
+        display: inline-block;
+        margin: 0 4px;
+        padding: 0 5px;
+        border: 1px solid rgba(255, 255, 255, .55);
+        border-radius: 3px;
+        font-size: .7em;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        vertical-align: middle;
+    }
+
+    .cc-title-sub {
+        display: block;
+        margin-top: 2px;
+        font-size: .8em;
+        opacity: .85;
+        overflow-wrap: anywhere;
+    }
+
+    .cc-actions {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 4px;
+        padding: 8px 8px 8px 0;
+    }
+
+    .accordion .card-header .cc-actions a.btn {
+        display: inline-block;
+        padding: .47rem .75rem;
+    }
+
+    @media (max-width: 767px) {
+        .accordion .card-header .cc-actions .btn {
+            width: 2.75rem;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: center;
+        }
+    }
+
+    .cc-group-fields .multiselect-native-select,
+    .cc-group-fields .multiselect-native-select > .btn-group {
+        display: block;
+        width: 100%;
+    }
+
+    .cc-group-fields .multiselect-native-select .multiselect {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        text-align: left;
+    }
+
+    .cc-group-toggle {
+        display: none;
+    }
+
+    @media (max-width: 767px) {
+        .cc-group-toggle {
+            display: inline-block;
+        }
+
+        .cc-group:not(.cc-show) .cc-group-fields {
+            display: none;
+        }
+    }
 </style>
 
 <header class="page-header">
@@ -69,9 +157,13 @@
                     {{if not .CurrentCommandGroup}}
                     <p>Create a new group to put allowed/denied roles/channels on multiple commands at the same time, as well as keeping things organized.</p>
                     {{else}}
-                    <form class="form-horizontal" method="post"
+                    <form class="form-horizontal cc-group" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                         data-async-form>
+                        <button type="button" class="btn btn-link px-0 cc-group-toggle" onclick="this.closest('.cc-group').classList.toggle('cc-show')">
+                            Group settings <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="cc-group-fields">
                         <div style="margin-bottom: 20px;">
                                 <div class="form-group">
                                     <label>Name </label>
@@ -89,14 +181,14 @@
                                       {{checkbox "IsEnabled" "IsEnabled" "Enables or Disables the Group" (not .CurrentCommandGroup.Disabled) }}
                                 </div>
                                 <div class="form-group row">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
                                         <label>Allowed roles (who can use these commands)</label><br>
                                         <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple"
                                             id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
                                             {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
                                         </select>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
                                         <label>Denied roles (who cannot use these commands)</label><br>
                                         <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple"
                                             id="blacklisted-roles-give" data-plugin-multiselect>
@@ -105,14 +197,14 @@
                                     </div>
                                 </div>
                                 <div class="form-group row">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
                                         <label>Channels these commands can be used in (empty for all)</label><br>
                                         <select multiple="multiple" class="form-control" data-plugin-multiselect
                                             name="WhitelistChannels" data-placeholder="Everywhere">
                                             {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
                                         </select>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
                                         <label>Channels Ignored</label><br>
                                         <select multiple="multiple" class="form-control" data-plugin-multiselect
                                             name="BlacklistChannels" data-placeholder="None">
@@ -122,18 +214,19 @@
                                 </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-6">
+                            <div class="col-12 col-md-6 mb-3 mb-md-0">
                                 <button type="button"
                                     title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}} &#013;Deleted group's commands become ungrouped."
                                     class="btn btn-block btn-danger"
                                     formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete
                                         group</button>
                             </div>
-                            <div class="col-6">
+                            <div class="col-12 col-md-6 mb-3 mb-md-0">
                                 <button type="submit" class="btn btn-block btn-success"
                                     formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                                     data-async-form-alertsonly>Save group settings</button>
                             </div>
+                        </div>
                         </div>
                     </form>
                     {{end}}
@@ -158,32 +251,31 @@
     {{$g := .ActiveGuild}}
     {{$dot := .}}
     {{range .CustomCommands}}
-    <div class="card">
-        <div class="card-header clearfix {{if .Disabled}} cc-disabled {{end}}">
-            <form class="form-horizontal" method="post" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
-                <div class="pull-right">
-                    {{if and (eq .TriggerType 5) (not .Disabled) }}
-                        <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately"
-                        formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now"
-                        data-async-form-alertsonly style="margin: 5px 5px 5px 0px!important">Run now</button>
-                    {{end}}
-                    <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>
-                    <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete" style="margin: 5px 5px 5px 0px!important">Delete</button>
-                </div>
-            </form>
-            <h2 class="card-title">
-                <a style="padding:15px 20px 10px 20px!important" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}" class="cc-collapsibleDown">
-                    #{{.LocalID}} -
-                    {{index $dot.CCTriggerTypes .TriggerType}}
-                    {{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}
-                    : <span class="cc-text-trigger-span">{{.TextTrigger}}</span>
-                    {{else if and (ne .TriggerType 10) (ne .TriggerType 6)}}
-                    : <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}}{{end}}{{if eq .TriggerType 5 9}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
-                    {{if .Name.Valid}} 
-                      <span style="padding:5px 20px 10px 20px!important" >Name: {{.Name.String}}</span>
+    <div class="card cc-row">
+        <div class="card-header d-flex align-items-center {{if .Disabled}}cc-disabled{{end}}">
+            <h2 class="card-title cc-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}" class="cc-collapsibleDown">
+                    <span class="cc-title-main">
+                        #{{.LocalID}} <span class="cc-title-type">{{index $dot.CCTriggerTypes .TriggerType}}</span>
+                        {{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}<span class="cc-text-trigger-span">{{.TextTrigger}}</span>
+                        {{else if eq .TriggerType 5}}<span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}</span>{{end}}
+                    </span>
+                    {{if or .Name.Valid (eq .TriggerType 5 9)}}
+                    <span class="cc-title-sub">
+                        {{if .Name.Valid}}{{.Name.String}}{{end}}{{if and .Name.Valid (eq .TriggerType 5 9)}} · {{end}}{{if eq .TriggerType 5 9}}Next run <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
+                    </span>
                     {{end}}
                 </a>
             </h2>
+            <form class="cc-actions" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
+                {{if and (eq .TriggerType 5) (not .Disabled) }}
+                <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately" aria-label="Run now"
+                    formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now" data-async-form-alertsonly><i class="fas fa-play"></i><span class="d-none d-md-inline ml-1">Run now</span></button>
+                {{end}}
+                <a class="btn btn-success" href="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/" aria-label="Edit"><i class="fas fa-pen"></i><span class="d-none d-md-inline ml-1">Edit</span></a>
+                <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" aria-label="Delete"
+                    formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete"><i class="fas fa-trash"></i><span class="d-none d-md-inline ml-1">Delete</span></button>
+            </form>
         </div>
         <div id="collapse_cmd{{.LocalID}}" class="collapse">
             <input type="text" class="hidden form-control" name="id" value="{{.LocalID}}">
