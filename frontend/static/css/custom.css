@@ -571,6 +571,96 @@ html.dark select optgroup {
 	justify-content: center;
 }
 
+.feed-table .feed-title p {
+	margin-bottom: 0;
+}
+
+/* On phones each feed row becomes a card: title, labelled fields, switches side by side, then the actions. */
+@media (max-width: 767px) {
+	.table.feed-table,
+	.table.feed-table tbody,
+	.table.feed-table tr,
+	.table.feed-table td {
+		display: block;
+		width: 100%;
+	}
+
+	.table.feed-table {
+		overflow: visible;
+	}
+
+	.table.feed-table thead {
+		display: none;
+	}
+
+	.table.feed-table tr {
+		margin-bottom: 1rem;
+		padding: .75rem;
+		border: 1px solid rgba(128, 128, 128, .3);
+		border-radius: 6px;
+	}
+
+	.table.feed-table td {
+		padding: .3rem 0;
+		border: 0;
+	}
+
+	.table.feed-table td[data-label]::before {
+		content: attr(data-label);
+		display: block;
+		margin-bottom: .25rem;
+		font-size: .85em;
+		font-weight: 600;
+	}
+
+	.table.feed-table .feed-title {
+		font-size: 1.05em;
+		overflow-wrap: anywhere;
+	}
+
+	.table.feed-table td.feed-switch {
+		display: inline-flex;
+		flex-direction: row-reverse;
+		align-items: center;
+		width: auto;
+		margin-right: 1.25rem;
+	}
+
+	.table.feed-table td.feed-switch::before {
+		display: inline;
+		margin: 0 0 0 .5rem;
+	}
+
+	.table.feed-table td.feed-switch .form-group {
+		margin-bottom: 0;
+	}
+
+	.table.feed-table .multiselect-native-select,
+	.table.feed-table .multiselect-native-select > .btn-group {
+		display: block;
+		width: 100%;
+	}
+
+	.table.feed-table .multiselect-native-select .multiselect {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+	}
+
+	.table.feed-table .feed-actions {
+		padding-top: .75rem;
+	}
+
+	.table.feed-table .feed-actions .btn-group {
+		display: flex;
+	}
+
+	.table.feed-table .feed-actions .btn {
+		flex: 1 1 0;
+	}
+}
+
 .tgl-flat + .tgl-btn {
 	padding: 2px;
 	-webkit-transition: all .2s ease;

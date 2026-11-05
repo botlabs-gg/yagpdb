@@ -2,14 +2,6 @@
 {{template "cp_head" .}}
 
 <style>
-  .tbl-actions-column {
-      display: flex;
-      flex-direction: column;
-  }
-  .tbl-actions-column > button { 
-    margin: 5px
-  }
-
   .card-deck {
     margin: 0 !important;
   }
@@ -69,11 +61,11 @@
             </header>
             <div class="card-body">
                 <p>Feeds are checked every 5 minutes. A feed is disabled right away if its URL starts returning a 4xx error such as 401, 403 or 404, after 48 hours of consecutive failures for any other error, if premium expires, or if the bot can't send the feed in the channel.</p>
-                <table class="table table-responsive-md table-sm mb-0 tgl-compact">
+                <table class="table table-responsive-md table-sm mb-0 tgl-compact feed-table">
                   <thead>
                     <tr>
                       <th>Feed URL</th>
-                      <th>Server Channel</th>
+                      <th>Channel</th>
                       <th class="text-center">@everyone</th>
                       <th>Mention Roles</th>
                       <th class="text-center">Enabled</th>
@@ -86,30 +78,30 @@
                   {{range .FeedItems}}
                   <form id="feed-item-{{.ID}}" class="no-unsaved-popup" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/rss/{{.ID}}/update">
                     <tr>
-                      <td>
+                      <td class="feed-title">
                           <a class="feedlink" href="{{.FeedURL}}" target="_blank">
                             {{.FeedURL}}</a>
                       </td>
-                      <td>
+                      <td data-label="Channel">
                         <select form="feed-item-{{.ID}}" class="form-control" name="DiscordChannel" >
                           {{textOnlyChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                         </select>
                       </td>
-                      <td>
+                      <td class="feed-switch" data-label="@everyone">
                         {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `` .MentionEveryone (print `form="feed-item-` .ID `"`) `aria-label="Mention everyone"`}}
                       </td>
-                      <td>
+                      <td data-label="Mention roles">
                         <select form="feed-item-{{.ID}}" name="MentionRoles" class="multiselect form-control" multiple="multiple"
                               id="mention-roles" data-plugin-multiselect>
                               {{roleOptionsMulti $dot.ActiveGuild.Roles nil .MentionRoles }}
                             </select>
                       </td>
-                      <td>
+                      <td class="feed-switch" data-label="Enabled">
                         {{checkbox "Enabled" (print "feed-enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID `"`) `aria-label="Enabled"`}}
                       </td>
-                      <td class="{{.StatusClass}}">{{.Status}}</td>
-                      <td>
-                        <div class="btn-group tbl-actions-column">
+                      <td data-label="Status"><span class="{{.StatusClass}}">{{.Status}}</span></td>
+                      <td class="text-nowrap feed-actions">
+                        <div class="btn-group">
                           <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/rss/{{.ID}}/update">Save</button>
                           <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/rss/{{.ID}}/delete">Delete</button>
                         </div>

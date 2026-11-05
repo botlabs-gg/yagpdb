@@ -1,17 +1,6 @@
 {{define "cp_voiceroles"}}
 {{template "cp_head" .}}
 
-<style>
-    .tbl-actions-column {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .tbl-actions-column>button {
-        margin: 5px
-    }
-
-</style>
 
 <div class="page-header">
     <h2>Voice Roles</h2>
@@ -78,7 +67,7 @@
                         action="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/update" data-async-form></form>
                     {{end}}
 
-                    <table class="table table-responsive-md table-sm mb-0 tgl-compact">
+                    <table class="table table-responsive-md table-sm mb-0 tgl-compact feed-table">
                         <thead>
                             <tr>
                                 <th>Channel</th>
@@ -90,29 +79,31 @@
                         <tbody>
                             {{range .VoiceRoles}}
                             <tr>
-                                <td>
+                                <td data-label="Channel">
                                     <select form="item-{{.ID}}" class="form-control" name="ChannelID" required>
                                         {{voiceChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                                     </select>
                                 </td>
-                                <td>
+                                <td data-label="Role">
                                     <select form="item-{{.ID}}" class="form-control" name="RoleID" required>
                                         {{roleOptionsExclude $dot.ActiveGuild.Roles $dot.HighestRole $dot.ExcludedRoleIDs .RoleID}}
                                     </select>
                                 </td>
-                                <td>
+                                <td class="feed-switch" data-label="Enabled">
                                     {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="item-` .ID `"`) `aria-label="Enabled"`}}
                                 </td>
-                                <td class="tbl-actions-column">
-                                    <button form="item-{{.ID}}" type="submit" class="btn btn-success"
-                                        formaction="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/update"
-                                        data-async-form-alertsonly>
-                                        Save
-                                    </button>
-                                    <button form="item-{{.ID}}" type="submit" class="btn btn-danger"
-                                        formaction="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/delete">
-                                        Delete
-                                    </button>
+                                <td class="text-nowrap feed-actions">
+                                    <div class="btn-group">
+                                        <button form="item-{{.ID}}" type="submit" class="btn btn-success"
+                                            formaction="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/update"
+                                            data-async-form-alertsonly>
+                                            Save
+                                        </button>
+                                        <button form="item-{{.ID}}" type="submit" class="btn btn-danger"
+                                            formaction="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/delete">
+                                            Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {{end}}

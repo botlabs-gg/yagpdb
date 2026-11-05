@@ -1,13 +1,5 @@
 {{define "cp_youtube"}} {{template "cp_head" .}}
 <style>
-  .yt-tbl-actions-column {
-      display: flex;
-      flex-direction: column;
-  }
-  .yt-tbl-actions-column > button { 
-    margin: 5px
-  }
-
   .card-deck {
     margin: 0 !important;
   }
@@ -144,15 +136,15 @@
         <div class="card-body">
             {{$dot := .}} {{range .Subs}}
             <form id="sub-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text" class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
-            <table class="table table-responsive-md table-sm mb-0 tgl-compact">
+            <table class="table table-responsive-md table-sm mb-0 tgl-compact feed-table">
                 <thead>
                     <tr>
-                        <th>Youtube</th>
-                        <th>Discord Channel</th>
-                        <th class="text-center">Mention Everyone</th>
+                        <th>YouTube channel</th>
+                        <th>Channel</th>
+                        <th class="text-center">@everyone</th>
                         <th>Mention Roles</th>
-                        <th class="text-center">Publish Livestreams</th>
-                        <th class="text-center">Publish Shorts</th>
+                        <th class="text-center">Livestreams</th>
+                        <th class="text-center">Shorts</th>
                         <th class="text-center">Enabled</th>
                         <th>Actions</th>
                     </tr>
@@ -160,20 +152,20 @@
                 <tbody class="yt-tbl-body">
                     {{range .Subs}}
                     <tr class="yt-tbl-row">
-                        <td class="yt-tbl-column">
+                        <td class="yt-tbl-column feed-title">
                             <p class="form-control-static"><a class="feedlink" href="https://youtube.com/channel/{{.YoutubeChannelID}}" target="_blank"><b>{{.YoutubeChannelName}}</b></a> - <code>{{.YoutubeChannelID}}</code></p>
                         </td>
-                        <td class="yt-tbl-column">
+                        <td class="yt-tbl-column" data-label="Channel">
                             <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
                                 {{textOnlyChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                             </select>
                         </td>
-                        <td class="yt-tbl-column custom-announcement-disables">
+                        <td class="yt-tbl-column custom-announcement-disables feed-switch" data-label="@everyone">
                             <span class="custom-announcement-popover">
                             {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `` .MentionEveryone (print `form="sub-item-` .ID `"`) `aria-label="Mention everyone"`}}
                             </span>
                         </td>
-                        <td class="yt-tbl-column custom-announcement-disables">
+                        <td class="yt-tbl-column custom-announcement-disables" data-label="Mention roles">
                             <span class="custom-announcement-popover">
                             <select form="sub-item-{{.ID}}" name="MentionRoles" class="multiselect form-control" multiple="multiple"
                               id="mention-roles" data-plugin-multiselect>
@@ -181,18 +173,20 @@
                             </select>
                             </span>
                         </td>
-                        <td class="yt-tbl-column">
+                        <td class="yt-tbl-column feed-switch" data-label="Livestreams">
                             {{checkbox "PublishLivestream" (print "publish-livestream-" .ID) `` .PublishLivestream (print `form="sub-item-` .ID `"`) `aria-label="Publish livestreams"`}}
                         </td>
-                        <td class="yt-tbl-column">
+                        <td class="yt-tbl-column feed-switch" data-label="Shorts">
                             {{checkbox "PublishShorts" (print "publish-shorts-" .ID) `` .PublishShorts (print `form="sub-item-` .ID `"`) `aria-label="Publish shorts"`}}
                         </td>
-                        <td class="yt-tbl-column">
+                        <td class="yt-tbl-column feed-switch" data-label="Enabled">
                             {{checkbox "Enabled" (print "feed-enabled-" .ID) `` .Enabled (print `form="sub-item-` .ID `"`) `aria-label="Enabled"`}}
                         </td>
-                        <td class="yt-tbl-column yt-tbl-actions-column">
-                            <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
-                            <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                        <td class="yt-tbl-column text-nowrap feed-actions">
+                            <div class="btn-group">
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                            </div>
                         </td>
                     </tr>
                     {{end}}

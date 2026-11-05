@@ -1,16 +1,6 @@
 {{define "cp_twitch"}}
 {{template "cp_head" .}}
 
-<style>
-    .tbl-actions-column {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .tbl-actions-column>button {
-        margin: 5px
-    }
-</style>
 
 <header class="page-header">
     <h2>Twitch Feeds</h2>
@@ -156,12 +146,12 @@
                 <form id="feed-item-{{.ID}}" class="no-unsaved-popup" method="post"
                     action="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"></form>
                 {{end}}
-                <table class="table table-responsive-md table-sm mb-0 tgl-compact">
+                <table class="table table-responsive-md table-sm mb-0 tgl-compact feed-table">
                     <thead>
                         <tr>
-                            <th>Twitch User</th>
-                            <th>Discord Channel</th>
-                            <th class="text-center">Mention Everyone</th>
+                            <th>Twitch user</th>
+                            <th>Channel</th>
+                            <th class="text-center">@everyone</th>
                             <th>Mention Roles</th>
                             <th class="text-center">Publish VOD</th>
                             <th class="text-center">Enabled</th>
@@ -171,36 +161,38 @@
                     <tbody>
                         {{range .TwitchSubs}}
                         <tr>
-                            <td>
+                            <td class="feed-title">
                                 <p class="form-control-static"><a href="https://twitch.tv/{{.TwitchUsername}}"
                                         target="_blank"><b>{{.TwitchUsername}}</b></a></p>
                             </td>
-                            <td>
+                            <td data-label="Channel">
                                 <select form="feed-item-{{.ID}}" class="form-control" name="DiscordChannel">
                                     {{textOnlyChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                                 </select>
                             </td>
-                            <td>
+                            <td class="feed-switch" data-label="@everyone">
                                 {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `` .MentionEveryone (print `form="feed-item-` .ID `"`) `aria-label="Mention everyone"`}}
                             </td>
-                            <td>
+                            <td data-label="Mention roles">
                                 <select form="feed-item-{{.ID}}" name="MentionRoles" class="multiselect form-control"
                                     multiple="multiple" data-plugin-multiselect>
                                     {{roleOptionsMulti $dot.ActiveGuild.Roles nil .MentionRoles }}
                                 </select>
                             </td>
-                            <td>
+                            <td class="feed-switch" data-label="Publish VOD">
                                 {{checkbox "PublishVOD" (print "publish-vod-" .ID) `` .PublishVod (print `form="feed-item-` .ID `"`) `aria-label="Publish VOD"`}}
                             </td>
-                            <td>
+                            <td class="feed-switch" data-label="Enabled">
                                 {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID `"`) `aria-label="Enabled"`}}
                             </td>
-                            <td class="tbl-actions-column">
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success"
-                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"
-                                    data-async-form-alertsonly>Save</button>
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger"
-                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/delete">Delete</button>
+                            <td class="text-nowrap feed-actions">
+                                <div class="btn-group">
+                                    <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success"
+                                        formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"
+                                        data-async-form-alertsonly>Save</button>
+                                    <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger"
+                                        formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/delete">Delete</button>
+                                </div>
                             </td>
                         </tr>
                         {{end}}
