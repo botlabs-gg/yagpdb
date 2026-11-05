@@ -561,6 +561,16 @@ html.dark select optgroup {
 	display: none;
 }
 
+/* In tables, switches sit centered in their column and level with the rest of the row. */
+.table.tgl-compact td,
+.table.tgl-compact th {
+	vertical-align: middle;
+}
+
+.table.tgl-compact td .form-group {
+	justify-content: center;
+}
+
 .tgl-flat + .tgl-btn {
 	padding: 2px;
 	-webkit-transition: all .2s ease;

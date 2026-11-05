@@ -6,164 +6,120 @@
     #sidebar-left { display: none !important; }
     #main-content.content-body { margin-left: 0 !important; }
 
-    /* Hero: warm gold backdrop on light, deep slate on dark */
-    .premium-hero {
-        background: linear-gradient(135deg, #fff7d6 0%, #ffe4a3 100%);
-        border-color: #e6c75a !important;
+    @media (max-width: 767px) {
+        .premium-actions { width: 100%; text-align: center; }
+        .premium-actions .btn { display: block; width: 100%; margin: 0 0 .5rem !important; }
     }
-    .premium-hero .crown-orb {
-        background: #cb9a0c;
-        color: #fff;
-        width: 64px; height: 64px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.75rem;
-        box-shadow: 0 4px 12px rgba(241, 196, 15, 0.4);
-    }
-    html.dark .premium-hero {
-        background: linear-gradient(135deg, #2a2e3a 0%, #1a1c24 100%);
-        border-color: #4a3f1c !important;
-    }
-    html.dark .premium-hero . { color: #c9ced8 !important; }
-
-    /* Subtle lift on hover for all feature/limit/pricing cards */
-    .perk-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-    .perk-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
-    }
-    html.dark .perk-card:hover { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5) !important; }
-
-    /* Limit card: make the "to" number the focal point */
-    .perk-limit-to {
-        font-size: 1.5rem;
-        line-height: 1;
-        font-weight: 700;
-    }
-
-    /* Pricing card headers - distinct per source */
-    .pricing-discord .card-header { background: #5865f2; color: #fff; border-bottom: none; }
-    .pricing-patreon .card-header { background: #ff424d; color: #fff; border-bottom: none; }
-    .pricing-discord .card-header h5,
-    .pricing-patreon .card-header h5 { color: #fff; margin: 0; }
-
-    /* Section header with bottom rule */
-    .section-heading {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        padding-bottom: 0.5rem;
-    }
-    html.dark .section-heading { border-bottom-color: rgba(255, 255, 255, 0.1); }
 </style>
 
 {{template "cp_alerts" .}}
 
 <div class="container">
 
-<!-- HERO -->
-<div class="card border premium-hero shadow-sm mb-4">
-    <div class="card-body p-4 d-flex flex-column flex-md-row align-items-md-center">
-        <div class="text-center mr-md-4 mb-3 mb-md-0">
-            <span class="crown-orb"><i class="fas fa-crown"></i></span>
-        </div>
-        <div class="flex-grow-1 text-center text-md-left mb-3 mb-md-0">
-            <h1 class="display-5 font-weight-bold mb-1">YAGPDB Premium</h1>
-            <p class="lead mb-0 ">Higher limits, exclusive features, and the polish your server deserves.</p>
-        </div>
-        <div class="text-center text-md-right">
-            <div class="d-flex flex-column flex-sm-row justify-content-md-end">
-                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank"
-                    class="btn btn-primary btn-lg font-weight-bold mb-2 mb-sm-0 mr-sm-2 shadow-sm">
-                    <i class="fab fa-discord mr-1"></i> Get on Discord
-                </a>
-                <a href="https://patreon.com/yagpdb/membership" target="_blank"
-                    class="btn btn-danger btn-lg ignore-prompt font-weight-bold shadow-sm">
-                    <i class="fab fa-patreon mr-1"></i> Get on Patreon
-                </a>
-            </div>
-            <a href="/premium" class="small premium-color mt-2 d-inline-block font-weight-bold">Already premium? Manage slots &rarr;</a>
+<section class="card card-featured card-featured-warning">
+    <header class="card-header">
+        <h2 class="card-title"><i class="fas fa-crown premium-color mr-2"></i>YAGPDB Premium</h2>
+    </header>
+    <div class="card-body d-flex flex-wrap align-items-center">
+        <p class="mb-3 mr-md-4 flex-grow-1">Higher limits, exclusive features, and the polish your server deserves.</p>
+        <div class="mb-3 premium-actions">
+            <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank" class="btn btn-primary mb-2 mb-sm-0 mr-sm-2">
+                <i class="fab fa-discord mr-1"></i> Get on Discord
+            </a>
+            <a href="https://patreon.com/yagpdb/membership" target="_blank" class="btn btn-danger ignore-prompt mb-2 mb-sm-0">
+                <i class="fab fa-patreon mr-1"></i> Get on Patreon
+            </a>
+            <a href="/premium" class="d-block small mt-2">Already premium? Manage slots</a>
         </div>
     </div>
-</div>
+</section>
 
-<!-- PREMIUM EXCLUSIVES -->
 {{if .PremiumPerks}}
-<div class="section-heading d-flex align-items-baseline mt-4 mb-3">
-    <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-star premium-color mr-2"></i>Premium Exclusives</h4>
-    <small class="premium-color d-none d-sm-inline">Features only premium servers get</small>
-</div>
-<div class="row">
-    {{range .PremiumPerks}}
-    <div class="col-md-4 col-lg-3 mb-3">
-        <div class="card h-100 shadow-sm perk-card">
-            <div class="card-body p-3 d-flex">
-                <i class="{{.Icon}} premium-color fa-lg mr-3 mt-1"></i>
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title">Premium exclusives</h2>
+    </header>
+    <div class="card-body">
+        <p class="help-block mt-0">Features only premium servers get.</p>
+        <div class="row">
+            {{range .PremiumPerks}}
+            <div class="col-md-6 d-flex mb-3">
+                <i class="{{.Icon}} fa-fw premium-color mr-3 mt-1"></i>
                 <div>
-                    <div class="font-weight-bold mb-1">{{.Name}}</div>
-                    <p class="small mb-0">{{.Description}}</p>
+                    <div class="font-weight-bold">{{.Name}}</div>
+                    <div>{{.Description}}</div>
                 </div>
             </div>
+            {{end}}
         </div>
     </div>
-    {{end}}
-</div>
+</section>
 {{end}}
 
-<!-- BIGGER LIMITS -->
-<div class="section-heading d-flex align-items-baseline mt-4 mb-3">
-    <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-chart-line premium-color mr-2"></i>Bigger Limits</h4>
-    <small class="premium-color d-none d-sm-inline">Free &rarr; Premium</small>
-</div>
-<div class="row">
-    {{range .PremiumLimits}}{{template "premium_limit_card" .}}{{end}}
-</div>
+<section class="card">
+    <header class="card-header">
+        <h2 class="card-title">Bigger limits</h2>
+    </header>
+    <div class="card-body">
+        <table class="table table-sm mb-0">
+            <thead>
+                <tr>
+                    <th>Limit</th>
+                    <th class="text-right">Free</th>
+                    <th class="text-right">Premium</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .PremiumLimits}}
+                <tr>
+                    <td><i class="{{.Icon}} fa-fw mr-2"></i>{{.Name}}</td>
+                    <td class="text-right">{{.From}}</td>
+                    <td class="text-right font-weight-bold premium-color">{{.To}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</section>
 
-<!-- HOW TO GET PREMIUM -->
-<div class="section-heading d-flex align-items-baseline mt-4 mb-3">
-    <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-shopping-cart premium-color mr-2"></i>How to Get Premium</h4>
-    <small class="premium-color d-none d-sm-inline">Pick whichever fits you better</small>
-</div>
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5 mb-3">
-        <div class="card h-100 shadow-sm perk-card pricing-discord">
-            <div class="card-header py-3">
-                <h5 class="font-weight-bold"><i class="fab fa-discord mr-2"></i>Discord Subscription</h5>
-            </div>
-            <div class="card-body d-flex flex-column">
+<div class="row">
+    <div class="col-md-6 d-flex">
+        <section class="card card-featured card-featured-primary flex-fill d-flex flex-column">
+            <header class="card-header">
+                <h2 class="card-title"><i class="fab fa-discord mr-2"></i>Discord subscription</h2>
+            </header>
+            <div class="card-body d-flex flex-column flex-grow-1">
                 <ul class="list-unstyled mb-3">
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Quickest setup - billed through your Discord account</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Quickest setup, billed through your Discord account</li>
                     <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Cancel anytime from Discord settings</li>
                 </ul>
-                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank"
-                    class="btn btn-primary btn-block font-weight-bold mt-auto">
+                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank" class="btn btn-primary btn-block mt-auto">
                     <i class="fab fa-discord mr-1"></i> Get on Discord
                 </a>
             </div>
-        </div>
+        </section>
     </div>
-    <div class="col-md-6 col-lg-5 mb-3">
-        <div class="card h-100 shadow-sm perk-card pricing-patreon">
-            <div class="card-header py-3">
-                <h5 class="font-weight-bold"><i class="fab fa-patreon mr-2"></i>Patreon</h5>
-            </div>
-            <div class="card-body d-flex flex-column">
+    <div class="col-md-6 d-flex">
+        <section class="card card-featured card-featured-danger flex-fill d-flex flex-column">
+            <header class="card-header">
+                <h2 class="card-title"><i class="fab fa-patreon mr-2"></i>Patreon</h2>
+            </header>
+            <div class="card-body d-flex flex-column flex-grow-1">
                 <ul class="list-unstyled mb-3">
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Higher tiers grant more premium slots</li>
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Discounted Annual Subscription</li>
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Switch premium to a different discord account</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Discounted annual subscription</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Get a Special Patron role in our support server</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Switch premium to a different Discord account</li>
                     <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Bundle with any other Patreon memberships you have</li>
                 </ul>
-                <a href="https://patreon.com/yagpdb/membership" target="_blank"
-                    class="btn btn-danger ignore-prompt btn-block font-weight-bold mt-auto">
+                <a href="https://patreon.com/yagpdb/membership" target="_blank" class="btn btn-danger ignore-prompt btn-block mt-auto">
                     <i class="fab fa-patreon mr-1"></i> Get on Patreon
                 </a>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 
-<p class="small text-center mt-2 mb-4 premium-color">
+<p class="help-block text-center mb-4">
     <i class="fas fa-info-circle mr-1"></i>
     Slots purchased through Discord and Patreon are tracked separately and can't be transferred between the two.
 </p>
@@ -172,20 +128,4 @@
 
 {{template "cp_footer" .}}
 
-{{end}}
-
-{{define "premium_limit_card"}}
-<div class="col-6 col-md-3 col-lg-2 mb-3">
-    <div class="card h-100 text-center shadow-sm perk-card">
-        <div class="card-body p-3">
-            <i class="{{.Icon}} premium-color fa-lg mb-2"></i>
-            <div class="small  text-uppercase font-weight-bold mb-2" style="letter-spacing:.05em;">{{.Name}}</div>
-            <div>
-                <span class=" small"><s>{{.From}}</s></span>
-                <i class="fas fa-arrow-right  small mx-1"></i>
-                <span class="perk-limit-to premium-color">{{.To}}</span>
-            </div>
-        </div>
-    </div>
-</div>
 {{end}}

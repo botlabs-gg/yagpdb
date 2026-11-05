@@ -162,7 +162,7 @@
         show(els.normalFields, !v2);
         els.componentsLabel.innerHTML = v2
             ? "Components"
-            : 'Components <span class="text-muted">(optional - buttons &amp; menus)</span>';
+            : 'Components <small class="text-muted">optional, buttons and menus</small>';
         els.modeHint.textContent = v2
             ? "Components V2: content & embeds are replaced by components (Text, Container, Section, …)."
             : "Normal message: content, an embed, and up to 5 rows of buttons / select menus.";
@@ -359,8 +359,8 @@
     }
 
     function embedCard(e, idx) {
-        let card = el("div", { class: "mc-node" });
-        card.appendChild(nodeHeader("Embed " + (idx + 1), state.embeds, idx, rebuildEmbeds));
+        let node = nodeCard("Embed " + (idx + 1), state.embeds, idx, rebuildEmbeds);
+        let card = node.body;
 
         card.appendChild(el("div", { class: "form-row" }, [
             el("div", { class: "col-md-8" }, [field("Title", e.title, function (v) { e.title = v; refreshPreview(); })]),
@@ -396,7 +396,7 @@
         if (e.fields.length < 25) {
             card.appendChild(btn("+ Field", "btn-block btn-outline-secondary", function () { e.fields.push({ name: "", value: "", inline: false }); renderEmbeds(); renderPreview(); }));
         }
-        return card;
+        return node.card;
     }
 
     // Build clean Discord embed objects from the model, dropping empty ones.
@@ -509,19 +509,25 @@
         return bar;
     }
 
-    function nodeHeader(title, list, idx, onChange) {
+    // nodeCard builds the card for one embed or component, with move and remove buttons in its header.
+    function nodeCard(title, list, idx, onChange) {
         onChange = onChange || rebuildEditor;
-        let tools = el("div", { class: "mc-node-tools" }, [
-            btn('<i class="fas fa-arrow-up"></i>', "btn-sm btn-secondary", function () { move(list, idx, -1, onChange); }, { title: "Move up" }),
-            btn('<i class="fas fa-arrow-down"></i>', "btn-sm btn-secondary", function () { move(list, idx, 1, onChange); }, { title: "Move down" }),
-            btn('<i class="fas fa-trash"></i>', "btn-sm btn-danger", function () { list.splice(idx, 1); onChange(); }, { noconfirm: true, title: "Remove" })
+        let tools = el("div", { class: "btn-group btn-group-sm mc-node-tools" }, [
+            btn('<i class="fas fa-chevron-up"></i>', "btn-primary", function () { move(list, idx, -1, onChange); }, { title: "Move up" }),
+            btn('<i class="fas fa-chevron-down"></i>', "btn-primary", function () { move(list, idx, 1, onChange); }, { title: "Move down" }),
+            btn('<i class="fas fa-trash"></i>', "btn-danger", function () { list.splice(idx, 1); onChange(); }, { noconfirm: true, title: "Remove" })
         ]);
-        return el("div", { class: "mc-node-header" }, [el("span", { class: "mc-node-title" }, [title]), tools]);
+        let body = el("div", { class: "card-body" });
+        let card = el("section", { class: "card mc-node" }, [
+            el("header", { class: "card-header" }, [el("h2", { class: "card-title" }, [title]), tools]),
+            body
+        ]);
+        return { card: card, body: body };
     }
 
     function renderNode(node, list, idx) {
-        let card = el("div", { class: "mc-node" });
-        card.appendChild(nodeHeader(NODE_TITLES[node.type] || ("Type " + node.type), list, idx));
+        let wrap = nodeCard(NODE_TITLES[node.type] || ("Type " + node.type), list, idx);
+        let card = wrap.body;
         let body;
         switch (node.type) {
             case 10: body = field("Text (markdown supported)", node.content, function (v) { node.content = v; refreshPreview(); }, { textarea: true, rows: 2, emojiPicker: "insert" }); break;
@@ -533,7 +539,7 @@
             default: body = el("div", { class: "text-muted small" }, ["Unsupported component type " + node.type]);
         }
         card.appendChild(body);
-        return card;
+        return wrap.card;
     }
 
     function separatorBody(node) {
@@ -563,10 +569,9 @@
     }
 
     function interactiveEditor(child, list, idx) {
-        let card = el("div", { class: "mc-node" });
-        card.appendChild(nodeHeader(child.type === 2 ? "Button" : "Select menu", list, idx));
-        card.appendChild(child.type === 2 ? buttonEditor(child) : selectEditor(child));
-        return card;
+        let wrap = nodeCard(child.type === 2 ? "Button" : "Select menu", list, idx);
+        wrap.body.appendChild(child.type === 2 ? buttonEditor(child) : selectEditor(child));
+        return wrap.card;
     }
 
     function buttonEditor(node) {

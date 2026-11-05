@@ -2,9 +2,6 @@
 {{template "cp_head" .}}
 
 <style>
-    .mc-section-label { letter-spacing: .04em; }
-    .mc-action-toggle, .mc-mode-toggle { display: flex; width: 100%; }
-    .mc-mode-toggle .btn, .mc-action-toggle .btn { flex: 1 1 0; }
     .mc-view-bar { gap: 8px; }
     .mc-view-toggle { width: auto; }
     .mc-pane-tabs { display: none; }
@@ -13,27 +10,23 @@
     @media (max-width: 991px) {
         .mc-pane-tabs {
             display: flex; position: sticky; top: 60px; z-index: 10;
-            margin: -4px -4px 12px; padding: 4px; background: inherit;
+            margin: -4px -4px 12px; padding: 4px; background: #ecedf0;
         }
-        html.dark .mc-pane-tabs { background: #2e353e; }
+        html.dark .mc-pane-tabs { background: #1d2127; }
         .mc-pane-tabs .btn { flex: 1 1 0; }
-        #mc-root .mc-view-toggle, .mc-preview-col > hr { display: none; }
+        #mc-root .mc-view-toggle { display: none; }
         #mc-root[data-pane="edit"] .mc-preview-col,
         #mc-root:not([data-pane="edit"]) .mc-editor-col { display: none; }
         #mc-root[data-pane="preview"] .mc-view-bar { display: none !important; }
         .mc-preview-wrap { position: static; }
     }
-    .mc-action-toggle .btn.active, .mc-mode-toggle .btn.active { font-weight: 600; }
     .btn-group label.disabled { opacity: .5; pointer-events: none; }
-    .mc-editor-scroll { max-height: 68vh; overflow-y: auto; padding-right: 6px; }
-    .mc-field { background: rgba(0, 0, 0, .12); border-radius: 4px; padding: 8px; margin-bottom: 8px; }
 
-    .mc-node { border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; background: rgba(0, 0, 0, .1); }
-    .mc-node .mc-node { background: rgba(255, 255, 255, .03); }
-    .mc-node-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-    .mc-node-title { font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; color: #b5bac1; }
-    .mc-node-tools { margin-left: auto; display: flex; gap: 4px; }
-    .mc-node-tools .btn { padding: 1px 7px; line-height: 1.4; }
+    .mc-node { border: 1px solid rgba(128, 128, 128, .3); border-radius: 4px; margin-bottom: 12px; }
+    .mc-node > .card-header { display: flex; align-items: center; padding: 8px 12px; }
+    .mc-node > .card-header .card-title { font-size: 1rem; margin: 0; }
+    .mc-node > .card-body { padding: 12px; }
+    .mc-node-tools { margin-left: auto; }
     .mc-add-bar .btn { margin: 0 4px 4px 0; }
     .mc-opt-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
     .mc-opt-row .mc-opt-emoji { flex: 0 0 auto; min-width: 2.4rem; }
@@ -42,10 +35,6 @@
     .mc-color-swatch { width: 26px; height: 26px; border-radius: 4px; border: 1px solid rgba(128, 128, 128, .5); display: inline-block; flex: 0 0 auto; }
     .mc-color-preset { width: 22px; height: 22px; cursor: pointer; }
     .mc-color-palette { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-
-    @media (min-width: 992px) {
-        .mc-preview-col { border-left: 1px solid rgba(128, 128, 128, .28); }
-    }
 
     .mc-preview-wrap { position: sticky; top: 16px; }
     .mc-discord-preview {
@@ -103,8 +92,6 @@
     .mc-discord-preview .mc-md-spoiler { background: #1e1f22; color: transparent; border-radius: 3px; padding: 0 2px; cursor: pointer; transition: color .1s; }
     .mc-discord-preview .mc-md-spoiler:hover { color: #dbdee1; }
 
-    html.dark #mc-root .mc-node-title { color: #c2c8d2; }
-    html.dark #mc-root .mc-node { border-color: rgba(255, 255, 255, .18); }
 </style>
 
 <div class="page-header">
@@ -115,53 +102,66 @@
 {{template "cp_alerts" .}}
 
 <div id="mc-root" class="row" data-pane="edit" data-guildid="{{.ActiveGuild.ID}}" data-guild-emojis="{{json .ActiveGuild.Emojis}}">
-    <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title mb-0">Message Creator</h2>
-            </header>
-            <div class="card-body">
+    <div class="col-12">
+        <form id="mc-form" method="post" action="/manage/{{.ActiveGuild.ID}}/messagecreator/send" data-async-form data-async-form-alertsonly>
+            <input type="hidden" name="mode" id="mc-f-mode">
+            <input type="hidden" name="payload" id="mc-f-payload">
 
-                <form id="mc-form" method="post" action="/manage/{{.ActiveGuild.ID}}/messagecreator/send" data-async-form data-async-form-alertsonly>
-                    <input type="hidden" name="mode" id="mc-f-mode">
-                    <input type="hidden" name="payload" id="mc-f-payload">
+            <div class="btn-group mc-pane-tabs">
+                <label class="btn btn-outline-primary text-nowrap active">
+                    <input type="radio" name="mc-pane" value="edit" checked hidden> <i class="fas fa-pen"></i> Edit
+                </label>
+                <label class="btn btn-outline-primary text-nowrap">
+                    <input type="radio" name="mc-pane" value="preview" hidden> <i class="fas fa-eye"></i> Preview
+                </label>
+                <label class="btn btn-outline-primary text-nowrap">
+                    <input type="radio" name="mc-pane" value="code" hidden> <i class="fas fa-code"></i> Code
+                </label>
+            </div>
 
-                    <div class="btn-group mc-pane-tabs">
-                        <label class="btn btn-outline-primary text-nowrap active">
-                            <input type="radio" name="mc-pane" value="edit" checked hidden> <i class="fas fa-pen"></i> Edit
-                        </label>
-                        <label class="btn btn-outline-primary text-nowrap">
-                            <input type="radio" name="mc-pane" value="preview" hidden> <i class="fas fa-eye"></i> Preview
-                        </label>
-                        <label class="btn btn-outline-primary text-nowrap">
-                            <input type="radio" name="mc-pane" value="code" hidden> <i class="fas fa-code"></i> Code
-                        </label>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-lg-7 mc-editor-col">
-
-                            <div class="form-group">
-                                <label class="d-block text-muted small text-uppercase font-weight-bold mc-section-label">Action</label>
-                                <div class="btn-group mc-action-toggle">
-                                    <label class="btn btn-outline-primary active">
-                                        <input type="radio" name="mc-action" value="create" checked hidden> <i class="fas fa-plus"></i> Create
-                                    </label>
-                                    <label class="btn btn-outline-primary">
-                                        <input type="radio" name="mc-action" value="edit" hidden> <i class="fas fa-pen"></i> Edit
-                                    </label>
+            <div class="row">
+                <div class="col-lg-7 mc-editor-col">
+                    <section class="card">
+                        <header class="card-header">
+                            <h2 class="card-title">Message</h2>
+                        </header>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="form-group col-sm-6">
+                                    <label class="d-block">Action</label>
+                                    <div class="btn-group btn-group-sm mc-action-toggle">
+                                        <label class="btn btn-outline-primary active">
+                                            <input type="radio" name="mc-action" value="create" checked hidden> <i class="fas fa-plus"></i> Create
+                                        </label>
+                                        <label class="btn btn-outline-primary">
+                                            <input type="radio" name="mc-action" value="edit" hidden> <i class="fas fa-pen"></i> Edit
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <label class="d-block">Message type</label>
+                                    <div class="btn-group btn-group-sm mc-mode-toggle">
+                                        <label class="btn btn-outline-primary active" id="mode-normal-btn">
+                                            <input type="radio" name="mc-mode" value="normal" checked hidden> <i class="fas fa-align-left"></i> Embed
+                                        </label>
+                                        <label class="btn btn-outline-primary" id="mode-v2-btn">
+                                            <input type="radio" name="mc-mode" value="componentsv2" hidden> <i class="fas fa-th-large"></i> Components V2
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
+                            <p class="help-block mt-0" id="mc-mode-hint"></p>
+                            <div id="mc-type-lock-note" class="small text-warning mb-2" style="display:none;"></div>
 
-                            <div class="form-group mc-when-create">
+                            <div class="form-group mc-when-create mb-0">
                                 <label>Channel</label>
                                 <select name="channel_id" class="form-control" data-requireperms-send>
                                     {{textOnlyChannelOptions .ActiveGuild.Channels 0 true "Select a channel"}}
                                 </select>
                             </div>
 
-                            <div class="form-group mc-when-existing" style="display:none;">
-                                <label>Message link <span class="text-muted">(a message YAGPDB sent in this server)</span></label>
+                            <div class="form-group mc-when-existing mb-0" style="display:none;">
+                                <label>Message link</label>
                                 <div class="input-group">
                                     <input type="text" name="message_link" id="mc-edit-link" class="form-control"
                                         placeholder="https://discord.com/channels/.../.../...">
@@ -171,89 +171,86 @@
                                         </button>
                                     </div>
                                 </div>
+                                <p class="help-block">A message YAGPDB sent in this server.</p>
                                 <div id="mc-load-error" class="small mt-1"></div>
                             </div>
-
-                            <hr>
-
-                            <div class="form-group">
-                                <label class="d-block text-muted small text-uppercase font-weight-bold mc-section-label">Message type</label>
-                                <div class="btn-group mc-mode-toggle">
-                                    <label class="btn btn-primary active" id="mode-normal-btn">
-                                        <input type="radio" name="mc-mode" value="normal" checked hidden> <i class="fas fa-align-left"></i> Embed
-                                    </label>
-                                    <label class="btn btn-primary" id="mode-v2-btn">
-                                        <input type="radio" name="mc-mode" value="componentsv2" hidden> <i class="fas fa-th-large"></i> Components V2
-                                    </label>
-                                </div>
-                                <small class="form-text text-muted" id="mc-mode-hint"></small>
-                                <div id="mc-type-lock-note" class="small text-warning mt-1" style="display:none;"></div>
-                            </div>
-
-                            <div id="normal-fields">
-                                <div class="form-group">
-                                    <label>Message content <span class="text-muted">(optional)</span></label>
-                                    <textarea class="form-control mc-input" id="embed-content" rows="2" maxlength="2000" data-emoji-picker></textarea>
-                                </div>
-
-                                <label class="d-block mb-1">Embeds <span class="text-muted">(up to 10)</span></label>
-                                <div id="embeds-builder"></div>
-                                <div id="embeds-add-bar" class="mb-2"></div>
-                                <hr>
-                            </div>
-
-                            <div id="components-editor">
-                                <label class="d-block mb-1" id="components-label">Components <span class="text-muted">(optional)</span></label>
-                                <div id="components-builder"></div>
-                                <div id="components-add-bar" class="mt-2"></div>
-                                <small class="form-text text-muted">
-                                    The <code>templates-</code> prefix is added to component ids on send so they can
-                                    trigger a <em>Message Component</em> type custom command.
-                                </small>
-                                <div id="components-error" class="text-danger small mt-1"></div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="d-block text-muted small text-uppercase font-weight-bold mc-section-label">Mentions</label>
-                                <small class="form-text text-muted mb-2">User mentions are always allowed.</small>
-                                {{checkbox "allow_role_mentions" "mc-allow-role-mentions" "Allow role mentions" false}}
-                                {{checkbox "allow_everyone_mentions" "mc-allow-everyone-mentions" "Allow <code>@everyone</code> and <code>@here</code> mentions" false}}
-                            </div>
-
-                            <div id="mc-errors" class="alert alert-danger mt-3" style="display:none;"></div>
-
-                            <button type="submit" id="mc-submit" class="btn btn-success btn-block btn-lg mt-3">
-                                <span id="mc-submit-label">Create message</span>
-                            </button>
-                            <div id="mc-edit-hint" class="text-muted small text-center mt-1" style="display:none;">Load a message first to edit it.</div>
                         </div>
+                    </section>
 
-                        <div class="col-lg-5 mc-preview-col">
-                            <hr class="d-lg-none mt-0">
-                            <div class="mc-preview-wrap">
-                                <div class="d-flex flex-wrap align-items-center mb-2 mc-view-bar">
-                                    <div class="btn-group btn-group-sm mc-view-toggle">
-                                        <label class="btn btn-outline-primary text-nowrap active">
-                                            <input type="radio" name="mc-view" value="preview" checked hidden> <i class="fas fa-eye"></i> Preview
-                                        </label>
-                                        <label class="btn btn-outline-primary text-nowrap" title="Custom command code">
-                                            <input type="radio" name="mc-view" value="code" hidden> <i class="fas fa-code"></i> Code
-                                        </label>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ml-auto" id="mc-code-copy" style="display:none;"><i class="fas fa-copy"></i> Copy</button>
-                                </div>
-                                <div id="mc-preview" class="mc-discord-preview"></div>
-                                <div id="mc-code-view" style="display:none;">
-                                    <pre id="mc-code" class="mc-code"></pre>
-                                    <small class="form-text text-muted">Sends this message from a custom command. Component ids get the <code>templates-</code> prefix automatically.</small>
-                                </div>
+                    <section class="card" id="normal-fields">
+                        <header class="card-header">
+                            <h2 class="card-title">Content</h2>
+                        </header>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Message content <span class="text-muted">(optional)</span></label>
+                                <textarea class="form-control mc-input" id="embed-content" rows="2" maxlength="2000" data-emoji-picker></textarea>
+                            </div>
+
+                            <label class="d-block">Embeds <span class="text-muted">(up to 10)</span></label>
+                            <div id="embeds-builder"></div>
+                            <div id="embeds-add-bar"></div>
+                        </div>
+                    </section>
+
+                    <section class="card" id="components-editor">
+                        <header class="card-header">
+                            <h2 class="card-title" id="components-label">Components</h2>
+                        </header>
+                        <div class="card-body">
+                            <div id="components-builder"></div>
+                            <div id="components-add-bar"></div>
+                            <p class="help-block mb-0">
+                                The <code>templates-</code> prefix is added to component ids on send so they can
+                                trigger a <em>Message Component</em> type custom command.
+                            </p>
+                            <div id="components-error" class="text-danger small mt-1"></div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <header class="card-header">
+                            <h2 class="card-title">Mentions</h2>
+                        </header>
+                        <div class="card-body">
+                            <p class="help-block mt-0">User mentions are always allowed.</p>
+                            {{checkbox "allow_role_mentions" "mc-allow-role-mentions" "Allow role mentions" false}}
+                            {{checkbox "allow_everyone_mentions" "mc-allow-everyone-mentions" "Allow <code>@everyone</code> and <code>@here</code> mentions" false}}
+                        </div>
+                    </section>
+
+                    <div id="mc-errors" class="alert alert-danger" style="display:none;"></div>
+
+                    <button type="submit" id="mc-submit" class="btn btn-success btn-block">
+                        <span id="mc-submit-label">Create message</span>
+                    </button>
+                    <div id="mc-edit-hint" class="help-block text-center mt-1" style="display:none;">Load a message first to edit it.</div>
+                </div>
+
+                <div class="col-lg-5 mc-preview-col">
+                    <section class="card mc-preview-wrap">
+                        <header class="card-header d-flex flex-wrap align-items-center mc-view-bar">
+                            <div class="btn-group btn-group-sm mc-view-toggle">
+                                <label class="btn btn-outline-primary text-nowrap active">
+                                    <input type="radio" name="mc-view" value="preview" checked hidden> <i class="fas fa-eye"></i> Preview
+                                </label>
+                                <label class="btn btn-outline-primary text-nowrap" title="Custom command code">
+                                    <input type="radio" name="mc-view" value="code" hidden> <i class="fas fa-code"></i> Code
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ml-auto" id="mc-code-copy" style="display:none;"><i class="fas fa-copy"></i> Copy</button>
+                        </header>
+                        <div class="card-body">
+                            <div id="mc-preview" class="mc-discord-preview"></div>
+                            <div id="mc-code-view" style="display:none;">
+                                <pre id="mc-code" class="mc-code"></pre>
+                                <p class="help-block mb-0">Sends this message from a custom command. Component ids get the <code>templates-</code> prefix automatically.</p>
                             </div>
                         </div>
-                    </div>
-                </form>
-
+                    </section>
+                </div>
             </div>
-        </section>
+        </form>
     </div>
 </div>
 
