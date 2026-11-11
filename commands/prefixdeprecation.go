@@ -61,7 +61,12 @@ func alertPrefixCommandDisabled(evt *eventsystem.EventData, msg *discordgo.Messa
 		return
 	}
 
-	canExecute, _, _, err := cmd.checkCanExecuteCommand(data)
+	settings, err := cmd.commandSettings(data)
+	if err != nil {
+		return
+	}
+
+	canExecute, _, err := cmd.checkCanExecuteCommand(data, settings)
 	if err != nil || !canExecute {
 		return
 	}

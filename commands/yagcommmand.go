@@ -439,25 +439,32 @@ type CanExecuteError struct {
 }
 
 // checks if the specified user can execute the command, and if so returns the settings for said command
-func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
+// commandSettings resolves the guild overrides on their own, ahead of the rest
+// of the checks. A slash command has three seconds to be acknowledged, and
+// checkCanExecuteCommand can block well past that fetching the bot member, so
+// the interaction has to be deferred in between the two.
+func (yc *YAGCommand) commandSettings(data *dcmd.Data) (*CommandSettings, error) {
+	if data.GuildData == nil {
+		return &CommandSettings{Enabled: true}, nil
+	}
+
+	settings, err := yc.GetSettings(data.ContainerChain, data.GuildData.CS, data.GuildData.GS)
+	if err != nil {
+		return nil, errors.WithMessage(err, "cs.GetSettings")
+	}
+
+	return settings, nil
+}
+
+func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, settings *CommandSettings) (canExecute bool, resp *CanExecuteError, err error) {
 	// Check guild specific settings if not triggered from a DM
 	if data.GuildData != nil {
 		guild := data.GuildData.GS
 
 		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
 			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionViewChannel|discordgo.PermissionSendMessages); !hasPerms {
-				return false, nil, nil, nil
+				return false, nil, nil
 			}
-		}
-
-		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS, guild)
-		if err != nil {
-			resp = &CanExecuteError{
-				Type:    ReasonError,
-				Message: "Failed retrieving cs.settings",
-			}
-
-			return false, resp, settings, errors.WithMessage(err, "cs.GetSettings")
 		}
 
 		if !settings.Enabled {
@@ -466,30 +473,26 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 				Message: "Command is disabled in this channel by server admins",
 			}
 
-			return false, resp, settings, nil
+			return false, resp, nil
 		}
 
 		member := data.GuildData.MS
 		guildRoles := roleNames(guild)
 
 		if missingWhitelistErr := checkWhitelistRoles(guildRoles, settings.RequiredRoles, data); missingWhitelistErr != nil {
-			return false, missingWhitelistErr, settings, nil
+			return false, missingWhitelistErr, nil
 		}
 
 		if blacklistErr := checkBlacklistRoles(guildRoles, settings.IgnoreRoles, data); blacklistErr != nil {
-			return false, blacklistErr, settings, nil
+			return false, blacklistErr, nil
 		}
 
 		if userPermsErr := yc.checkRequiredMemberPerms(guild, member, data.ChannelID); userPermsErr != nil {
-			return false, userPermsErr, settings, nil
+			return false, userPermsErr, nil
 		}
 
 		if userPermsErr := yc.checkRequiredBotPerms(guild, data.ChannelID); userPermsErr != nil {
-			return false, userPermsErr, settings, nil
-		}
-	} else {
-		settings = &CommandSettings{
-			Enabled: true,
+			return false, userPermsErr, nil
 		}
 	}
 
@@ -510,11 +513,11 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 			Type:    ReasonCooldown,
 			Message: "Command is on cooldown, try again in " + strconv.Itoa(cdLeft) + " seconds",
 		}
-		return false, resp, settings, nil
+		return false, resp, nil
 	}
 
 	// If we got here then we can execute the command
-	return true, nil, settings, nil
+	return true, nil, nil
 }
 
 func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, data *dcmd.Data) *CanExecuteError {

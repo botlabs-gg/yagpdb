@@ -174,10 +174,12 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			guildID = data.GuildData.GS.ID
 		}
 
-		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
-		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+		// Resolved before acknowledging so the deferred reply gets the right
+		// ephemeral flag, which is the only thing here that needs the overrides.
+		settings, settingsErr := yc.commandSettings(data)
+		if settingsErr != nil {
+			yc.Logger(data).WithError(settingsErr).Error("An error occured while checking if we could run command")
+			settings = &CommandSettings{}
 		}
 
 		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
@@ -192,6 +194,18 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			if err != nil {
 				return nil, err
 			}
+		}
+
+		if settingsErr != nil {
+			return &EphemeralOrNone{
+				Content: "You're unable to run this command:\n> Failed retrieving cs.settings",
+			}, nil
+		}
+
+		// Check if the user can execute the command
+		canExecute, resp, err := yc.checkCanExecuteCommand(data, settings)
+		if err != nil {
+			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
 		}
 
 		parseErr := dcmd.ParseCmdArgs(data)
