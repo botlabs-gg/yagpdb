@@ -624,7 +624,7 @@ func (f *FlaggedMediaTrigger) Kind() RulePartType {
 }
 
 func (f *FlaggedMediaTrigger) Name() string {
-	return "Media Flagged by Discord"
+	return "Message Contains Media Flagged by Discord"
 }
 
 func (f *FlaggedMediaTrigger) DataType() any {
