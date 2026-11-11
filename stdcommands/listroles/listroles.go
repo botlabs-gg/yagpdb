@@ -10,9 +10,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-// role names are shown as they are, not as markdown
-var markdownEscaper = strings.NewReplacer(`\`, `\\`, "*", `\*`, "_", `\_`, "~", `\~`, "`", "\\`", "|", `\|`, ">", `\>`)
-
 var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryTool,
 	Name:                "ListRoles",
@@ -24,22 +21,31 @@ var Command = &commands.YAGCommand{
 	},
 
 	RunFunc: func(data *dcmd.Data) (any, error) {
-		noManaged := data.Switches["nomanaged"].Value != nil && data.Switches["nomanaged"].Value.(bool)
+		var out, outFinal string
+		var noMana bool
 
-		var lines []string
-		for _, r := range data.GuildData.GS.Roles {
-			if noManaged && r.Managed {
-				continue
-			}
-
-			lines = append(lines, roleLine(&r))
+		if data.Switches["nomanaged"].Value != nil && data.Switches["nomanaged"].Value.(bool) {
+			noMana = true
 		}
 
-		return fmt.Sprintf("Total role count: %d\n(ME = mention everyone perms)\n%s", len(lines), strings.Join(lines, "\n")), nil
+		// sort.Sort(dutil.Roles(data.GuildData.GS.Roles))
+
+		counter := 0
+		for _, r := range data.GuildData.GS.Roles {
+			if noMana && r.Managed {
+				continue
+			} else {
+				counter++
+				out += roleLine(&r)
+			}
+		}
+		outFinal = fmt.Sprintf("Total role count: %d\n", counter)
+		outFinal += "(ME = mention everyone perms)\n"
+		outFinal += out
+		return outFinal, nil
 	},
 }
 
-// roleLine is a line per role rather than a table, which breaks on long names once the line wraps
 func roleLine(r *discordgo.Role) string {
 	// the counts of all roles are fetched together and cached, so this is one request for the whole list
 	members := "?"
@@ -47,10 +53,8 @@ func roleLine(r *discordgo.Role) string {
 		members = strconv.Itoa(count)
 	}
 
-	line := fmt.Sprintf("**%s** · %s members · `%d` · #%06x", markdownEscaper.Replace(r.Name), members, r.ID, r.Color)
-	if r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0 {
-		line += " · ME"
-	}
-
-	return line
+	// a backtick in the name would end the code span early
+	name := strings.ReplaceAll(r.Name, "`", "'")
+	me := r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0
+	return fmt.Sprintf("`%-25s: %-19d #%-6x  Members:%-6s ME:%5t`\n", name, r.ID, r.Color, members, me)
 }
