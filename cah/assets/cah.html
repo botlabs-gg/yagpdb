@@ -1,0 +1,196 @@
+{{define "cp_cah"}}
+{{template "cp_head" .}}
+
+<header class="page-header">
+    <h2>Cards Against Humanity</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <form role="form" method="post" action="/manage/{{.ActiveGuild.ID}}/cah/" data-async-form>
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Game settings</h2>
+                </header>
+                <div class="card-body">
+                    <p>These are used for every game started with <code>/cah create</code>.</p>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label>Default packs</label><br>
+                                <select name="DefaultPacks" class="multiselect form-control" multiple="multiple" id="cah-default-packs" data-plugin-multiselect>
+                                    {{range .BuiltinPacks}}{{if .Enabled}}<option value="{{.Name}}" {{if .IsDefault}}selected{{end}}>{{.Name}}</option>{{end}}{{end}}
+                                    {{if .IsGuildPremium}}{{range .CustomPacks}}<option value="{{.SavedName}}" {{if .IsDefault}}selected{{end}}>{{.SavedName}}</option>{{end}}{{end}}
+                                </select>
+                                <p class="help-block">Used when no packs are given to <code>/cah create</code>.</p>
+                            </div>
+                            {{checkbox "VoteMode" "cah-vote-mode" `Vote mode: players vote on the winner instead of having a card czar` .CAHConfig.VoteMode}}
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label for="cah-win-limit">Points needed to win</label>
+                                <input type="number" min="1" max="25" class="form-control" id="cah-win-limit" name="WinLimit" value="{{.CAHConfig.WinLimit}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="cah-player-limit">Maximum players</label>
+                                <input type="number" min="2" max="11" class="form-control" id="cah-player-limit" name="PlayerLimit" value="{{.CAHConfig.PlayerLimit}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="cah-pick-seconds">Seconds players have to pick their cards</label>
+                                <input type="number" min="30" max="180" class="form-control" id="cah-pick-seconds" name="PickSeconds" value="{{.CAHConfig.PickSeconds}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="cah-judge-seconds">Seconds to pick the winner</label>
+                                <input type="number" min="30" max="180" class="form-control" id="cah-judge-seconds" name="JudgeSeconds" value="{{.CAHConfig.JudgeSeconds}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Built-in packs</h2>
+                </header>
+                <div class="card-body">
+                    <p class="help-block mt-0">Turned off packs can't be used in games, also not with <code>*</code>.</p>
+
+                    <div class="accordion accordion-primary mb-3" id="cah-builtin-packs" role="tablist">
+                        {{range $i, $pack := .BuiltinPacks}}
+                        <div class="card">
+                            <div class="card-header d-flex align-items-center">
+                                <h2 class="card-title flex-grow-1">
+                                    <a data-toggle="collapse" data-parent="#cah-builtin-packs" href="#cah-builtin-pack-{{$i}}" aria-expanded="false" aria-controls="cah-builtin-pack-{{$i}}">
+                                        <i class="fas fa-chevron-down"></i> {{.Name}}
+                                        <small class="ml-2">{{.Description}} · {{.NumPrompts}} prompts, {{.NumResponses}} responses</small>
+                                    </a>
+                                </h2>
+                                <div class="pr-3 pt-2">
+                                    {{checkbox "EnabledPacks" (printf "cah-pack-enabled-%d" $i) "Enabled" .Enabled (printf `value="%s"` .Name)}}
+                                </div>
+                            </div>
+                            <div id="cah-builtin-pack-{{$i}}" class="collapse" data-parent="#cah-builtin-packs">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="cah-builtin-prompts-{{$i}}">Prompts</label>
+                                                <textarea class="form-control" id="cah-builtin-prompts-{{$i}}" rows="10" readonly>{{.Prompts}}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="cah-builtin-responses-{{$i}}">Responses</label>
+                                                <textarea class="form-control" id="cah-builtin-responses-{{$i}}" rows="10" readonly>{{.Responses}}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Custom packs</h2>
+            </header>
+            <div class="card-body">
+                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "Custom packs are a premium feature.")}}
+                <p>
+                    Write one card per line. In prompts, use <code>___</code> for each blank, up to {{.MaxPromptBlanks}}.
+                    Players pick one card for each blank, and a prompt without a blank gets one added at the end.
+                    Packs can have up to {{.MaxCardsPerPack}} cards, and servers up to {{.MaxCustomPacks}} packs.
+                </p>
+                <p>Play them by name in <code>/cah create</code>, or add them to the default packs above.</p>
+
+                <h4>Create a new pack</h4>
+                {{if ge (len .CustomPacks) .MaxCustomPacks}}
+                <p class="help-block mt-0">This server has the maximum of {{.MaxCustomPacks}} packs, delete one to make a new one.</p>
+                {{end}}
+                <form method="post" action="/manage/{{.ActiveGuild.ID}}/cah/packs/new" data-async-form>
+                    <fieldset {{if or (not .IsGuildPremium) (ge (len .CustomPacks) .MaxCustomPacks)}}disabled{{end}}>
+                        {{template "cah_pack_fields" (dict "ID" "new" "Name" .NewPack.Name "Description" .NewPack.Description "Prompts" .NewPack.Prompts "Responses" .NewPack.Responses)}}
+                        <input type="submit" class="btn btn-success btn-block" value="Create">
+                    </fieldset>
+                </form>
+
+                {{if .CustomPacks}}
+                <h4 class="mt-4">This server's packs</h4>
+                {{$dot := .}}
+                <div class="accordion accordion-primary" id="cah-custom-packs" role="tablist">
+                    {{range .CustomPacks}}
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <a data-toggle="collapse" data-parent="#cah-custom-packs" href="#cah-custom-pack-{{.ID}}" aria-expanded="{{.Open}}" aria-controls="cah-custom-pack-{{.ID}}">
+                                    <i class="fas fa-chevron-down"></i> {{.SavedName}}
+                                    <small class="ml-2">{{.NumCards}} cards</small>
+                                </a>
+                            </h2>
+                        </div>
+                        <div id="cah-custom-pack-{{.ID}}" class="collapse {{if .Open}}show{{end}}" data-parent="#cah-custom-packs">
+                            <div class="card-body">
+                                <form id="cah-pack-{{.ID}}" method="post" action="/manage/{{$dot.ActiveGuild.ID}}/cah/packs/{{.ID}}/update" data-async-form>
+                                    <fieldset {{if not $dot.IsGuildPremium}}disabled{{end}}>
+                                        {{template "cah_pack_fields" (dict "ID" .ID "Name" .Name "Description" .Description "Prompts" .Prompts "Responses" .Responses)}}
+                                    </fieldset>
+                                </form>
+                                <button form="cah-pack-{{.ID}}" type="submit" class="btn btn-success" {{if not $dot.IsGuildPremium}}disabled{{end}}>Save</button>
+                                <button form="cah-pack-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/cah/packs/{{.ID}}/delete">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+        </section>
+    </div>
+</div>
+
+{{template "cp_footer" .}}
+{{end}}
+
+{{define "cah_pack_fields"}}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="form-group">
+            <label for="cah-pack-name-{{.ID}}">Name</label>
+            <input type="text" class="form-control" id="cah-pack-name-{{.ID}}" name="Name" maxlength="40" value="{{.Name}}" placeholder="my-pack">
+            <p class="help-block">No spaces, it's typed in /cah create.</p>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="form-group">
+            <label for="cah-pack-description-{{.ID}}">Description</label>
+            <input type="text" class="form-control" id="cah-pack-description-{{.ID}}" name="Description" maxlength="200" value="{{.Description}}">
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-6">
+        <div class="form-group">
+            <label for="cah-pack-prompts-{{.ID}}">Prompts</label>
+            <textarea class="form-control" id="cah-pack-prompts-{{.ID}}" name="Prompts" rows="8" placeholder="Why can't I sleep at night? ___">{{.Prompts}}</textarea>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="form-group">
+            <label for="cah-pack-responses-{{.ID}}">Responses</label>
+            <textarea class="form-control" id="cah-pack-responses-{{.ID}}" name="Responses" rows="8" placeholder="A very confused cat.">{{.Responses}}</textarea>
+        </div>
+    </div>
+</div>
+{{end}}
