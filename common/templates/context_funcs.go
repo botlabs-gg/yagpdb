@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -2006,6 +2007,33 @@ func (c *Context) tmplEditChannelName(channel any, newName string) (string, erro
 
 	_, err := common.BotSession.ChannelEdit(cID, newName)
 	return "", err
+}
+
+// tmplSetVoiceStatus sets the status shown under a voice channel, an empty status clears it
+func (c *Context) tmplSetVoiceStatus(channel any, status string) (string, error) {
+	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArgNoDMNoThread(channel)
+	if cID == 0 {
+		return "", errors.New("unknown channel")
+	}
+
+	cs := c.GS.GetChannel(cID)
+	if cs == nil || cs.Type != discordgo.ChannelTypeGuildVoice {
+		return "", errors.New("the channel is not a voice channel")
+	}
+
+	if utf8.RuneCountInString(status) > 500 {
+		return "", errors.New("voice channel status can be at most 500 characters")
+	}
+
+	if c.IncreaseCheckCallCounter("set_voice_status"+strconv.FormatInt(cID, 10), 1) {
+		return "", ErrTooManyCalls
+	}
+
+	return "", common.BotSession.ChannelVoiceStatusSet(cID, status)
 }
 
 func (c *Context) tmplEditChannelTopic(channel any, newTopic string) (string, error) {
