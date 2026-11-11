@@ -54,6 +54,7 @@ var yagFuncs = {
   getTargetPermissionsIn: true,
   editChannelName: true,
   editChannelTopic: true,
+  setVoiceStatus: true,
   getChannel: true,
   getChannelPins: true,
   getChannelOrThread: true,
