@@ -28,17 +28,24 @@
 	</div>
 </section>
 <script>
-  let maxRefreshTimer = 30000;
-  let interval = 1000;
-  let totalExpired = 0;
-    setInterval(()=>{
-      if(totalExpired < maxRefreshTimer){
-        $(".refresh-message").text(`(Refreshing in ${Math.ceil((maxRefreshTimer - totalExpired)/1000)} seconds)`);
+  (function () {
+    var maxRefreshTimer = 30000;
+    var interval = 1000;
+    var totalExpired = 0;
+    var message = $(".refresh-message");
+    var timer = setInterval(() => {
+      if (!document.body.contains(message[0])) {
+        clearInterval(timer);
+        return;
+      }
+      if (totalExpired < maxRefreshTimer) {
+        message.text(`(Refreshing in ${Math.ceil((maxRefreshTimer - totalExpired) / 1000)} seconds)`);
         totalExpired += interval;
         return;
       }
       window.location.reload()
-  }, interval)
+    }, interval);
+  })();
 </script>
 
 <style>

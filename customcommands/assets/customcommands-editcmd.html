@@ -1449,7 +1449,7 @@
 
     // Client-side validation mirroring the server rules in validateSlashCommandData.
     // Discord's name pattern (lowercased). \p{L}\p{N} need the unicode flag.
-    const SLASH_NAME_RE = /^[-_\p{L}\p{N}]{1,32}$/u;
+    var SLASH_NAME_RE = /^[-_\p{L}\p{N}]{1,32}$/u;
 
     function slashEscapeHtml(s) {
         return String(s).replace(/[&<>"']/g, function (c) {

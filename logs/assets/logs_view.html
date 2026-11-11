@@ -107,12 +107,11 @@ function sortTable(table, reverse) {
     for(i = 0; i < tr.length; ++i) tb.appendChild(tr[i]); // append each row in order
 }
 
-const logsList = document.querySelector("#logs-list");
-
 // Close any open popovers, when clicked outside
-document.body.addEventListener('click', function (event) {
+$(document.body).off('click.logspopover').on('click.logspopover', function (event) {
     const popoverDiv = document.querySelector(".popover")
-    if (!popoverDiv) {
+    const logsList = document.querySelector("#logs-list");
+    if (!popoverDiv || !logsList) {
         return
     }
     if (!(logsList.contains(event.target) || popoverDiv.contains(event.target))) {
