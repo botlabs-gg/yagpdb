@@ -16,6 +16,7 @@ func GuildSetFromGuild(guild *discordgo.Guild) *GuildSet {
 	roles := make([]discordgo.Role, len(guild.Roles))
 	for i := range guild.Roles {
 		roles[i] = *guild.Roles[i]
+		roles[i].GuildID = guild.ID
 	}
 
 	emojis := make([]discordgo.Emoji, len(guild.Emojis))

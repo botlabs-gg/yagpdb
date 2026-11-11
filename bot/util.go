@@ -34,6 +34,8 @@ func init() {
 
 		return false
 	}
+
+	discordgo.RoleMemberCountFetcher = RoleMemberCount
 }
 
 func ContextSession(ctx context.Context) *discordgo.Session {
@@ -120,6 +122,32 @@ func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, neede
 	}
 
 	return false, nil
+}
+
+// RoleMemberCount returns the number of members with the role, the counts of all roles in a guild are cached together for a minute
+func RoleMemberCount(guildID, roleID int64) (int, error) {
+	// discord leaves the everyone role out of the counts
+	if roleID == guildID {
+		gs := State.GetGuild(guildID)
+		if gs == nil {
+			return 0, ErrGuildNotFound
+		}
+
+		return int(gs.MemberCount), nil
+	}
+
+	key := "role_member_counts:" + discordgo.StrID(guildID)
+	if counts, ok := Cache.Get(key); ok {
+		return counts.(map[int64]int)[roleID], nil
+	}
+
+	counts, err := common.BotSession.GuildRoleMemberCounts(guildID)
+	if err != nil {
+		return 0, err
+	}
+
+	Cache.Set(key, counts, time.Minute)
+	return counts[roleID], nil
 }
 
 func SnowflakeToTime(i int64) time.Time {

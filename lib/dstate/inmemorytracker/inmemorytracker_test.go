@@ -108,8 +108,13 @@ func TestGuildCreate(t *testing.T) {
 		t.Fatal("gs is nil")
 	}
 
-	if gs.GetRole(initialTestRoleID) == nil {
+	role := gs.GetRole(initialTestRoleID)
+	if role == nil {
 		t.Fatal("gc role is nil")
+	}
+
+	if role.GuildID != initialTestGuildID {
+		t.Fatalf("role guild id not set: %d", role.GuildID)
 	}
 
 	if gs.GetChannel(initialTestChannelID) == nil {
@@ -241,6 +246,10 @@ func TestRoleUpdate(t *testing.T) {
 
 	if role.Name != updt.Role.Name {
 		t.Fatalf("role was not updated: name: %s", role.Name)
+	}
+
+	if role.GuildID != initialTestGuildID {
+		t.Fatalf("updated role guild id not set: %d", role.GuildID)
 	}
 }
 

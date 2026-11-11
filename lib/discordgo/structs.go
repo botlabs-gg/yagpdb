@@ -743,6 +743,21 @@ type Role struct {
 
 	// The hash of the role icon. Use .IconURL to retrieve the icon's URL.
 	Icon string `json:"icon"`
+
+	// The ID of the guild the role belongs to, discord does not send this, it is set by the state.
+	GuildID int64 `json:"guild_id,string,omitempty"`
+}
+
+// RoleMemberCountFetcher looks up the number of members with a role, set by the bot as discordgo has no cache of its own.
+var RoleMemberCountFetcher func(guildID, roleID int64) (int, error)
+
+// MemberCount returns the number of members with the role, only available on roles that have their GuildID set.
+func (r *Role) MemberCount() (int, error) {
+	if r.GuildID == 0 || RoleMemberCountFetcher == nil {
+		return 0, errors.New("member count is not available for this role")
+	}
+
+	return RoleMemberCountFetcher(r.GuildID, r.ID)
 }
 
 // Mention returns a string which mentions the role
