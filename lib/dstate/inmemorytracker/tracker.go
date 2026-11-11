@@ -68,10 +68,17 @@ type SparseGuildState struct {
 }
 
 func SparseGuildStateFromDstate(gs *dstate.GuildSet) *SparseGuildState {
+	// state from other processes, such as during shard migrations, can come from versions that didn't set the guild on roles
+	roles := make([]discordgo.Role, len(gs.Roles))
+	for i, v := range gs.Roles {
+		roles[i] = v
+		roles[i].GuildID = gs.ID
+	}
+
 	return &SparseGuildState{
 		Guild:       &gs.GuildState,
 		Channels:    gs.Channels,
-		Roles:       gs.Roles,
+		Roles:       roles,
 		Emojis:      gs.Emojis,
 		Stickers:    gs.Stickers,
 		VoiceStates: gs.VoiceStates,
