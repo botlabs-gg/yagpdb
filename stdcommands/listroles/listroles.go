@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
@@ -56,5 +57,5 @@ func roleLine(r *discordgo.Role) string {
 	// a backtick in the name would end the code span early
 	name := strings.ReplaceAll(r.Name, "`", "'")
 	me := r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0
-	return fmt.Sprintf("`%-25s: %-19d #%-6x  Members:%-6s ME:%5t`\n", name, r.ID, r.Color, members, me)
+	return fmt.Sprintf("`%-25s: %-19d %-7s  Members:%-6s ME:%5t`\n", name, r.ID, common.RoleColorsText(r), members, me)
 }

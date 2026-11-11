@@ -1,9 +1,28 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
+
+// RoleColorsText shows the role's color, with the secondary and tertiary colors after it for gradient and holographic roles
+func RoleColorsText(r *discordgo.Role) string {
+	if r.Colors == nil {
+		return fmt.Sprintf("#%06x", r.Color)
+	}
+
+	colors := fmt.Sprintf("#%06x", r.Colors.PrimaryColor)
+	if r.Colors.SecondaryColor != 0 {
+		colors += fmt.Sprintf("/#%06x", r.Colors.SecondaryColor)
+	}
+	if r.Colors.TertiaryColor != 0 {
+		colors += fmt.Sprintf("/#%06x", r.Colors.TertiaryColor)
+	}
+
+	return colors
+}
 
 // IsRoleAbove returns whether role a is above b,
 // checking positions first,

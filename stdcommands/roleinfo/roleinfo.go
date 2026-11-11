@@ -46,7 +46,7 @@ var Command = &commands.YAGCommand{
 				{Name: "ID", Value: discordgo.StrID(role.ID), Inline: true},
 				{Name: "Members", Value: members, Inline: true},
 				{Name: "Position", Value: strconv.Itoa(role.Position), Inline: true},
-				{Name: "Color", Value: fmt.Sprintf("#%06x", color), Inline: true},
+				{Name: colorsFieldName(role), Value: common.RoleColorsText(role), Inline: true},
 				{Name: "Mentionable", Value: yesNo(role.Mentionable), Inline: true},
 				{Name: "Hoisted", Value: yesNo(role.Hoist), Inline: true},
 				{Name: "Managed", Value: yesNo(role.Managed), Inline: true},
@@ -74,6 +74,13 @@ func permissionsText(perms int64) string {
 	}
 
 	return common.CutStringShort(strings.Join(humanized, ", "), 1024)
+}
+
+func colorsFieldName(role *discordgo.Role) string {
+	if role.Colors != nil && role.Colors.SecondaryColor != 0 {
+		return "Colors"
+	}
+	return "Color"
 }
 
 func yesNo(b bool) string {
