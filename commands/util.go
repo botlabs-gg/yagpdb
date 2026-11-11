@@ -404,6 +404,11 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 
 func (ra *RoleArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val any, err error) {
 	r, err := options.ExpectRole(def.Name)
+	if r != nil && data.GuildData != nil {
+		// roles resolved by discord don't include the guild
+		r.GuildID = data.GuildData.GS.ID
+	}
+
 	return r, err
 }
 

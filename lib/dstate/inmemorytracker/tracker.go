@@ -303,6 +303,7 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 	roles := make([]discordgo.Role, len(gc.Roles))
 	for i := range gc.Roles {
 		roles[i] = *gc.Roles[i]
+		roles[i].GuildID = gc.ID
 	}
 	sort.Sort(dstate.Roles(roles))
 
@@ -557,10 +558,13 @@ func (shard *ShardTracker) handleRoleCreateUpdate(guildID int64, r *discordgo.Ro
 		return nil
 	}
 
+	role := *r
+	role.GuildID = guildID
+
 	for i, v := range gs.Roles {
 		if v.ID == r.ID {
 			newSparseGuild := gs.copyRoles()
-			newSparseGuild.Roles[i] = *r
+			newSparseGuild.Roles[i] = role
 			sort.Sort(dstate.Roles(newSparseGuild.Roles))
 			shard.guilds[guildID] = newSparseGuild
 			return newSparseGuild
@@ -569,7 +573,7 @@ func (shard *ShardTracker) handleRoleCreateUpdate(guildID int64, r *discordgo.Ro
 
 	// role was not already in state, we need to add it to the roles slice
 	newSparseGuild := gs.copyRoles()
-	newSparseGuild.Roles = append(newSparseGuild.Roles, *r)
+	newSparseGuild.Roles = append(newSparseGuild.Roles, role)
 	sort.Sort(dstate.Roles(newSparseGuild.Roles))
 
 	shard.guilds[guildID] = newSparseGuild

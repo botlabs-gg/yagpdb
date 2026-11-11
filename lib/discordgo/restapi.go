@@ -1162,6 +1162,34 @@ func (s *Session) GuildRoles(guildID int64) (st []*Role, err error) {
 	return // TODO return pointer
 }
 
+// GuildRoleMemberCounts returns the number of members with each role, keyed by role id.
+// The everyone role is not included.
+// guildID: The ID of a Guild.
+func (s *Session) GuildRoleMemberCounts(guildID int64) (counts map[int64]int, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointGuildRoleMemberCounts(guildID), nil, nil, EndpointGuildRoleMemberCounts(guildID))
+	if err != nil {
+		return
+	}
+
+	var raw map[string]int
+	err = unmarshal(body, &raw)
+	if err != nil {
+		return
+	}
+
+	counts = make(map[int64]int, len(raw))
+	for k, v := range raw {
+		id, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		counts[id] = v
+	}
+
+	return
+}
+
 // GuildRoleCreate returns a new Guild Role.
 // guildID: The ID of a Guild.
 func (s *Session) GuildRoleCreate(guildID int64) (st *Role, err error) {
