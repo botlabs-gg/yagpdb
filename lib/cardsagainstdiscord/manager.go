@@ -1,7 +1,9 @@
 package cardsagainstdiscord
 
 import (
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
@@ -21,21 +23,47 @@ func NewGameManager(sessionProvider SessionProvider) *GameManager {
 	}
 }
 
-func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, username string, voteMode bool, packs ...string) (*Game, error) {
+type CreateGameOptions struct {
+	GuildID   int64
+	ChannelID int64
+	UserID    int64
+	Username  string
+	VoteMode  bool
+
+	// Built in packs or names of the custom packs, * for all of them
+	Packs       []string
+	CustomPacks []*CardPack
+
+	// Zero uses the defaults
+	PlayerLimit      int
+	WinLimit         int
+	PickResponseTime time.Duration
+	PickWinnerTime   time.Duration
+}
+
+func (gm *GameManager) CreateGame(opts CreateGameOptions) (*Game, error) {
+	resolver := &Game{CustomPacks: opts.CustomPacks}
+	packs := opts.Packs
+
 	allPacks := false
 	allResponseOnly := true
+	allPromptOnly := true
 	for _, v := range packs {
 		if v == "*" {
 			allPacks = true
 			allResponseOnly = false
+			allPromptOnly = false
 			break
 		}
 
-		p, ok := Packs[v]
-		if !ok {
-			validPacks := make([]string, 0, len(Packs))
+		p := resolver.resolvePack(v)
+		if p == nil {
+			validPacks := make([]string, 0, len(Packs)+len(opts.CustomPacks))
 			for k := range Packs {
 				validPacks = append(validPacks, k)
+			}
+			for _, cp := range opts.CustomPacks {
+				validPacks = append(validPacks, cp.Name)
 			}
 			return nil, &ErrUnknownPack{
 				PassedPack:  v,
@@ -45,6 +73,9 @@ func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, 
 		if len(p.Prompts) > 0 {
 			allResponseOnly = false
 		}
+		if len(p.Responses) > 0 {
+			allPromptOnly = false
+		}
 	}
 
 	if len(packs) < 1 && !allPacks {
@@ -53,43 +84,62 @@ func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, 
 	if allResponseOnly {
 		return nil, ErrAllPacksResponseOnly
 	}
+	if allPromptOnly {
+		return nil, ErrAllPacksPromptOnly
+	}
 
 	if allPacks {
-		packs = make([]string, 0, len(Packs))
+		packs = make([]string, 0, len(Packs)+len(opts.CustomPacks))
 		for k := range Packs {
 			packs = append(packs, k)
 		}
+		for _, cp := range opts.CustomPacks {
+			packs = append(packs, cp.Name)
+		}
+	}
+
+	playerLimit, winLimit := opts.PlayerLimit, opts.WinLimit
+	if playerLimit <= 0 {
+		playerLimit = 10
+	}
+	// every response is labeled with one of the selection emojis
+	playerLimit = min(playerLimit, MaxPlayers)
+	if winLimit <= 0 {
+		winLimit = 10
 	}
 
 	gm.Lock()
 	defer gm.Unlock()
 
-	if _, ok := gm.ActiveGames[channelID]; ok {
+	if _, ok := gm.ActiveGames[opts.ChannelID]; ok {
 		return nil, ErrGameAlreadyInChannel
 	}
 
-	if _, ok := gm.ActiveGames[userID]; ok {
+	if _, ok := gm.ActiveGames[opts.UserID]; ok {
 		return nil, ErrPlayerAlreadyInGame
 	}
 
 	game := &Game{
-		MasterChannel: channelID,
-		Manager:       gm,
-		GuildID:       guildID,
-		Packs:         packs,
-		GameMaster:    userID,
-		VoteMode:      voteMode,
-		PlayerLimit:   10,
-		WinLimit:      10,
-		Session:       gm.SessionProvider.SessionForGuild(guildID),
+		MasterChannel:    opts.ChannelID,
+		Manager:          gm,
+		GuildID:          opts.GuildID,
+		Packs:            packs,
+		CustomPacks:      opts.CustomPacks,
+		GameMaster:       opts.UserID,
+		VoteMode:         opts.VoteMode,
+		PlayerLimit:      playerLimit,
+		WinLimit:         winLimit,
+		PickResponseTime: opts.PickResponseTime,
+		PickWinnerTime:   opts.PickWinnerTime,
+		Session:          gm.SessionProvider.SessionForGuild(opts.GuildID),
 	}
 
 	err := game.Created()
 	if err == nil {
-		game.AddPlayer(userID, username)
+		game.AddPlayer(opts.UserID, opts.Username)
 
-		gm.ActiveGames[channelID] = game
-		gm.ActiveGames[userID] = game
+		gm.ActiveGames[opts.ChannelID] = game
+		gm.ActiveGames[opts.UserID] = game
 		gm.NumActiveGames++
 	}
 
@@ -165,16 +215,6 @@ func (gm *GameManager) AdminKickUser(admin, playerID int64) error {
 	return nil
 }
 
-func (p *Player) removeLastMenuReactions(session *discordgo.Session) {
-	if p.LastReactionMenu != 0 {
-		session.ChannelMessageEditComplex(&discordgo.MessageEdit{
-			Channel:    p.Channel,
-			ID:         p.LastReactionMenu,
-			Components: []discordgo.TopLevelComponent{},
-		})
-	}
-}
-
 func (gm *GameManager) RemoveGame(gameID int64) error {
 	gm.Lock()
 	defer gm.Unlock()
@@ -196,7 +236,6 @@ func (gm *GameManager) RemoveGame(gameID int64) error {
 	for _, v := range g.Players {
 		if v.InGame {
 			delete(gm.ActiveGames, v.ID)
-			v.removeLastMenuReactions(g.Session)
 		}
 	}
 
@@ -235,7 +274,6 @@ func (gm *GameManager) TryAdminRemoveGame(admin int64) error {
 	for _, v := range g.Players {
 		if v.InGame {
 			delete(gm.ActiveGames, v.ID)
-			v.removeLastMenuReactions(g.Session)
 		}
 	}
 
@@ -245,38 +283,31 @@ func (gm *GameManager) TryAdminRemoveGame(admin int64) error {
 }
 
 func (gm *GameManager) HandleInteractionCreate(ic *discordgo.InteractionCreate) {
-	if ic.Type != discordgo.InteractionMessageComponent {
+	if ic.Type != discordgo.InteractionMessageComponent && ic.Type != discordgo.InteractionModalSubmit {
 		return
 	}
 
 	if ic.GuildID == 0 {
-		//DM interactions are handled via pubsub
 		return
 	}
 
-	gm.HandleCahInteraction(ic)
-}
-
-func (gm *GameManager) HandleCahInteraction(ic *discordgo.InteractionCreate) {
-	cid := ic.ChannelID
-	gm.RLock()
-
-	if game, ok := gm.ActiveGames[cid]; ok {
-		gm.RUnlock()
-		game.HandleInteractionAdd(ic)
-	} else if ic.User != nil {
-		gm.RUnlock()
-		if ic.Type == discordgo.InteractionModalSubmit && ic.ModalSubmitData().CustomID == CahBlankCardModal {
-			if game, ok := gm.ActiveGames[ic.User.ID]; ok {
-				game.HandleMessageCreate(ic)
-			}
-			return
-		}
-		if game, ok := gm.ActiveGames[ic.User.ID]; ok {
-			game.HandleInteractionAdd(ic)
-		}
+	// only the game's own components and modals, others in the channel belong to other features
+	var customID string
+	if ic.Type == discordgo.InteractionModalSubmit {
+		customID = ic.ModalSubmitData().CustomID
 	} else {
-		gm.RUnlock()
+		customID = ic.MessageComponentData().CustomID
+	}
+	if !strings.HasPrefix(customID, "cah_") {
+		return
+	}
+
+	gm.RLock()
+	game, ok := gm.ActiveGames[ic.ChannelID]
+	gm.RUnlock()
+
+	if ok {
+		game.HandleInteractionAdd(ic)
 	}
 }
 

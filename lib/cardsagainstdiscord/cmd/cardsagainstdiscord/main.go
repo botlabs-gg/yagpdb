@@ -73,7 +73,14 @@ var CreateGameCommand = &dcmd.SimpleCmd{
 		pStr := data.Args[0].Str()
 		packs := strings.Fields(pStr)
 
-		_, err := cahManager.CreateGame(data.GuildData.GS.ID, data.GuildData.CS.ID, data.Author.ID, data.Author.Username, voteMode, packs...)
+		_, err := cahManager.CreateGame(cardsagainstdiscord.CreateGameOptions{
+			GuildID:   data.GuildData.GS.ID,
+			ChannelID: data.GuildData.CS.ID,
+			UserID:    data.Author.ID,
+			Username:  data.Author.Username,
+			VoteMode:  voteMode,
+			Packs:     packs,
+		})
 		if err == nil {
 			log.Println("Created a new game in ", data.GuildData.CS.ID)
 			return "", nil

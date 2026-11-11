@@ -12,9 +12,14 @@ import (
 var Packs = make(map[string]*CardPack)
 
 func AddPack(pack *CardPack) {
-	// Count picks
+	PreparePack(pack)
+	Packs[pack.Name] = pack
+}
+
+// PreparePack sets how many cards each prompt needs, prompts without a blank get one added at the end
+func PreparePack(pack *CardPack) {
 	for _, v := range pack.Prompts {
-		numPicks := strings.Count(v.Prompt, "%s")
+		numPicks := CountPromptBlanks(v.Prompt)
 		if numPicks == 0 {
 			v.Prompt += " %s"
 			v.NumPick = 1
@@ -22,8 +27,6 @@ func AddPack(pack *CardPack) {
 			v.NumPick = numPicks
 		}
 	}
-
-	Packs[pack.Name] = pack
 }
 
 type CardPack struct {
@@ -40,15 +43,19 @@ type PromptCard struct {
 
 var (
 	EscaperReplacer = strings.NewReplacer("*", "\\*", "_", "\\_")
+
+	// replacers go left to right, so a literal %% is never read as the start of a %s blank
+	placeholderReplacer = strings.NewReplacer("%%", "%", "%s", "_____")
+	blankCounter        = strings.NewReplacer("%%", "")
 )
 
+// CountPromptBlanks returns how many cards the prompt needs, %% is a literal percent sign and not part of a blank
+func CountPromptBlanks(prompt string) int {
+	return strings.Count(blankCounter.Replace(prompt), "%s")
+}
+
 func (p *PromptCard) PlaceHolder() string {
-	s := strings.Replace(p.Prompt, "%s", "_____", -1)
-	s = strings.Replace(s, "%%", `%`, -1)
-
-	s = EscaperReplacer.Replace(s)
-
-	return s
+	return EscaperReplacer.Replace(placeholderReplacer.Replace(p.Prompt))
 }
 
 func (p *PromptCard) WithCards(cards any) string {
@@ -92,6 +99,7 @@ var (
 	ErrStoppedAlready       = errors.New("Game already stopped")
 	ErrPlayerNotInGame      = errors.New("Player not in your game")
 	ErrAllPacksResponseOnly = errors.New("The set of packs specified are all response-only; at least one pack that has prompts is needed to start a game")
+	ErrAllPacksPromptOnly   = errors.New("The set of packs specified have no responses; at least one pack that has responses is needed to start a game")
 )
 
 type ErrUnknownPack struct {
@@ -109,7 +117,7 @@ func (e *ErrUnknownPack) Error() string {
 func HumanizeError(err error) string {
 	err = errors.Cause(err)
 
-	if err == ErrGameAlreadyInChannel || err == ErrPlayerAlreadyInGame || err == ErrGameNotFound || err == ErrGameFull || err == ErrNoPacks || err == ErrNotGM || err == ErrStoppedAlready || err == ErrPlayerNotInGame || err == ErrAllPacksResponseOnly {
+	if err == ErrGameAlreadyInChannel || err == ErrPlayerAlreadyInGame || err == ErrGameNotFound || err == ErrGameFull || err == ErrNoPacks || err == ErrNotGM || err == ErrStoppedAlready || err == ErrPlayerNotInGame || err == ErrAllPacksResponseOnly || err == ErrAllPacksPromptOnly {
 		return err.Error()
 	}
 

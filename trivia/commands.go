@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
@@ -27,13 +28,16 @@ func (p *Plugin) AddCommands() {
 					{Name: "Medium", Value: "medium"},
 					{Name: "Hard", Value: "hard"},
 				}, Help: "Difficulty of the trivia, can be none, easy, medium or hard"},
+			{Name: "Timer", Type: &dcmd.IntArg{Min: int64(MinTriviaDuration.Seconds()), Max: int64(MaxTriviaDuration.Seconds())}, Default: int64(DefaultTriviaDuration.Seconds()),
+				Help: "Seconds to answer, between 5 and 120 (30 by default)"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			difficulty := strings.ToLower(parsed.Args[0].Str())
 			if difficulty != "easy" && difficulty != "medium" && difficulty != "hard" {
 				difficulty = "none"
 			}
-			err := manager.NewTrivia(parsed.GuildData.GS.ID, parsed.ChannelID, difficulty)
+			duration := time.Duration(parsed.Args[1].Int64()) * time.Second
+			err := manager.NewTrivia(parsed.GuildData.GS.ID, parsed.ChannelID, difficulty, duration)
 			if err != nil {
 				logger.WithError(err).Error("Failed to create new trivia")
 				if err == ErrSessionInChannel {

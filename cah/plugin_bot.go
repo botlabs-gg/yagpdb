@@ -1,5 +1,7 @@
 package cah
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"fmt"
 	"slices"
@@ -12,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/cardsagainstdiscord"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 )
 
 const ShardMigrationEvtGame = 110
@@ -23,6 +26,7 @@ func init() {
 func RegisterPlugin() {
 	p := &Plugin{}
 	p.Manager = cardsagainstdiscord.NewGameManager(p)
+	common.InitSchemas("cah", DBSchemas...)
 	common.RegisterPlugin(p)
 
 }
@@ -48,6 +52,7 @@ var (
 	_ bot.ShardMigrationReceiver = (*Plugin)(nil)
 	_ bot.ShardMigrationSender   = (*Plugin)(nil)
 	_ commands.CommandProvider   = (*Plugin)(nil)
+	_ web.Plugin                 = (*Plugin)(nil)
 )
 
 func (p *Plugin) BotInit() {
@@ -56,16 +61,16 @@ func (p *Plugin) BotInit() {
 		if ic.GuildID == 0 {
 			return
 		}
+
+		// handled before the games, as a game can already be running in the channel of the picker
+		if p.handlePickerInteraction(ic) {
+			return
+		}
+
 		go p.Manager.HandleInteractionCreate(ic)
 	}, eventsystem.EventInteractionCreate)
 
-	pubsub.AddHandler("dm_interaction", func(evt *pubsub.Event) {
-		dataCast := evt.Data.(*discordgo.InteractionCreate)
-		if dataCast.Type != discordgo.InteractionMessageComponent && dataCast.Type != discordgo.InteractionModalSubmit {
-			return
-		}
-		go p.Manager.HandleCahInteraction(dataCast)
-	}, discordgo.InteractionCreate{})
+	pubsub.AddHandler("invalidate_cah_config_cache", handleInvalidateConfigCache, nil)
 }
 
 func (p *Plugin) Status() (string, string) {
