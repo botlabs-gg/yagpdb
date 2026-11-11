@@ -623,7 +623,22 @@ type UnfurledMediaItem struct {
 	Height      int    `json:"height,omitempty"`       // The height of the media item. This field is ignored and provided by the API as part of the response
 	Width       int    `json:"width,omitempty"`        // The width of the media item. This field is ignored and provided by the API as part of the response
 	ContentType string `json:"content_type,omitempty"` // The media type of the content. This field is ignored and provided by the API as part of the response
+
+	ContentScanMetadata *ContentScanMetadata `json:"content_scan_metadata,omitempty"` // Results of Discord's content scanning, provided by the API as part of the response
 }
+
+// ContentScanMetadata is the result of Discord's content scanning of a media item, it can be added in a message update after the message was sent
+type ContentScanMetadata struct {
+	Flags ContentScanFlags `json:"flags"`
+}
+
+type ContentScanFlags int
+
+const (
+	ContentScanFlagIsExplicitContent ContentScanFlags = 1 << 0
+	ContentScanFlagIsGoreContent     ContentScanFlags = 1 << 1
+	ContentScanFlagIsSelfHarmContent ContentScanFlags = 1 << 2
+)
 
 // Thumbnail represents thumbnail component.
 type Thumbnail struct {

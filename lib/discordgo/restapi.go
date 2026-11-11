@@ -1944,6 +1944,21 @@ func (s *Session) ChannelMessagePin(channelID, messageID int64) (err error) {
 	return
 }
 
+// ChannelVoiceStatusSet sets the status of a voice channel, an empty status clears it.
+// channelID: The ID of a voice channel.
+// status: The new status, up to 500 characters.
+func (s *Session) ChannelVoiceStatusSet(channelID int64, status string) (err error) {
+	data := struct {
+		Status *string `json:"status"`
+	}{}
+	if status != "" {
+		data.Status = &status
+	}
+
+	_, err = s.RequestWithBucketID("PUT", EndpointChannelVoiceStatus(channelID), data, nil, EndpointChannelVoiceStatus(channelID))
+	return
+}
+
 // ChannelMessageUnpin unpins a message within a given channel.
 // channelID: The ID of a channel.
 // messageID: The ID of a message.

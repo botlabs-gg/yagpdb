@@ -48,6 +48,7 @@ const (
 	PermissionCreateEvents                     int64 = 1 << 44 // Allows for creating scheduled events, and editing and deleting those created by the current user
 	PermissionUseExternalSounds                int64 = 1 << 45 // Allows the usage of custom soundboard sounds from other servers 	V
 	PermissionSendVoiceMessages                int64 = 1 << 46 // Allows sending voice messages 	T, V, S
+	PermissionSetVoiceChannelStatus            int64 = 1 << 48 // Allows setting the status of voice channels, also needs ManageChannels when not connected to the channel 	V
 	PermissionSendPolls                        int64 = 1 << 49 // Allows sending polls 	T, V, S
 	PermissionUseExternalApps                  int64 = 1 << 50 // Allows user-installed apps to send public responses. When disabled, users will still be allowed to use their apps but the responses will be ephemeral. This only applies to apps not also installed to the server.	T, V, S
 	PermissionPinMessages                      int64 = 1 << 51 // Allows for pinning/unpinning messages in a channel	T
@@ -79,6 +80,7 @@ var AllPermissions = []int64{
 	PermissionUseSoundboard,
 	PermissionUseExternalSounds,
 	PermissionSendVoiceMessages,
+	PermissionSetVoiceChannelStatus,
 	PermissionSendPolls,
 
 	PermissionVoiceConnect,

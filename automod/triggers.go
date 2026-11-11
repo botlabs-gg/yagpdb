@@ -609,6 +609,103 @@ func (a *AntiPhishingLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 
 /////////////////////////////////////////////////////////////
 
+var _ MessageTrigger = (*FlaggedMediaTrigger)(nil)
+
+type FlaggedMediaTrigger struct{}
+
+type FlaggedMediaTriggerData struct {
+	Explicit bool
+	Gore     bool
+	SelfHarm bool
+}
+
+func (f *FlaggedMediaTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (f *FlaggedMediaTrigger) Name() string {
+	return "Message Contains Media Flagged by Discord"
+}
+
+func (f *FlaggedMediaTrigger) DataType() any {
+	return &FlaggedMediaTriggerData{}
+}
+
+func (f *FlaggedMediaTrigger) Description() string {
+	return "Triggers on messages with attachments or embeds that Discord's content scanning flagged, which can happen shortly after the message was sent"
+}
+
+func (f *FlaggedMediaTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name:    "Explicit content",
+			Key:     "Explicit",
+			Kind:    SettingTypeBool,
+			Default: true,
+		},
+		{
+			Name:    "Gore",
+			Key:     "Gore",
+			Kind:    SettingTypeBool,
+			Default: true,
+		},
+		{
+			Name:    "Self-harm",
+			Key:     "SelfHarm",
+			Kind:    SettingTypeBool,
+			Default: true,
+		},
+	}
+}
+
+func (f *FlaggedMediaTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
+	dataCast := triggerCtx.Data.(*FlaggedMediaTriggerData)
+
+	var attachmentFlags discordgo.MessageAttachmentFlags
+	var embedFlags discordgo.MessageEmbedFlags
+	if dataCast.Explicit {
+		attachmentFlags |= discordgo.MessageAttachmentFlagContainsExplicitContent
+		embedFlags |= discordgo.MessageEmbedFlagContainsExplicitContent
+	}
+	if dataCast.Gore {
+		attachmentFlags |= discordgo.MessageAttachmentFlagContainsGoreContent
+		embedFlags |= discordgo.MessageEmbedFlagContainsGoreContent
+	}
+	if dataCast.SelfHarm {
+		attachmentFlags |= discordgo.MessageAttachmentFlagContainsSelfHarmContent
+		embedFlags |= discordgo.MessageEmbedFlagContainsSelfHarmContent
+	}
+
+	for _, v := range m.GetMessageAttachments() {
+		if v.Flags&attachmentFlags != 0 {
+			return true, nil
+		}
+	}
+
+	for _, v := range m.GetMessageEmbeds() {
+		if v.Flags&embedFlags != 0 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// MergeDuplicates checks for every kind of content picked in any of the duplicates
+func (f *FlaggedMediaTrigger) MergeDuplicates(data []any) any {
+	merged := &FlaggedMediaTriggerData{}
+	for _, v := range data {
+		d := v.(*FlaggedMediaTriggerData)
+		merged.Explicit = merged.Explicit || d.Explicit
+		merged.Gore = merged.Gore || d.Gore
+		merged.SelfHarm = merged.SelfHarm || d.SelfHarm
+	}
+
+	return merged
+}
+
+/////////////////////////////////////////////////////////////
+
 var _ MessageTrigger = (*GoogleSafeBrowsingTrigger)(nil)
 
 type GoogleSafeBrowsingTrigger struct{}

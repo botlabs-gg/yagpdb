@@ -612,8 +612,36 @@ type GuildSoundboardSoundsUpdate struct{}
 type GuildJoinRequestCreate struct{}
 type GuildJoinRequestUpdate struct{}
 type GuildJoinRequestDelete struct{}
-type VoiceChannelStatusUpdate struct{}
-type VoiceChannelStartTimeStatusUpdate struct{}
+type VoiceChannelStatusUpdate struct {
+	ID      int64 `json:"id,string"`
+	GuildID int64 `json:"guild_id,string"`
+	// Empty when the status was cleared
+	Status string `json:"status"`
+}
+
+func (e *VoiceChannelStatusUpdate) GetGuildID() int64 {
+	return e.GuildID
+}
+
+func (e *VoiceChannelStatusUpdate) GetChannelID() int64 {
+	return e.ID
+}
+
+type VoiceChannelStartTimeStatusUpdate struct {
+	ID      int64 `json:"id,string"`
+	GuildID int64 `json:"guild_id,string"`
+	// Unix timestamp in seconds of when the voice session started, zero when it ended
+	VoiceStartTime int64 `json:"voice_start_time"`
+}
+
+func (e *VoiceChannelStartTimeStatusUpdate) GetGuildID() int64 {
+	return e.GuildID
+}
+
+func (e *VoiceChannelStartTimeStatusUpdate) GetChannelID() int64 {
+	return e.ID
+}
+
 type VoiceChannelEffectSend struct{}
 type ChannelTopicUpdate struct{}
 type GiftCodeUpdate struct{}
