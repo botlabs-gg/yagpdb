@@ -43,6 +43,8 @@ func PermissionName(p int64) string {
 		return "UseExternalSounds"
 	case PermissionSendVoiceMessages:
 		return "SendVoiceMessages"
+	case PermissionSetVoiceChannelStatus:
+		return "SetVoiceChannelStatus"
 	case PermissionSendPolls:
 		return "SendPolls"
 	case PermissionVoiceConnect:

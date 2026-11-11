@@ -51,6 +51,7 @@ var RulePartMap = map[int]RulePart{
 	36: &SlowmodeTrigger{Links: true, ChannelBased: false},
 	37: &SlowmodeTrigger{Links: true, ChannelBased: true},
 	38: &AutomodExecution{},
+	39: &FlaggedMediaTrigger{},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},

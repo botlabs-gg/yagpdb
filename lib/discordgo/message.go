@@ -427,11 +427,25 @@ type MessageAttachment struct {
 type MessageAttachmentFlags int
 
 const (
-	MessageAttachmentFlagIsClip = 1 << iota
-	MessageAttachmentFlagIsThumbnail
-	MessageAttachmentFlagIsRemix
-	MessageAttachmentFlagIsSpoiler
-	MessageAttachmentFlagIsAnimated
+	MessageAttachmentFlagIsClip      MessageAttachmentFlags = 1 << 0
+	MessageAttachmentFlagIsThumbnail MessageAttachmentFlags = 1 << 1
+	MessageAttachmentFlagIsRemix     MessageAttachmentFlags = 1 << 2
+	MessageAttachmentFlagIsSpoiler   MessageAttachmentFlags = 1 << 3
+	// The content scanning flags can be added after the message was sent, in a message update
+	MessageAttachmentFlagContainsExplicitContent MessageAttachmentFlags = 1 << 4
+	MessageAttachmentFlagIsAnimated              MessageAttachmentFlags = 1 << 5
+	MessageAttachmentFlagContainsGoreContent     MessageAttachmentFlags = 1 << 6
+	MessageAttachmentFlagContainsSelfHarmContent MessageAttachmentFlags = 1 << 7
+)
+
+type MessageEmbedFlags int
+
+const (
+	// The content scanning flags can be added after the message was sent, in a message update
+	MessageEmbedFlagContainsExplicitContent MessageEmbedFlags = 1 << 4
+	MessageEmbedFlagIsContentInventoryEntry MessageEmbedFlags = 1 << 5
+	MessageEmbedFlagContainsGoreContent     MessageEmbedFlags = 1 << 6
+	MessageEmbedFlagContainsSelfHarmContent MessageEmbedFlags = 1 << 7
 )
 
 // MessageEmbedFooter is a part of a MessageEmbed struct.
@@ -501,6 +515,7 @@ type MessageEmbed struct {
 	Provider    *MessageEmbedProvider  `json:"provider,omitempty"`
 	Author      *MessageEmbedAuthor    `json:"author,omitempty"`
 	Fields      []*MessageEmbedField   `json:"fields,omitempty"`
+	Flags       MessageEmbedFlags      `json:"flags,omitempty"`
 
 	//flag that tells the marshaller to marshal struct as nil
 	marshalnil bool `json:"-"`

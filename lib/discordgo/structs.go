@@ -1182,6 +1182,7 @@ const (
 	AuditLogActionChannelOverwriteCreate AuditLogAction = 13
 	AuditLogActionChannelOverwriteUpdate AuditLogAction = 14
 	AuditLogActionChannelOverwriteDelete AuditLogAction = 15
+	AuditLogActionChannelPositionUpdate  AuditLogAction = 16
 
 	AuditLogActionMemberKick       AuditLogAction = 20
 	AuditLogActionMemberPrune      AuditLogAction = 21
@@ -1193,9 +1194,10 @@ const (
 	AuditLogActionMemberDisconnect AuditLogAction = 27
 	AuditLogActionBotAdd           AuditLogAction = 28
 
-	AuditLogActionRoleCreate AuditLogAction = 30
-	AuditLogActionRoleUpdate AuditLogAction = 31
-	AuditLogActionRoleDelete AuditLogAction = 32
+	AuditLogActionRoleCreate         AuditLogAction = 30
+	AuditLogActionRoleUpdate         AuditLogAction = 31
+	AuditLogActionRoleDelete         AuditLogAction = 32
+	AuditLogActionRolePositionUpdate AuditLogAction = 33
 
 	AuditLogActionInviteCreate AuditLogAction = 40
 	AuditLogActionInviteUpdate AuditLogAction = 41
@@ -1240,6 +1242,9 @@ const (
 	AuditLogActionAutoModerationBlockMessage              AuditLogAction = 143
 	AuditLogActionAutoModerationFlagToChannel             AuditLogAction = 144
 	AuditLogActionAutoModerationUserCommunicationDisabled AuditLogAction = 145
+
+	AuditLogActionVoiceChannelStatusUpdate AuditLogAction = 192
+	AuditLogActionVoiceChannelStatusDelete AuditLogAction = 193
 )
 
 // AuditLogChange for an AuditLogEntry
@@ -1410,6 +1415,8 @@ type AuditLogOptions struct {
 	ID               string               `json:"id"`
 	Type             *AuditLogOptionsType `json:"type"`
 	RoleName         string               `json:"role_name"`
+	// The new status on voice channel status updates
+	Status string `json:"status"`
 }
 
 // AuditLogOptionsType of the AuditLogOption
