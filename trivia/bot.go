@@ -14,7 +14,11 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var TriviaDuration = time.Second * 30
+const (
+	DefaultTriviaDuration = time.Second * 30
+	MinTriviaDuration     = time.Second * 5
+	MaxTriviaDuration     = time.Second * 120
+)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
@@ -50,6 +54,7 @@ type triviaSession struct {
 	SelectedOptions []*pickedOption
 	createdAt       time.Time
 	startedAt       time.Time
+	duration        time.Duration
 	ended           bool
 	optionEmojis    []string
 
@@ -58,7 +63,7 @@ type triviaSession struct {
 
 var ErrSessionInChannel = errors.New("a trivia session already exists in this channel")
 
-func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, difficulty string) error {
+func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, difficulty string, duration time.Duration) error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	for _, v := range tm.sessions {
@@ -95,6 +100,7 @@ func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, diffic
 		ChannelID:    channelID,
 		Question:     question,
 		optionEmojis: optionEmojis,
+		duration:     duration,
 	}
 
 	tm.sessions = append(tm.sessions, session)
@@ -156,7 +162,7 @@ func (t *triviaSession) tick() (ended bool) {
 		t.updateMessage()
 	}
 
-	if time.Since(t.startedAt) > TriviaDuration {
+	if time.Since(t.startedAt) > t.duration {
 		t.ended = true
 		t.processScores()
 		t.updateMessage()
@@ -270,7 +276,7 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 	}
 
 	if !t.ended {
-		timeLeft := t.startedAt.Add(TriviaDuration)
+		timeLeft := t.startedAt.Add(t.duration)
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 			Name:  "Timer",
 			Value: fmt.Sprintf("ends **<t:%d:R> \n**", timeLeft.Unix()),
@@ -340,7 +346,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	}
 
 	// Editing the embed can sometime get ratelimited
-	if t.ended || time.Since(t.startedAt) > TriviaDuration {
+	if t.ended || time.Since(t.startedAt) > t.duration {
 		response.Data.Content = "You're too slow, trivia has already ended."
 		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 		if err != nil {

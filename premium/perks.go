@@ -33,6 +33,7 @@ var perks = []*Perk{
 	{"Threaded Tickets", "Use private threads instead of new channels for tickets.", "fas fa-comments", "/tickets", "tickets"},
 	{"Appeal Ban Button", "Let banned users appeal straight from their ban DM.", "fas fa-gavel", "/moderation", "moderation"},
 	{"Ban Appeals Channel", "Post ban appeals in their own channel instead of the modlog.", "fas fa-inbox", "/moderation", "moderation"},
+	{"Custom CAH Packs", "Write up to 10 of your own Cards Against Humanity packs.", "fas fa-clone", "/cah", "cah"},
 }
 
 var limits = []*Limit{

@@ -9,9 +9,10 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
-	"unicode/utf8"
 
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/sirupsen/logrus"
 )
@@ -48,6 +49,12 @@ const (
 	GameExpireAfterPregame = time.Minute * 30
 
 	BlankCard ResponseCard = "(write your own response)"
+
+	MinPlayers = 2
+	// each response is labeled with one of the CardSelectionEmojis, so there can't be more players than those
+	MaxPlayers = 11
+
+	startingNotice = "Starting "
 )
 
 var (
@@ -76,6 +83,11 @@ var (
 	CahCardSelectMenu = "cah_card_select"
 	CahBlankCardModal = "cah_blank_card"
 	CahTextInput      = "cah_text_input"
+
+	// Players see their hand in an ephemeral message, the round is part of the ids so menus from previous rounds can be told apart
+	CahShowCards       = "cah_show_cards"
+	CahHandSelectMenu  = "cah_hand_select"
+	ShowCardsButtonTxt = "Show my cards"
 )
 
 type Game struct {
@@ -95,10 +107,12 @@ type Game struct {
 	// The current cardzar
 	CurrentCardCzar int64
 
-	PlayerLimit        int
-	WinLimit           int
-	VoteMode           bool
-	Packs              []string
+	PlayerLimit int
+	WinLimit    int
+	VoteMode    bool
+	Packs       []string
+	// Packs only available to this game, such as a server's own packs, kept with the game so they survive shard migration
+	CustomPacks        []*CardPack
 	availablePrompts   []*PromptCard
 	availableResponses []ResponseCard
 
@@ -112,7 +126,22 @@ type Game struct {
 
 	CurrentPropmpt *PromptCard
 
+	// Increased every round
+	Round int
+
+	// Zero uses the defaults, which is also the case for games from before these were configurable
+	PickResponseTime time.Duration
+	PickWinnerTime   time.Duration
+
 	LastMenuMessage int64
+	// the last menu without its buttons, used to remove them once a new menu is sent
+	lastMenuDisplay *discordgo.Container
+	lastMenuRows    []discordgo.TopLevelComponent
+	// announcements are added to the last menu instead of being sent as their own messages
+	menuNotices []string
+	// edits of the menu are sent in the background, only the latest one is sent if several are waiting
+	menuEditMu  sync.Mutex
+	menuVersion atomic.Int64
 
 	Responses []*PickedResonse
 
@@ -150,23 +179,30 @@ func GetCommonCahButtons() []discordgo.TopLevelComponent {
 	}
 }
 
+// getRoundCahButtons are the common buttons along with the button players use to see their cards
+func getRoundCahButtons() []discordgo.TopLevelComponent {
+	buttons := GetCommonCahButtons()
+	row := buttons[0].(discordgo.ActionsRow)
+	row.Components = append(row.Components, discordgo.Button{
+		Label:    ShowCardsButtonTxt,
+		Style:    discordgo.SecondaryButton,
+		CustomID: CahShowCards,
+	})
+
+	return []discordgo.TopLevelComponent{row}
+}
+
 func (g *Game) Created() error {
 	g.LastAction = time.Now()
 
-	embed := &discordgo.MessageEmbed{
-		Title:       "Game created!",
-		Description: fmt.Sprintf("React with %s to join and %s to leave, the game master can start/stop the game with %s", JoinEmoji, LeaveEmoji, PlayPauseEmoji),
-	}
-
-	msg, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
-		Components: GetCommonCahButtons(),
-		Embeds:     []*discordgo.MessageEmbed{embed},
-	})
-	if err != nil {
+	container := textContainer(0,
+		fmt.Sprintf("## <@%d> started Cards Against Humanity", g.GameMaster),
+		"**Packs**\n"+common.FormatList(g.Packs, "and"),
+		fmt.Sprintf("Press %s to join and %s to leave, the game master starts and pauses the game with %s", JoinEmoji, LeaveEmoji, PlayPauseEmoji),
+	)
+	if err := g.sendMenu(container, GetCommonCahButtons()...); err != nil {
 		return err
 	}
-
-	g.LastMenuMessage = msg.ID
 
 	g.stopch = make(chan bool)
 
@@ -179,17 +215,43 @@ func (g *Game) Created() error {
 	return nil
 }
 
+func (g *Game) resolvePack(name string) *CardPack {
+	for _, v := range g.CustomPacks {
+		if v.Name == name {
+			return v
+		}
+	}
+
+	return Packs[name]
+}
+
 func (g *Game) loadPackResponses() {
 	for _, v := range g.Packs {
-		pack := Packs[v]
-		g.availableResponses = append(g.availableResponses, pack.Responses...)
+		if pack := g.resolvePack(v); pack != nil {
+			g.availableResponses = append(g.availableResponses, pack.Responses...)
+		}
 	}
 }
 func (g *Game) loadPackPrompts() {
 	for _, v := range g.Packs {
-		pack := Packs[v]
-		g.availablePrompts = append(g.availablePrompts, pack.Prompts...)
+		if pack := g.resolvePack(v); pack != nil {
+			g.availablePrompts = append(g.availablePrompts, pack.Prompts...)
+		}
 	}
+}
+
+func (g *Game) pickResponseTime() time.Duration {
+	if g.PickResponseTime > 0 {
+		return g.PickResponseTime
+	}
+	return PickResponseDuration
+}
+
+func (g *Game) pickWinnerTime() time.Duration {
+	if g.PickWinnerTime > 0 {
+		return g.PickWinnerTime
+	}
+	return PickWinnerDuration
 }
 
 // AddPlayer attempts to add a player to the game, if it fails (hit the limit for example) then it returns false
@@ -219,7 +281,6 @@ func (g *Game) addPlayer(id int64, username string) bool {
 
 	msg := ""
 
-	// Create a userchannel and cache it for use later
 	existing := g.findPlayer(id)
 	if existing != nil {
 
@@ -228,28 +289,21 @@ func (g *Game) addPlayer(id int64, username string) bool {
 		}
 
 		existing.InGame = true
-		msg = "Came back!"
+		msg = "Came back"
 	} else {
-
-		channel, err := g.Session.UserChannelCreate(id)
-		if err != nil {
-			return false
-		}
-
 		p := &Player{
 			ID:       id,
 			Username: username,
-			Channel:  channel.ID,
 			Cards:    g.getRandomPlayerCards(8),
 			InGame:   true,
 		}
 
 		g.Players = append(g.Players, p)
 
-		msg = "Joined the game!"
+		msg = "Joined the game"
 	}
 
-	go g.sendAnnouncment(fmt.Sprintf("<@%d> %s! (%d/%d)", id, msg, numPlaying+1, g.PlayerLimit), false)
+	g.sendAnnouncment(fmt.Sprintf("<@%d> %s! (%d/%d)", id, msg, numPlaying+1, g.PlayerLimit))
 	return true
 }
 
@@ -299,9 +353,10 @@ func (g *Game) removePlayer(id int64) bool {
 		return false
 	}
 
-	go g.sendAnnouncment(fmt.Sprintf("<@%d> Left the game (%d/%d)", id, numPlaying, g.PlayerLimit), false)
+	g.sendAnnouncment(fmt.Sprintf("<@%d> Left the game (%d/%d)", id, numPlaying, g.PlayerLimit))
 
-	if g.CurrentCardCzar == id && g.State != GameStatePreGame && g.State != GameStatePreRoundDelay {
+	if g.CurrentCardCzar == id && !g.VoteMode && g.State != GameStatePreGame && g.State != GameStatePreRoundDelay {
+		g.sendAnnouncment("The card czar left, skipping this round.")
 		g.nextRound()
 	}
 
@@ -309,7 +364,7 @@ func (g *Game) removePlayer(id int64) bool {
 		for _, v := range g.Players {
 			if v.InGame {
 				g.GameMaster = v.ID
-				go g.sendAnnouncment(fmt.Sprintf("GameMaster left, assigned <@%d> as new game master.", v.ID), false)
+				g.sendAnnouncment(fmt.Sprintf("GameMaster left, assigned <@%d> as new game master.", v.ID))
 				break
 			}
 		}
@@ -347,47 +402,39 @@ func (g *Game) getRandomResponseCard() ResponseCard {
 func (g *Game) getRandomPlayerCards(num int) []ResponseCard {
 	result := make([]ResponseCard, 0, num)
 
-	if len(g.availableResponses) < 1 {
-		return result
-	}
-
 	for len(result) < num {
-		card := g.getRandomResponseCard()
-		result = append(result, card)
+		if len(g.availableResponses) < 1 {
+			// re-shuffle the deck once it runs out, which can't help if the packs have no responses at all
+			g.loadPackResponses()
+			if len(g.availableResponses) < 1 {
+				break
+			}
+		}
+
+		result = append(result, g.getRandomResponseCard())
 	}
 
 	return result
 }
 
-func (g *Game) sendAnnouncment(msg string, allPlayers bool) {
-	embed := &discordgo.MessageEmbed{
-		Description: msg,
+// sendAnnouncment adds the message to the last menu, or sends it on its own when there's no menu to add it to
+// assumes the game is locked
+func (g *Game) sendAnnouncment(msg string) {
+	if g.LastMenuMessage == 0 || g.lastMenuDisplay == nil {
+		go g.sendContainer(textContainer(0, msg))
+		return
 	}
 
-	if allPlayers {
-		for _, v := range g.Players {
-			go func(channel int64) {
-				g.Session.ChannelMessageSendEmbed(channel, embed)
-			}(v.Channel)
-		}
+	g.menuNotices = append(g.menuNotices, msg)
+	if len(g.menuNotices) > maxMenuNotices {
+		g.menuNotices = g.menuNotices[len(g.menuNotices)-maxMenuNotices:]
 	}
 
-	g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
+	g.editMenu()
 }
 
 func (g *Game) sendAnnouncmentMenu(msg string) {
-	embed := &discordgo.MessageEmbed{
-		Description: msg,
-	}
-
-	m, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: GetCommonCahButtons(),
-	})
-	if err == nil {
-		g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
-		g.LastMenuMessage = m.ID
-	}
+	g.sendMenu(textContainer(0, msg), GetCommonCahButtons()...)
 }
 
 func (g *Game) Stop() {
@@ -451,6 +498,7 @@ func (g *Game) Tick() {
 	case GameStatePickingResponses:
 		allPlayersDone := true
 		oneResponsePicked := false
+		var warn []int64
 		for _, v := range g.Players {
 			if v.ID == g.CurrentCardCzar || !v.PlayingThisRound() {
 				continue
@@ -458,21 +506,25 @@ func (g *Game) Tick() {
 
 			if !v.MadeSelections(g.CurrentPropmpt) {
 				allPlayersDone = false
-				if !v.sent15sWarning && time.Since(g.StateEntered) > (PickResponseDuration-(time.Second*15)) {
+				if !v.sent15sWarning && time.Since(g.StateEntered) > (g.pickResponseTime()-(time.Second*15)) {
 					v.sent15sWarning = true
-					go g.Session.ChannelMessageSendEmbed(v.Channel, &discordgo.MessageEmbed{Description: "You have 15 seconds left"})
+					warn = append(warn, v.ID)
 				}
 			} else {
 				oneResponsePicked = true
 			}
 		}
 
-		if allPlayersDone || time.Since(g.StateEntered) >= PickResponseDuration {
+		if len(warn) > 0 {
+			go g.sendPickWarning(warn, g.StateEntered.Add(g.pickResponseTime()))
+		}
+
+		if allPlayersDone || time.Since(g.StateEntered) >= g.pickResponseTime() {
 			if oneResponsePicked {
 				g.donePickingResponses()
 			} else {
 				// No one picked any cards...?
-				g.sendAnnouncment("No one picked any cards, going to next round", false)
+				g.sendAnnouncment("No one picked any cards, going to next round")
 				g.nextRound()
 			}
 		}
@@ -483,13 +535,17 @@ func (g *Game) Tick() {
 				return
 			}
 
-			if !cardCzarPlayer.sent15sWarning && time.Since(g.StateEntered) > (PickWinnerDuration-(time.Second*15)) {
+			if !cardCzarPlayer.sent15sWarning && time.Since(g.StateEntered) > (g.pickWinnerTime()-(time.Second*15)) {
 				cardCzarPlayer.sent15sWarning = true
-				go g.Session.ChannelMessageSendEmbed(g.MasterChannel, &discordgo.MessageEmbed{Description: "You have 15 seconds left to pick a winner"})
+				go g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+					Components:      []discordgo.TopLevelComponent{textContainer(0, fmt.Sprintf("<@%d> time to pick a winner runs out %s", g.CurrentCardCzar, relativeTime(g.StateEntered.Add(g.pickWinnerTime()))))},
+					Flags:           discordgo.MessageFlagsIsComponentsV2,
+					AllowedMentions: discordgo.AllowedMentions{Users: []int64{g.CurrentCardCzar}},
+				})
 			}
 		}
 
-		if time.Since(g.StateEntered) >= PickWinnerDuration {
+		if time.Since(g.StateEntered) >= g.pickWinnerTime() {
 			noVotes := true
 			for _, v := range g.Players {
 				if v.VotedFor != 0 {
@@ -507,6 +563,19 @@ func (g *Game) Tick() {
 
 }
 
+func (g *Game) sendPickWarning(players []int64, deadline time.Time) {
+	var mentions strings.Builder
+	for _, id := range players {
+		fmt.Fprintf(&mentions, "<@%d> ", id)
+	}
+
+	g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Components:      []discordgo.TopLevelComponent{textContainer(0, fmt.Sprintf("%stime to pick your cards runs out %s, press **%s** on the round message", mentions.String(), relativeTime(deadline), ShowCardsButtonTxt))},
+		Flags:           discordgo.MessageFlagsIsComponentsV2,
+		AllowedMentions: discordgo.AllowedMentions{Users: players},
+	})
+}
+
 func (g *Game) numUsersInGame() int {
 	num := 0
 	for _, v := range g.Players {
@@ -519,9 +588,11 @@ func (g *Game) numUsersInGame() int {
 }
 
 func (g *Game) startRound() {
-	if g.numUsersInGame() < 2 {
+	if g.numUsersInGame() < MinPlayers {
+		// players left during the countdown, which no longer applies
+		g.removeNotices(startingNotice)
 		g.setState(GameStatePreGame)
-		g.sendAnnouncment("Not enough players...", false)
+		g.sendAnnouncment("Not enough players to start, waiting for more players to join.")
 		return
 	}
 
@@ -538,6 +609,7 @@ func (g *Game) startRound() {
 	}
 
 	g.Responses = nil
+	g.Round++
 
 	for _, v := range g.Players {
 		v.SelectedCards = nil
@@ -619,69 +691,32 @@ func (g *Game) giveEveryoneCards(num int) {
 			continue
 		}
 
-		if num+len(p.Cards) > 10 {
-			num = 10 - len(p.Cards)
-		}
-
-		cards := g.getRandomPlayerCards(num)
+		cards := g.getRandomPlayerCards(min(num, 10-len(p.Cards)))
 		p.Cards = append(p.Cards, cards...)
 	}
 
 }
 
 func (g *Game) presentStartRound() {
-
-	for _, player := range g.Players {
-		go func(p *Player) {
-			if !p.PlayingThisRound() {
-				return
-			}
-
-			p.PresentBoard(g.Session, g.CurrentPropmpt, g.CurrentCardCzar)
-		}(player)
-	}
-
-	instructions := fmt.Sprintf("Players: Check your dm for your cards and make your selections there, then return here, you have %d seconds", int(PickResponseDuration.Seconds()))
+	// the round is presented right before picking starts
+	instructions := fmt.Sprintf("Players: Press **%s** to see your cards and make your selections, time runs out %s", ShowCardsButtonTxt, relativeTime(time.Now().Add(g.pickResponseTime())))
 	if g.VoteMode {
 		instructions += "\nAfter that you will all vote on the response"
 	} else {
 		instructions += "\nCardCzar: Wait until all players have picked card(s) then select the best one(s)"
 	}
 
-	fields := []*discordgo.MessageEmbedField{
-		{
-			Name:  "Prompt",
-			Value: g.CurrentPropmpt.PlaceHolder(),
-		},
-	}
-
+	cardCzar := ""
 	if !g.VoteMode {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:  "CardCzar",
-			Value: fmt.Sprintf("<@%d>", g.CurrentCardCzar),
-		})
+		cardCzar = fmt.Sprintf("**CardCzar**\n<@%d>", g.CurrentCardCzar)
 	}
 
-	fields = append(fields, &discordgo.MessageEmbedField{
-		Name:  "Instructions",
-		Value: instructions,
-	})
-
-	embed := &discordgo.MessageEmbed{
-		Title: "Next round started!",
-		Color: 7001855,
-		// Description: msg,
-		Fields: fields,
-	}
-
-	m, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: GetCommonCahButtons(),
-	})
-	if err == nil {
-		g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
-		g.LastMenuMessage = m.ID
-	}
+	g.sendMenu(textContainer(colorRoundStarted,
+		"## Next round started!",
+		"**Prompt**\n"+g.CurrentPropmpt.PlaceHolder(),
+		cardCzar,
+		"**Instructions**\n"+instructions,
+	), getRoundCahButtons()...)
 }
 
 func (g *Game) donePickingResponses() {
@@ -692,7 +727,6 @@ func (g *Game) donePickingResponses() {
 		}
 
 		if len(v.SelectedCards) < g.CurrentPropmpt.NumPick {
-			go g.Session.ChannelMessageSend(v.Channel, fmt.Sprintf("You didn't respond in time... winner is being picked in <#%d>", g.MasterChannel))
 			v.SelectedCards = nil
 			continue
 		}
@@ -721,6 +755,9 @@ func (g *Game) donePickingResponses() {
 	g.presentPickedResponseCards(false)
 }
 
+// candidatesTextLimit keeps the candidates well under the 4000 characters of text a components v2 message can have
+const candidatesTextLimit = 2000
+
 func (g *Game) presentPickedResponseCards(edit bool) {
 
 	desc := "Cards have been picked, "
@@ -730,68 +767,44 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 		desc += fmt.Sprintf("pick the best one(s) <@%d>!", g.CurrentCardCzar)
 	}
 
-	secondsLeft := int((PickWinnerDuration - time.Since(g.StateEntered)).Seconds())
-	desc += fmt.Sprintf(" You have `%d` seconds.", secondsLeft)
+	desc += " Time runs out " + relativeTime(g.StateEntered.Add(g.pickWinnerTime())) + "."
 
-	embed := &discordgo.MessageEmbed{
-		Title:       "Pick the winner",
-		Description: desc,
-		Color:       5659830,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:  "Prompt",
-				Value: g.CurrentPropmpt.PlaceHolder(),
-			},
-			{
-				Name: "Candidates",
-			},
-		},
+	maxCandidateLen := candidatesTextLimit
+	if len(g.Responses) > 0 {
+		maxCandidateLen = candidatesTextLimit / len(g.Responses)
 	}
 
-	currentEmbedField := embed.Fields[1]
-
+	var candidates strings.Builder
 	for i, v := range g.Responses {
-		text := ""
-
-		filledPrompt := g.CurrentPropmpt.WithCards(v.Selections)
+		filledPrompt := common.CutStringShort(g.CurrentPropmpt.WithCards(v.Selections), maxCandidateLen)
 
 		if g.VoteMode {
-			text = fmt.Sprintf("%s: %s (`%d`) \n\n", CardSelectionEmojis[i], filledPrompt, v.Player.ReceivedVotes)
+			fmt.Fprintf(&candidates, "%s: %s (`%d`) \n\n", CardSelectionEmojis[i], filledPrompt, v.Player.ReceivedVotes)
 		} else {
-			text = CardSelectionEmojis[i] + ": " + filledPrompt + "\n\n"
-		}
-
-		// Embed field values can be max 1024 in length, so make new fields as needed
-		if currentEmbedField.Value != "" && utf8.RuneCountInString(currentEmbedField.Value)+utf8.RuneCountInString(text) > 1000 {
-			newField := &discordgo.MessageEmbedField{
-				Name:  "...",
-				Value: text,
-			}
-			embed.Fields = append(embed.Fields, newField)
-			currentEmbedField = newField
-		} else {
-			currentEmbedField.Value += text
+			candidates.WriteString(CardSelectionEmojis[i] + ": " + filledPrompt + "\n\n")
 		}
 	}
 
+	waitingFor := ""
 	if g.VoteMode {
-		remainingPlayersField := &discordgo.MessageEmbedField{
-			Name: "Waiting for...",
-		}
-
+		var remaining []string
 		for _, v := range g.Players {
-			if v.PlayingThisRound() && v.VotedFor == 0 {
-				if remainingPlayersField.Value != "" {
-					remainingPlayersField.Value += ", "
-				}
-				remainingPlayersField.Value += "<@" + discordgo.StrID(v.ID) + ">"
+			if g.waitingForVote(v) {
+				remaining = append(remaining, "<@"+discordgo.StrID(v.ID)+">")
 			}
 		}
 
-		if remainingPlayersField.Value != "" {
-			embed.Fields = append(embed.Fields, remainingPlayersField)
+		if len(remaining) > 0 {
+			waitingFor = "**Waiting for...**\n" + strings.Join(remaining, ", ")
 		}
 	}
+
+	container := textContainer(colorPickWinner,
+		"## Pick the winner\n"+desc,
+		"**Prompt**\n"+g.CurrentPropmpt.PlaceHolder(),
+		"**Candidates**\n"+candidates.String(),
+		waitingFor,
+	)
 
 	voteOptions := []discordgo.SelectMenuOption{}
 	for i := 0; i < len(g.Responses); i++ {
@@ -802,17 +815,14 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 				chosenOption += ", " + selections[j]
 			}
 		}
-		option := discordgo.SelectMenuOption{
-			Label: string(chosenOption),
+		label, _ := splitOptionText(string(chosenOption))
+		voteOptions = append(voteOptions, discordgo.SelectMenuOption{
+			Label: label,
 			Value: CardSelectionEmojis[i],
-		}
-		if len(string(chosenOption)) > 100 {
-			option.Label = string(chosenOption)[:100]
-		}
-		voteOptions = append(voteOptions, option)
+		})
 	}
 
-	voteOptionsComponent := []discordgo.TopLevelComponent{
+	rows := append([]discordgo.TopLevelComponent{
 		discordgo.ActionsRow{
 			Components: []discordgo.InteractiveComponent{
 				discordgo.SelectMenu{
@@ -821,65 +831,27 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 				},
 			},
 		},
-		discordgo.ActionsRow{
-			Components: []discordgo.InteractiveComponent{
-				discordgo.Button{
-					Emoji:    &discordgo.ComponentEmoji{Name: JoinEmoji},
-					Style:    discordgo.SuccessButton,
-					CustomID: CahGameJoined,
-				},
-				discordgo.Button{
-					Emoji:    &discordgo.ComponentEmoji{Name: LeaveEmoji},
-					Style:    discordgo.DangerButton,
-					CustomID: CahGameLeft,
-				},
-				discordgo.Button{
-					Emoji:    &discordgo.ComponentEmoji{Name: PlayPauseEmoji},
-					Style:    discordgo.PrimaryButton,
-					CustomID: CahGamePlayPause,
-				},
-			},
-		},
-	}
+	}, GetCommonCahButtons()...)
 
 	if edit {
-		g.Session.ChannelMessageEditComplex(&discordgo.MessageEdit{
-			Embeds:     []*discordgo.MessageEmbed{embed},
-			Components: voteOptionsComponent,
-			Channel:    g.MasterChannel,
-			ID:         g.LastMenuMessage,
-		})
+		g.lastMenuDisplay = &container
+		g.lastMenuRows = rows
+		g.editMenu()
 		return
 	}
 
-	msg, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: voteOptionsComponent,
-	})
-	if err != nil {
-		return
-	}
-
-	g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
-	g.LastMenuMessage = msg.ID
+	g.sendMenu(container, rows...)
 }
 
 func (g *Game) pickWinnerExpired() {
 	var content string
 	if g.VoteMode {
-		content = fmt.Sprintf("no one voted for anyone in %d seconds, skipping round...", int(PickWinnerDuration.Seconds()))
+		content = fmt.Sprintf("no one voted for anyone in %d seconds, skipping round...", int(g.pickWinnerTime().Seconds()))
 	} else {
-		content = fmt.Sprintf("<@%d> didn't pick a winner in %d seconds, skipping round...", g.CurrentCardCzar, int(PickWinnerDuration.Seconds()))
+		content = fmt.Sprintf("<@%d> didn't pick a winner in %d seconds, skipping round...", g.CurrentCardCzar, int(g.pickWinnerTime().Seconds()))
 	}
 
-	_, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
-		Content:    content,
-		Components: GetCommonCahButtons(),
-	})
-	if err != nil {
-		return
-	}
-
+	g.sendMenu(textContainer(0, content), GetCommonCahButtons()...)
 	g.setState(GameStatePreRoundDelay)
 }
 
@@ -889,35 +861,9 @@ func (g *Game) gameExpired() {
 	g.stop()
 }
 
-func (g *Game) removeOldInteractions(cID, mID int64) {
-	if mID == 0 {
-		return
-	}
-	g.Session.ChannelMessageEditComplex(&discordgo.MessageEdit{
-		Channel:    cID,
-		ID:         mID,
-		Components: []discordgo.TopLevelComponent{},
-	})
-}
-
 func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 	g.Lock()
 	defer g.Unlock()
-
-	if g.State != GameStatePickingResponses {
-		// Pong the interaction
-		err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseDeferredMessageUpdate,
-		})
-		if err != nil {
-			logrus.WithError(err).Error("Failed Creating CAH Response")
-			return
-		}
-	}
-
-	if g.State == GameStateEnded {
-		return
-	}
 
 	var user *discordgo.User
 	if ic.Member != nil {
@@ -926,171 +872,202 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 		user = ic.User
 	}
 	player := g.findPlayer(user.ID)
-	if ic.Message.ID == g.LastMenuMessage {
-		switch ic.MessageComponentData().CustomID {
-		case CahGameJoined:
-			if player != nil && player.InGame {
-				return
-			}
 
-			go func() {
-				username := ""
-
-				if player == nil {
-					username = user.Username
-				} else {
-					username = player.Username
-				}
-
-				if err := g.Manager.PlayerTryJoinGame(g.MasterChannel, user.ID, username); err == nil {
-					g.Lock()
-					g.LastAction = time.Now()
-					g.Unlock()
-				}
-			}()
-
-			return
-		case CahGameLeft:
-			go g.Manager.PlayerTryLeaveGame(user.ID)
-			g.LastAction = time.Now()
-			return
-		case CahGamePlayPause:
-			g.LastAction = time.Now()
-			if g.State == GameStatePreGame && g.GameMaster == user.ID {
-				g.setState(GameStatePreRoundDelay)
-				go g.sendAnnouncment(fmt.Sprintf("Starting in %d seconds", int(PreRoundDelayDuration.Seconds())), false)
-			} else if g.GameMaster == user.ID {
-				for _, v := range g.Players {
-					v.SelectedCards = nil
-				}
-
-				g.Responses = nil
-				g.setState(GameStatePreGame)
-
-				go g.sendAnnouncmentMenu(fmt.Sprintf("Paused, react with %s to continue, the game can be paused for max 30 minutes before it expires.", PlayPauseEmoji))
-			}
-
-			return
-		default:
-		}
-	}
-
-	// From here on out only players can take actions
-	if player == nil {
+	if ic.Type == discordgo.InteractionModalSubmit {
+		g.handleBlankCardSubmit(player, ic)
 		return
 	}
 
-	switch g.State {
-	case GameStatePickingResponses:
-		if ic.Message.ID != player.LastReactionMenu || ic.MessageComponentData().CustomID != CahCardSelectMenu {
+	customID := ic.MessageComponentData().CustomID
+	if customID == CahShowCards || strings.HasPrefix(customID, CahHandSelectMenu) {
+		g.handleHandInteraction(player, ic, customID)
+		return
+	}
+
+	// Pong the interaction, the rest are on the public game messages which are sent or edited separately
+	err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	})
+	if err != nil {
+		logrus.WithError(err).Error("Failed Creating CAH Response")
+		return
+	}
+
+	if g.State == GameStateEnded {
+		g.reply(ic, "This game is over.")
+		return
+	}
+
+	if ic.Message.ID != g.LastMenuMessage {
+		g.reply(ic, "This menu is no longer active, use the latest game message.")
+		return
+	}
+
+	switch customID {
+	case CahGameJoined:
+		g.handleJoinClick(ic, user, player)
+	case CahGameLeft:
+		if player == nil || !player.InGame {
+			g.reply(ic, "You're not in this game.")
 			return
 		}
-		response := ic.MessageComponentData().Values[0]
 
 		g.LastAction = time.Now()
-		g.playerPickedResponseReaction(player, response, ic)
-	case GameStatePickingWinner:
-		if ic.Message.ID != g.LastMenuMessage || (player.ID != g.CurrentCardCzar && !g.VoteMode) || ic.MessageComponentData().CustomID != CahCardSelectMenu {
-			return
-		}
-
-		emojiIndex := -1
-		for i, v := range CardSelectionEmojis {
-			if v == ic.MessageComponentData().Values[0] {
-				emojiIndex = i
-				break
+		go func() {
+			if err := g.Manager.PlayerTryLeaveGame(user.ID); err != nil {
+				g.reply(ic, "You're not in this game.")
+				return
 			}
-		}
-
-		if emojiIndex == -1 || emojiIndex >= len(g.Responses) {
-			return
-		}
-
-		if g.VoteMode {
-			targetPlayer := g.Responses[emojiIndex].Player
-			if targetPlayer.ID != player.ID && player.VotedFor == 0 {
-				player.VotedFor = targetPlayer.ID
-				targetPlayer.ReceivedVotes++
-			}
-
-			g.LastAction = time.Now()
-
-			g.presentPickedResponseCards(true)
-			for _, v := range g.Players {
-				if v.PlayingThisRound() {
-					if v.VotedFor == 0 {
-						return
-					}
-				}
-			}
-
-			// Game is done
-			g.allVoted()
-		} else {
-			winner := g.Responses[emojiIndex]
-			winner.Player.Wins++
-			g.presentWinners([]*PickedResonse{winner})
-
-			if g.Players[0].Wins >= g.WinLimit {
-				go g.Manager.RemoveGame(g.MasterChannel)
-				g.setState(GameStateEnded)
-			} else {
-				g.setState(GameStatePreRoundDelay)
-				g.LastAction = time.Now()
-			}
-		}
+			g.reply(ic, "You left the game.")
+		}()
+	case CahGamePlayPause:
+		g.handlePlayPauseClick(ic, user)
+	case CahCardSelectMenu:
+		g.handleWinnerPick(ic, player)
 	}
 }
 
-func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
-	g.Lock()
-	defer g.Unlock()
-
-	if ic.User == nil {
-		// Only check dm messages
-		return
-	}
-
-	cardResponse, _ := ic.ModalSubmitData().TextInputValue(CahTextInput)
-
-	var player *Player
-	for _, v := range g.Players {
-		if v.ID == ic.User.ID {
-			player = v
-			break
+// reply sends a message only the user that used the component sees, the interaction has to be acknowledged already
+func (g *Game) reply(ic *discordgo.InteractionCreate, msg string) {
+	go func() {
+		_, err := g.Session.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
+			Content:         msg,
+			Flags:           discordgo.MessageFlagsEphemeral,
+			AllowedMentions: &discordgo.AllowedMentions{},
+		})
+		if err != nil {
+			logrus.WithError(err).Error("Failed sending CAH reply")
 		}
-	}
+	}()
+}
 
-	if player == nil || !player.FilingBlankCard {
+func (g *Game) handleJoinClick(ic *discordgo.InteractionCreate, user *discordgo.User, player *Player) {
+	if player != nil && player.InGame {
+		g.reply(ic, "You're already in this game.")
 		return
 	}
 
-	for _, v := range player.SelectedCards {
-		card := player.Cards[v]
-		if card == BlankCard {
-			player.Cards[v] = ResponseCard(FilterEveryoneMentions(cardResponse))
+	username := user.Username
+	if player != nil {
+		username = player.Username
+	}
 
-			msg := "Selected **" + cardResponse + "**, "
-			if len(player.SelectedCards) < g.CurrentPropmpt.NumPick {
-				msg += fmt.Sprintf("select %d more card(s)", g.CurrentPropmpt.NumPick-len(player.SelectedCards))
+	// joining goes through the manager, which locks this game itself
+	go func() {
+		err := g.Manager.PlayerTryJoinGame(g.MasterChannel, user.ID, username)
+		switch err {
+		case nil:
+			g.Lock()
+			g.LastAction = time.Now()
+			playing := g.State == GameStatePreGame || g.State == GameStatePreRoundDelay
+			g.Unlock()
+
+			if playing {
+				g.reply(ic, "You joined the game!")
 			} else {
-				msg += fmt.Sprintf("go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
+				g.reply(ic, "You joined the game! You'll get cards from the next round.")
 			}
+		case ErrPlayerAlreadyInGame:
+			g.reply(ic, "You're already in a game in another channel, leave it first.")
+		case ErrGameFull:
+			g.reply(ic, "You can't join this game, it's full.")
+		default:
+			g.reply(ic, "This game is no longer running.")
+		}
+	}()
+}
 
-			err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Embeds: []*discordgo.MessageEmbed{{Description: msg}},
-				},
-			})
-			if err != nil {
-				return
-			}
-			break
+func (g *Game) handlePlayPauseClick(ic *discordgo.InteractionCreate, user *discordgo.User) {
+	if g.GameMaster != user.ID {
+		g.reply(ic, fmt.Sprintf("Only the game master <@%d> can start or pause the game.", g.GameMaster))
+		return
+	}
+
+	g.LastAction = time.Now()
+	if g.State == GameStatePreGame {
+		if missing := MinPlayers - g.numUsersInGame(); missing > 0 {
+			g.reply(ic, fmt.Sprintf("At least %d players are needed to start, waiting for %d more.", MinPlayers, missing))
+			return
+		}
+
+		g.setState(GameStatePreRoundDelay)
+		g.sendAnnouncment(startingNotice + relativeTime(g.StateEntered.Add(PreRoundDelayDuration)))
+		g.reply(ic, "Starting the game!")
+		return
+	}
+
+	for _, v := range g.Players {
+		v.SelectedCards = nil
+	}
+
+	g.Responses = nil
+	g.setState(GameStatePreGame)
+
+	g.sendAnnouncmentMenu(fmt.Sprintf("Paused, press %s to continue. The game ends %s if it isn't continued.", PlayPauseEmoji, relativeTime(time.Now().Add(GameExpireAfterPregame))))
+	g.reply(ic, "Paused the game.")
+}
+
+func (g *Game) handleWinnerPick(ic *discordgo.InteractionCreate, player *Player) {
+	if g.State != GameStatePickingWinner {
+		g.reply(ic, "The winner isn't being picked right now.")
+		return
+	}
+
+	if player == nil || !player.PlayingThisRound() {
+		g.reply(ic, "Only players of this round can pick the winner.")
+		return
+	}
+
+	if !g.VoteMode && player.ID != g.CurrentCardCzar {
+		g.reply(ic, fmt.Sprintf("Only the card czar <@%d> can pick the winner.", g.CurrentCardCzar))
+		return
+	}
+
+	emojiIndex := slices.Index(CardSelectionEmojis, ic.MessageComponentData().Values[0])
+	if emojiIndex == -1 || emojiIndex >= len(g.Responses) {
+		return
+	}
+
+	picked := g.Responses[emojiIndex]
+	if !g.VoteMode {
+		g.reply(ic, "You picked "+g.CurrentPropmpt.WithCards(picked.Selections))
+
+		picked.Player.Wins++
+		g.presentWinners([]*PickedResonse{picked})
+
+		if g.Players[0].Wins >= g.WinLimit {
+			go g.Manager.RemoveGame(g.MasterChannel)
+			g.setState(GameStateEnded)
+		} else {
+			g.setState(GameStatePreRoundDelay)
+			g.LastAction = time.Now()
+		}
+		return
+	}
+
+	switch {
+	case player.VotedFor != 0:
+		g.reply(ic, "You already voted this round.")
+		return
+	case picked.Player.ID == player.ID:
+		g.reply(ic, "You can't vote for your own cards.")
+		return
+	}
+
+	player.VotedFor = picked.Player.ID
+	picked.Player.ReceivedVotes++
+	g.LastAction = time.Now()
+	g.reply(ic, "You voted for "+g.CurrentPropmpt.WithCards(picked.Selections))
+
+	g.presentPickedResponseCards(true)
+	for _, v := range g.Players {
+		if g.waitingForVote(v) {
+			return
 		}
 	}
 
-	player.FilingBlankCard = false
+	// everyone voted
+	g.allVoted()
 }
 
 const zeroWidthSpace = "\u200b"
@@ -1193,118 +1170,215 @@ func (g *Game) presentWinners(winningPicks []*PickedResonse) {
 	if wonFullGame {
 		extraContent = fmt.Sprintf("**ALL PRAISE %s OUR LORD(s) AND SAVIOUR(s)!**", wonFullGamePlayers)
 	} else {
-		extraContent = fmt.Sprintf("Next round in %d seconds...", int(PreRoundDelayDuration.Seconds()))
+		// the next round's delay starts right after the winners are presented
+		extraContent = "Next round starts " + relativeTime(time.Now().Add(PreRoundDelayDuration))
 	}
 
-	content := fmt.Sprintf("%s\n\n**Standings:**\n%s\n\n%s", winnerCards.String(), standings.String(), extraContent)
-	embed := &discordgo.MessageEmbed{
-		Title:       title,
-		Description: content,
-		Color:       15276265,
-	}
-
-	msg, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: GetCommonCahButtons(),
-	})
-	// msg, err := g.Session.ChannelMessageSend(g.MasterChannel, content)
-	if err != nil {
+	container := textContainer(colorWinners, "## "+title+"\n"+winnerCards.String(), "**Standings:**\n"+standings.String(), extraContent)
+	if !wonFullGame {
+		g.sendMenu(container, GetCommonCahButtons()...)
 		return
 	}
 
-	if !wonFullGame {
-		g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
-		g.LastMenuMessage = msg.ID
-	}
+	// the game is over, so the final message has no buttons
+	g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
+	g.sendContainer(container)
 }
 
-func (g *Game) playerPickedResponseReaction(player *Player, response string, ic *discordgo.InteractionCreate) {
-	if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
+func (g *Game) handMenuID() string {
+	return fmt.Sprintf("%s:%d", CahHandSelectMenu, g.Round)
+}
+
+// handUnavailableReason returns why the player can't pick cards right now, or an empty string if they can
+func (g *Game) handUnavailableReason(player *Player) string {
+	switch {
+	case player == nil || !player.InGame:
+		return fmt.Sprintf("You're not in this game, press %s on the game message to join.", JoinEmoji)
+	case g.State != GameStatePickingResponses:
+		return "Cards can only be picked while a round is running, wait for the next round."
+	case !player.Playing:
+		return "You joined during this round, you'll get to play from the next round."
+	case !g.VoteMode && player.ID == g.CurrentCardCzar:
+		return "You're the card czar this round, wait for the others to pick their cards and then choose the winner."
+	}
+
+	return ""
+}
+
+// handleHandInteraction handles players opening their hand and picking cards from it, all of which happens in an ephemeral message
+func (g *Game) handleHandInteraction(player *Player, ic *discordgo.InteractionCreate, customID string) {
+	fromHand := customID != CahShowCards
+
+	if reason := g.handUnavailableReason(player); reason != "" {
+		g.respondHand(ic, fromHand, textContainer(0, reason), nil)
 		return
 	}
 
-	emojiIndex := -1
-	for i, v := range CardSelectionEmojis {
-		if v == response {
-			emojiIndex = i
-			break
+	if fromHand {
+		if customID != g.handMenuID() {
+			g.respondHand(ic, fromHand, textContainer(0, fmt.Sprintf("That round is over, press **%s** on the latest round message.", ShowCardsButtonTxt)), nil)
+			return
 		}
-	}
 
-	if emojiIndex < 0 {
-		// Unknown reaction
-		return
-	}
-
-	if emojiIndex >= len(player.Cards) {
-		// Somehow picked a reaction that they cant (probably added the reaction themselv to mess with the bot)
-		return
-	}
-
-	if slices.Contains(player.SelectedCards, emojiIndex) {
-		// Already selected this card
-		return
-	}
-
-	card := player.Cards[emojiIndex]
-	if card != BlankCard {
-		// Pong the interaction
-		err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseDeferredMessageUpdate,
-		})
-		if err != nil {
+		g.LastAction = time.Now()
+		if g.playerPickedCard(player, ic.MessageComponentData().Values[0], ic) {
+			// a modal was opened for a blank card instead
 			return
 		}
 	}
 
-	respMsg := ""
-	var showTextModal bool
-	if card == BlankCard && player.FilingBlankCard {
-		// Picked a blank card while already filing another blank card
-		respMsg = "You're already filling in another blank card"
-	} else {
-		// Otherwise proceed normally
-		player.SelectedCards = append(player.SelectedCards, emojiIndex)
+	container, rows := g.handMessage(player)
+	g.respondHand(ic, fromHand, container, rows)
+}
 
-		if card == BlankCard {
-			respMsg += "Selected a blank card, type in your own response here now"
-			player.FilingBlankCard = true
-			showTextModal = true
-		} else {
-			respMsg = fmt.Sprintf("Selected **%s**", card)
-			if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
-				respMsg += fmt.Sprintf(", go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
-			} else {
-				respMsg += fmt.Sprintf(", select %d more cards", g.CurrentPropmpt.NumPick-len(player.SelectedCards))
-			}
-		}
+// respondHand sends a new ephemeral message, or updates the ephemeral message the hand menu is in
+func (g *Game) respondHand(ic *discordgo.InteractionCreate, update bool, container discordgo.Container, rows []discordgo.TopLevelComponent) {
+	resp := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Components: withRows(container, rows),
+			Flags:      discordgo.MessageFlagsEphemeral | discordgo.MessageFlagsIsComponentsV2,
+		},
 	}
-	if showTextModal {
-		g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseModal,
-			Data: &discordgo.InteractionResponseData{
-				CustomID: CahBlankCardModal,
-				Title:    "Blank Card",
-				Components: []discordgo.TopLevelComponent{
-					discordgo.Label{
-						Label: "Enter your response",
-						Component: discordgo.TextInput{
-							CustomID:  CahTextInput,
-							Style:     discordgo.TextInputShort,
-							Required:  true,
-							MaxLength: 200,
-						},
+
+	if update {
+		// the flags of the message being updated stay as they are
+		resp.Type = discordgo.InteractionResponseUpdateMessage
+		resp.Data.Flags = 0
+	}
+
+	err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, resp)
+	if err != nil {
+		logrus.WithError(err).Error("Failed responding with CAH hand")
+	}
+}
+
+func (g *Game) handMessage(player *Player) (discordgo.Container, []discordgo.TopLevelComponent) {
+	picked := ""
+	if len(player.SelectedCards) > 0 {
+		var sb strings.Builder
+		sb.WriteString("**Picked**\n")
+		for _, i := range player.SelectedCards {
+			fmt.Fprintf(&sb, "**%s**\n", player.Cards[i])
+		}
+		picked = sb.String()
+	}
+
+	header := fmt.Sprintf("## Pick %d card(s)!\n%s", g.CurrentPropmpt.NumPick, g.CurrentPropmpt.PlaceHolder())
+
+	if player.MadeSelections(g.CurrentPropmpt) {
+		return textContainer(0, header, picked, "-# Waiting for the other players to finish, the winner will be picked in the channel."), nil
+	}
+
+	container := textContainer(0, header, picked, fmt.Sprintf("-# Pick %d more card(s)", g.CurrentPropmpt.NumPick-len(player.SelectedCards)))
+
+	options := []discordgo.SelectMenuOption{}
+	for i, v := range player.Cards {
+		if slices.Contains(player.SelectedCards, i) {
+			continue
+		}
+
+		label, description := splitOptionText(string(v))
+		options = append(options, discordgo.SelectMenuOption{
+			Label:       label,
+			Description: description,
+			Value:       CardSelectionEmojis[i],
+		})
+	}
+
+	if len(options) == 0 {
+		// select menus need at least one option
+		return textContainer(0, header, picked, "-# You don't have any cards left to pick, wait for the next round."), nil
+	}
+
+	return container, []discordgo.TopLevelComponent{discordgo.ActionsRow{
+		Components: []discordgo.InteractiveComponent{discordgo.SelectMenu{
+			Options:  options,
+			CustomID: g.handMenuID(),
+		}},
+	}}
+}
+
+func (g *Game) playerPickedCard(player *Player, value string, ic *discordgo.InteractionCreate) bool {
+	if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
+		return false
+	}
+
+	index := slices.Index(CardSelectionEmojis, value)
+	if index < 0 || index >= len(player.Cards) || slices.Contains(player.SelectedCards, index) {
+		return false
+	}
+
+	if player.Cards[index] != BlankCard {
+		player.SelectedCards = append(player.SelectedCards, index)
+		return false
+	}
+
+	// the blank card is only selected once the modal is submitted, so dismissing it lets them pick it again
+	err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseModal,
+		Data: &discordgo.InteractionResponseData{
+			CustomID: fmt.Sprintf("%s:%d:%d", CahBlankCardModal, g.Round, index),
+			Title:    "Blank Card",
+			Components: []discordgo.TopLevelComponent{
+				discordgo.Label{
+					Label: "Enter your response",
+					Component: discordgo.TextInput{
+						CustomID:  CahTextInput,
+						Style:     discordgo.TextInputShort,
+						Required:  true,
+						MaxLength: 200,
 					},
 				},
 			},
-		})
+		},
+	})
+	if err != nil {
+		logrus.WithError(err).Error("Failed opening CAH blank card modal")
+	}
+
+	return true
+}
+
+func (g *Game) handleBlankCardSubmit(player *Player, ic *discordgo.InteractionCreate) {
+	data := ic.ModalSubmitData()
+
+	var round, index int
+	_, err := fmt.Sscanf(data.CustomID, CahBlankCardModal+":%d:%d", &round, &index)
+	if err != nil {
 		return
 	}
-	go g.Session.ChannelMessageSendEmbed(player.Channel, &discordgo.MessageEmbed{Description: respMsg})
+
+	if reason := g.handUnavailableReason(player); reason != "" {
+		g.respondHand(ic, true, textContainer(0, reason), nil)
+		return
+	}
+
+	if round != g.Round {
+		g.respondHand(ic, true, textContainer(0, "That round is over, your blank card wasn't used."), nil)
+		return
+	}
+
+	text, _ := data.TextInputValue(CahTextInput)
+	text = strings.TrimSpace(text)
+	if text != "" && index < len(player.Cards) && player.Cards[index] == BlankCard &&
+		!slices.Contains(player.SelectedCards, index) && len(player.SelectedCards) < g.CurrentPropmpt.NumPick {
+
+		player.Cards[index] = ResponseCard(FilterEveryoneMentions(text))
+		player.SelectedCards = append(player.SelectedCards, index)
+		g.LastAction = time.Now()
+	}
+
+	container, rows := g.handMessage(player)
+	g.respondHand(ic, true, container, rows)
 }
 
 func (g *Game) loadFromSerializedState() {
 	g.Lock()
+	// the decks aren't serialized
+	g.loadPackPrompts()
+	g.loadPackResponses()
+
 	// update references
 	for _, v := range g.Responses {
 		for _, p := range g.Players {
@@ -1319,22 +1393,18 @@ func (g *Game) loadFromSerializedState() {
 		go g.runTicker()
 	}
 	g.tickerRunning = true
+	g.sendAnnouncment("Game has been fully loaded, it will still take another seconds before the game has resumed.")
 	g.Unlock()
-
-	go g.sendAnnouncment("Game has been fully loaded, it will still take another seconds before the game has resumed.", false)
 }
 
 type Player struct {
-	ID              int64
-	Username        string
-	Cards           []ResponseCard
-	SelectedCards   []int
-	Wins            int
-	FilingBlankCard bool
-	VotedFor        int64
-	ReceivedVotes   int
-
-	Channel int64
+	ID            int64
+	Username      string
+	Cards         []ResponseCard
+	SelectedCards []int
+	Wins          int
+	VotedFor      int64
+	ReceivedVotes int
 
 	// Wether this user is playing this round, if the user joined in the middle of a round this will be false
 	Playing bool
@@ -1342,8 +1412,6 @@ type Player struct {
 	Banned  bool
 
 	sent15sWarning bool
-
-	LastReactionMenu int64
 }
 
 func (p *Player) PlayingThisRound() bool {
@@ -1351,62 +1419,5 @@ func (p *Player) PlayingThisRound() bool {
 }
 
 func (p *Player) MadeSelections(currentPrompt *PromptCard) bool {
-	if len(p.SelectedCards) < currentPrompt.NumPick {
-		return false
-	}
-
-	if p.FilingBlankCard {
-		return false
-	}
-
-	return true
-}
-
-func (p *Player) PresentBoard(session *discordgo.Session, currentPrompt *PromptCard, currentCardCzar int64) {
-	if currentCardCzar == p.ID {
-		return
-	}
-
-	embed := &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("Pick %d card(s)!", currentPrompt.NumPick),
-		Description: currentPrompt.PlaceHolder(),
-	}
-
-	options := []discordgo.SelectMenuOption{}
-
-	for i, v := range p.Cards {
-		cardValue := string(v)
-		selectMenuOption := discordgo.SelectMenuOption{
-			Value: CardSelectionEmojis[i],
-		}
-		if len(cardValue) > 100 {
-			selectMenuOption.Label = cardValue[:100]
-			if len(cardValue) > 200 {
-				selectMenuOption.Description = cardValue[100:200]
-			} else {
-				selectMenuOption.Description = cardValue[100:]
-			}
-		} else {
-			selectMenuOption.Label = cardValue
-		}
-		options = append(options, selectMenuOption)
-	}
-
-	resp, err := session.ChannelMessageSendComplex(p.Channel, &discordgo.MessageSend{
-		Embeds: []*discordgo.MessageEmbed{embed},
-		Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{
-			Components: []discordgo.InteractiveComponent{discordgo.SelectMenu{
-				Options:  options,
-				CustomID: CahCardSelectMenu,
-			}},
-		}},
-	})
-	if err != nil {
-		logrus.WithError(err).Error("Failed sending CAH DM")
-		return
-	}
-
-	p.removeLastMenuReactions(session)
-
-	p.LastReactionMenu = resp.ID
+	return len(p.SelectedCards) >= currentPrompt.NumPick
 }
