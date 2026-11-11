@@ -41,6 +41,7 @@ func mTemplate(name string, values ...any) (template.HTML, error) {
 var permsString = map[string]int64{
 	"ManageRoles":    discordgo.PermissionManageRoles,
 	"ManageMessages": discordgo.PermissionManageMessages,
+	"PinMessages":    discordgo.PermissionPinMessages,
 }
 
 func hasPerm(botPerms int64, checkPerm string) (bool, error) {

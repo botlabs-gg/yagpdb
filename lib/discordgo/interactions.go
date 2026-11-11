@@ -359,6 +359,27 @@ func (ModalSubmitInteractionData) Type() InteractionType {
 	return InteractionModalSubmit
 }
 
+// TextInputValue returns the submitted value of the text input with the custom id, in either a label or a legacy action row.
+func (d ModalSubmitInteractionData) TextInputValue(customID string) (string, bool) {
+	for _, component := range d.Components {
+		var inputs []InteractiveComponent
+		switch c := component.(type) {
+		case *Label:
+			inputs = []InteractiveComponent{c.Component}
+		case *ActionsRow:
+			inputs = c.Components
+		}
+
+		for _, input := range inputs {
+			if textInput, ok := input.(*TextInput); ok && textInput.CustomID == customID {
+				return textInput.Value, true
+			}
+		}
+	}
+
+	return "", false
+}
+
 // UnmarshalJSON is a helper function to correctly unmarshal Components.
 func (d *ModalSubmitInteractionData) UnmarshalJSON(data []byte) error {
 	type modalSubmitInteractionData ModalSubmitInteractionData

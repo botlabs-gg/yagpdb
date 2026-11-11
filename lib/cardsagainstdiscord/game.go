@@ -1051,7 +1051,7 @@ func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
 		return
 	}
 
-	cardResponse := ic.ModalSubmitData().Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
+	cardResponse, _ := ic.ModalSubmitData().TextInputValue(CahTextInput)
 
 	var player *Player
 	for _, v := range g.Players {
@@ -1286,15 +1286,13 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 				CustomID: CahBlankCardModal,
 				Title:    "Blank Card",
 				Components: []discordgo.TopLevelComponent{
-					discordgo.ActionsRow{
-						Components: []discordgo.InteractiveComponent{
-							discordgo.TextInput{
-								CustomID:  CahTextInput,
-								Label:     "Enter your response",
-								Style:     discordgo.TextInputShort,
-								Required:  true,
-								MaxLength: 200,
-							},
+					discordgo.Label{
+						Label: "Enter your response",
+						Component: discordgo.TextInput{
+							CustomID:  CahTextInput,
+							Style:     discordgo.TextInputShort,
+							Required:  true,
+							MaxLength: 200,
 						},
 					},
 				},
