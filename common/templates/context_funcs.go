@@ -375,7 +375,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		sendType := sendMessageGuildChannel
 		cid := c.ChannelArg(channel)
 		if cid == 0 {
-			return "", nil
+			return "", errors.New("unknown channel, or the bot cannot view it")
 		}
 
 		if cid != c.ChannelArgNoDM(channel) {

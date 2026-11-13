@@ -386,7 +386,7 @@ func GetIsReadOnly(ctx context.Context) bool {
 }
 
 // The permissions the bot is invited with everywhere on the site.
-const BotInvitePermissions = 2253315936217591
+const BotInvitePermissions = 2534790912928247
 
 // BotInviteURL adds the bot to the server again, which also grants it any
 // permissions it was missing, without removing it first.

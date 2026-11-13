@@ -39,6 +39,7 @@ func (p *Plugin) BotInit() {
 	// pubsub.AddHandler("update_slash_command_permissions", p.handleUpdateSlashCommandsPermissions, nil)
 
 	CommandSystem.State = bot.State
+	CommandSystem.AddChannelToState = bot.AddChannelToState
 	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
 
 	// err := clearGlobalCommands()

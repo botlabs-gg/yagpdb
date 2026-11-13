@@ -17,6 +17,10 @@ type System struct {
 	ResponseSender ResponseSender
 	State          dstate.StateTracker
 
+	// AddChannelToState is called when a message or interaction comes from a channel or thread that is not in state,
+	// so it can be fetched and added to state before the command runs
+	AddChannelToState func(guildID, channelID int64)
+
 	// Mentions, direct messages and slash commands are unaffected.
 	DisablePrefixTrigger bool
 }
@@ -203,6 +207,19 @@ var (
 	ErrMemberNotAvailableInteraction = errors.New("Member not provided in interaction")
 )
 
+func (sys *System) fetchChannelOrThread(gs *dstate.GuildSet, channelID int64) (*dstate.GuildSet, *dstate.ChannelState) {
+	if cs := gs.GetChannelOrThread(channelID); cs != nil || sys.AddChannelToState == nil {
+		return gs, cs
+	}
+
+	sys.AddChannelToState(gs.ID, channelID)
+	if gs = sys.State.GetGuild(gs.ID); gs == nil {
+		return nil, nil
+	}
+
+	return gs, gs.GetChannelOrThread(channelID)
+}
+
 func (sys *System) FillDataLegacyMessage(s *discordgo.Session, m *discordgo.Message) (*Data, error) {
 	var gs *dstate.GuildSet
 	var cs *dstate.ChannelState
@@ -213,7 +230,7 @@ func (sys *System) FillDataLegacyMessage(s *discordgo.Session, m *discordgo.Mess
 			return nil, ErrGuildNotFound
 		}
 
-		cs = gs.GetChannelOrThread(m.ChannelID)
+		gs, cs = sys.fetchChannelOrThread(gs, m.ChannelID)
 		if cs == nil {
 			return nil, ErrChannelNotFound
 		}
@@ -263,7 +280,7 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 			return nil, ErrGuildNotFound
 		}
 
-		cs = gs.GetChannelOrThread(interaction.ChannelID)
+		gs, cs = sys.fetchChannelOrThread(gs, interaction.ChannelID)
 		if cs == nil {
 			return nil, ErrChannelNotFound
 		}

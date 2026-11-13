@@ -436,23 +436,11 @@ func (shard *ShardTracker) handleChannelUpdate(c *discordgo.Channel) {
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
 
-	gs := shard.handleChannelCreateUpdate(c)
-	if gs == nil {
-		return
-	}
-
-	// remove the channel and its threads from state if we lost access to it
-	ms := shard.getMemberLocked(gs.Guild.ID, shard.conf.BotMemberID)
-	if ms == nil {
-		return
-	}
-
-	// cs cannot be nil here, if it is then we have a race condition
-	cs := gs.channel(c.ID)
-	shard.updateChannelAccess(gs, ms, cs)
+	shard.handleChannelCreateUpdate(c)
 }
 
 // channels the bot cannot view are dropped from state, discord sends a full channel update once it can view them again
+// a full update is trusted over our own permission calculation, since the role or member update that granted access can arrive after it
 func (shard *ShardTracker) handleChannelCreateUpdate(c *discordgo.Channel) *SparseGuildState {
 	gs, ok := shard.guilds[c.GuildID]
 	if !ok {
@@ -1060,22 +1048,6 @@ func (shard *ShardTracker) updateAllChannelsAccess(gs *SparseGuildState, ms *Wra
 	}
 
 	shard.removeChannels(gs, removeChannels)
-}
-
-// checks if we have permissions to view the provided channel, and if not remove it and its threads from the state
-// assumes shard is locked
-func (shard *ShardTracker) updateChannelAccess(gs *SparseGuildState, ms *WrappedMember, cs *dstate.ChannelState) {
-	if cs.Type == discordgo.ChannelTypeGuildCategory {
-		return
-	}
-
-	guildPerms := dstate.CalculateBasePermissions(gs.Guild.ID, gs.Guild.OwnerID, gs.Roles, ms.User.ID, ms.Member.Roles)
-	if botHasAccessToChannel(gs, ms, cs, guildPerms) {
-		// no changes needed, we still have access
-		return
-	}
-
-	shard.removeChannels(gs, []int64{cs.ID})
 }
 
 func categoryHasChildren(gs *SparseGuildState, categoryID int64, ignore []int64) bool {

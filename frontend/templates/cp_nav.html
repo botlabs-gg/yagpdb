@@ -365,7 +365,7 @@
         {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
         <li>
             <a data-ga-event="bot_invite_started"
-                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=2253315936217591&guild_id={{$element.ID}}&response_type=code&redirect_uri={{print $baseURL "/manage"}}"><i
+                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=2534790912928247&guild_id={{$element.ID}}&response_type=code&redirect_uri={{print $baseURL "/manage"}}"><i
                     class="fas fa-plus"></i>{{$element.Name}}</a>
         </li>
         {{end}}{{end}}

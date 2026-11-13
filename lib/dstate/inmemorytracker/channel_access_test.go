@@ -80,6 +80,32 @@ func TestObfuscatedChannelUpdateRemovesAndRestores(t *testing.T) {
 	}
 }
 
+func TestChannelUpdateBeforeAccessGrantKeepsChannel(t *testing.T) {
+	const (
+		hiddenChannelID = 40
+		adminRoleID     = 41
+		botID           = initialTestMemberID + 1
+	)
+
+	state := createTestState(TrackerConfig{BotMemberID: botID})
+	state.HandleEvent(testSession, &discordgo.GuildMemberAdd{Member: createTestMember(initialTestGuildID, botID, nil)})
+	state.HandleEvent(testSession, &discordgo.ChannelCreate{Channel: createObfuscatedChannel(initialTestGuildID, hiddenChannelID)})
+
+	// discord sends the full channel before the member update that gave the bot an admin role
+	state.HandleEvent(testSession, &discordgo.ChannelUpdate{Channel: createTestChannel(initialTestGuildID, hiddenChannelID, []*discordgo.PermissionOverwrite{
+		{Type: discordgo.PermissionOverwriteTypeRole, ID: initialTestGuildID, Deny: discordgo.PermissionViewChannel},
+	})})
+	state.HandleEvent(testSession, &discordgo.GuildRoleCreate{GuildRole: &discordgo.GuildRole{
+		GuildID: initialTestGuildID,
+		Role:    &discordgo.Role{ID: adminRoleID, Permissions: discordgo.PermissionAdministrator},
+	}})
+	state.HandleEvent(testSession, &discordgo.GuildMemberUpdate{Member: createTestMember(initialTestGuildID, botID, []int64{adminRoleID})})
+
+	if state.GetGuild(initialTestGuildID).GetChannel(hiddenChannelID) == nil {
+		t.Fatal("channel the bot gained access to should be in state")
+	}
+}
+
 func TestBotRoleUpdateRemovesChannelsWithoutAccess(t *testing.T) {
 	const (
 		categoryID       = 20
