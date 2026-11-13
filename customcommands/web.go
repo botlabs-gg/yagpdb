@@ -1086,7 +1086,7 @@ func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx c
 
 	additionalMessage := ""
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+		additionalMessage = fmt.Sprintf("(You may increase the limit up to %d with YAGPDB premium)", MaxCommandsPremium)
 	}
 	templateData["AdditionalMessage"] = additionalMessage
 }
