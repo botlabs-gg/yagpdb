@@ -1,0 +1,139 @@
+# The debug setup, but with every process in its own container like production instead of a single -all process:
+# the bot, the web, the background workers and one per feed.
+# They only share redis and postgres, so this catches anything that relies on them being in one process.
+#
+# Stop the debug setup first, both use the same bot token:
+#   docker compose -f docker-compose.debug.yml down
+#   docker compose -f docker-compose.split.yml up --build
+#
+# The dashboard is on 5000, delve listens on:
+#   4000 bot, 4001 web, 4002 background workers, 4003 reddit, 4004 youtube, 4005 twitch, 4006 rss
+#
+# Every container builds from the same mounted source, so each writes its binary to its own /tmp to keep them apart.
+
+volumes:
+  db:
+  redis:
+  cert_cache:
+  soundboard:
+
+
+networks:
+  default:
+
+
+x-environment: &environment
+  # the background workers serve http to the other processes, which dial this same address
+  YAGPDB_BGWORKER_HTTP_SERVER_ADDR: bgworker:5004
+
+
+x-yagpdb: &yagpdb
+  build:
+    # We change context so that we can copy the local repo in during
+    # development
+    context: ../
+    dockerfile: yagpdb_docker/Dockerfile.debug
+  restart: unless-stopped
+  depends_on:
+    - nirn
+    - redis
+    - db
+  networks:
+    - default
+  env_file:
+    - app.env
+  environment:
+    <<: *environment
+  volumes:
+    - ..:/app/yagpdb
+  security_opt:
+    - "seccomp:unconfined"
+
+
+services:
+
+  nirn:
+    # Built from source because the published image is amd64 only, and the
+    # amd64 binary segfaults under emulation on arm64 hosts.
+    build: https://github.com/germanoeich/nirn-proxy.git#v1.3.3
+    restart: unless-stopped
+    networks:
+      - default
+
+  bot:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-bot", "--", "-bot" ]
+    environment:
+      <<: *environment
+      # the web finds the bot's internal api through the address it registers in redis,
+      # so it has to listen on its address on the docker network instead of loopback
+      YAGPDB_BOTREST_LISTEN_ADDRESS: bot
+    volumes:
+      - soundboard:/app/soundboard
+      - ..:/app/yagpdb
+    ports:
+      - '4000:4000'
+
+  web:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-web", "--", "-web", "-https=false" ]
+    volumes:
+      - cert_cache:/app/cert
+      - soundboard:/app/soundboard
+      - ..:/app/yagpdb
+    ports:
+      - '5000:5000'
+      - '4001:4000'
+
+  bgworker:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-bgworker", "--", "-backgroundworkers" ]
+    volumes:
+      - soundboard:/app/soundboard
+      - ..:/app/yagpdb
+    ports:
+      - '4002:4000'
+
+  feed-reddit:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-reddit", "--", "-feeds", "reddit" ]
+    ports:
+      - '4003:4000'
+
+  feed-youtube:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-youtube", "--", "-feeds", "youtube" ]
+    ports:
+      - '4004:4000'
+
+  feed-twitch:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-twitch", "--", "-feeds", "twitch" ]
+    ports:
+      - '4005:4000'
+
+  feed-rss:
+    <<: *yagpdb
+    command: [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=/tmp/yagpdb-rss", "--", "-feeds", "rss" ]
+    ports:
+      - '4006:4000'
+
+  redis:
+    image: docker.io/redis
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - redis:/data
+
+  db:
+    image: docker.io/postgres:11
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+    networks:
+      - default
+    env_file:
+      - db.env
