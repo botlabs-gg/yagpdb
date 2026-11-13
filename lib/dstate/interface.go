@@ -150,6 +150,41 @@ func (gs *GuildSet) GetChannelOrThread(id int64) *ChannelState {
 	return gs.GetThread(id)
 }
 
+// BotCanViewInteractionChannel reports whether the bot can view the channel the interaction was used in.
+// Interactions also come from channels the bot cannot view, which are not in state.
+func BotCanViewInteractionChannel(interaction *discordgo.Interaction) bool {
+	if interaction.AppPermissions == 0 {
+		return true
+	}
+
+	return interaction.AppPermissions&(discordgo.PermissionViewChannel|discordgo.PermissionAdministrator) != 0
+}
+
+// WithInteractionChannel returns the channel the interaction was used in, along with the guild containing it.
+// Channels that are not in state, such as ones the bot cannot view, are built from the partial channel in the interaction
+// and only added to a copy of the guild, so commands can still respond through the interaction.
+func (gs *GuildSet) WithInteractionChannel(interaction *discordgo.Interaction) (*GuildSet, *ChannelState) {
+	if cs := gs.GetChannelOrThread(interaction.ChannelID); cs != nil {
+		return gs, cs
+	}
+
+	if interaction.Channel == nil || interaction.Channel.ID != interaction.ChannelID {
+		return gs, nil
+	}
+
+	cs := ChannelStateFromDgo(interaction.Channel)
+	cs.GuildID = gs.ID
+
+	gsCopy := *gs
+	if cs.Type.IsThread() {
+		gsCopy.Threads = append(append(make([]ChannelState, 0, len(gs.Threads)+1), gs.Threads...), cs)
+		return &gsCopy, gsCopy.GetThread(cs.ID)
+	}
+
+	gsCopy.Channels = append(append(make([]ChannelState, 0, len(gs.Channels)+1), gs.Channels...), cs)
+	return &gsCopy, gsCopy.GetChannel(cs.ID)
+}
+
 // IconURL returns a URL to the guild icon.
 //
 //	size: The size of the guild's icon as a power of two

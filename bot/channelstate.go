@@ -6,6 +6,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/karlseguin/ccache"
 )
 
@@ -61,4 +62,18 @@ func claimAddChannelAttempt(channelID int64) bool {
 
 	addChannelAttempts.Set(key, true, addChannelCooldown)
 	return true
+}
+
+// InteractionChannel returns the channel the interaction was used in, along with the guild containing it.
+// Channels the bot can view are added to state when missing, others are built from the partial channel in the interaction,
+// so plugins can still respond through the interaction.
+func InteractionChannel(gs *dstate.GuildSet, interaction *discordgo.Interaction) (*dstate.GuildSet, *dstate.ChannelState) {
+	if gs.GetChannelOrThread(interaction.ChannelID) == nil && dstate.BotCanViewInteractionChannel(interaction) {
+		AddChannelToState(gs.ID, interaction.ChannelID)
+		if updated := State.GetGuild(gs.ID); updated != nil {
+			gs = updated
+		}
+	}
+
+	return gs.WithInteractionChannel(interaction)
 }

@@ -319,7 +319,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 			if t.Message.Message == "Unknown Message" {
 				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
 			} else if t.Response != nil && t.Response.StatusCode == 403 {
-				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
+				return "I am missing permissions to run this command, Discord responded with: " + t.Message.Message
 			}
 
 			return "The bot was not able to perform the action, discord responded with: " + t.Message.Message
@@ -491,7 +491,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, settings *CommandS
 			return false, userPermsErr, nil
 		}
 
-		if userPermsErr := yc.checkRequiredBotPerms(guild, data.ChannelID); userPermsErr != nil {
+		if userPermsErr := yc.checkRequiredBotPerms(guild, data); userPermsErr != nil {
 			return false, userPermsErr, nil
 		}
 	}
@@ -632,13 +632,13 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 	}
 }
 
-func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildSet, channelID int64) *CanExecuteError {
+func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildSet, data *dcmd.Data) *CanExecuteError {
 	// This command has permission sets required, if the user has one of them then allow this command to be used
 	if len(yc.RequireBotPerms) < 1 {
 		return nil
 	}
 
-	perms, err := bot.BotPermissions(gs, channelID)
+	perms, err := botPermissionsIn(gs, data)
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
@@ -674,8 +674,19 @@ OUTER:
 
 	return &CanExecuteError{
 		Type:    ReasonBotMissingPerms,
-		Message: "The bot needs at least one of the following permissions to run this command: " + strings.Join(humanizedPerms, " or "),
+		Message: "I am missing the following permissions in this channel to run this command: " + strings.Join(humanizedPerms, " or "),
 	}
+}
+
+// interactions carry the bot's permissions in the channel, which also covers channels the bot cannot view and are not in state
+func botPermissionsIn(gs *dstate.GuildSet, data *dcmd.Data) (int64, error) {
+	if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+		if perms := data.SlashCommandTriggerData.Interaction.AppPermissions; perms != 0 {
+			return perms, nil
+		}
+	}
+
+	return bot.BotPermissions(gs, data.ChannelID)
 }
 
 func roleNames(gs *dstate.GuildSet) map[int64]string {

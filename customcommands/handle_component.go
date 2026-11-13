@@ -39,7 +39,8 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	cState := evt.GS.GetChannelOrThread(interaction.ChannelID)
+	var cState *dstate.ChannelState
+	evt.GS, cState = bot.InteractionChannel(evt.GS, interaction.Interaction)
 	if cState == nil {
 		return
 	}

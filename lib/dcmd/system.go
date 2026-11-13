@@ -280,7 +280,14 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 			return nil, ErrGuildNotFound
 		}
 
-		gs, cs = sys.fetchChannelOrThread(gs, interaction.ChannelID)
+		if dstate.BotCanViewInteractionChannel(interaction) {
+			gs, _ = sys.fetchChannelOrThread(gs, interaction.ChannelID)
+			if gs == nil {
+				return nil, ErrGuildNotFound
+			}
+		}
+
+		gs, cs = gs.WithInteractionChannel(interaction)
 		if cs == nil {
 			return nil, ErrChannelNotFound
 		}

@@ -43,3 +43,31 @@ func TestAddChannelToState(t *testing.T) {
 		t.Fatalf("expected channel not found, got %v", err)
 	}
 }
+
+func TestInteractionFromHiddenChannel(t *testing.T) {
+	const guildID, channelID = 1, 2
+
+	state := &guildOnlyState{gs: &dstate.GuildSet{GuildState: dstate.GuildState{ID: guildID}}}
+	sys := &System{State: state, AddChannelToState: func(int64, int64) {
+		t.Fatal("channels the bot cannot view should not be fetched")
+	}}
+
+	data, err := sys.FillDataInteraction(nil, &discordgo.Interaction{
+		GuildID:        guildID,
+		ChannelID:      channelID,
+		Channel:        &discordgo.Channel{ID: channelID, Name: "hidden", Type: discordgo.ChannelTypeGuildText},
+		AppPermissions: discordgo.PermissionSendMessages,
+		Member:         &discordgo.Member{User: &discordgo.User{ID: 3}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if data.GuildData.CS == nil || data.GuildData.CS.Name != "hidden" || data.GuildData.GS.GetChannel(channelID) == nil {
+		t.Fatal("the channel from the interaction should be used")
+	}
+
+	if state.gs.GetChannel(channelID) != nil {
+		t.Fatal("the channel from the interaction should not be added to state")
+	}
+}

@@ -190,6 +190,12 @@ type Interaction struct {
 	GuildID       int64           `json:"guild_id,string"`
 	ChannelID     int64           `json:"channel_id,string"`
 
+	// The partial channel the interaction was used in, sent even when the bot cannot view it.
+	Channel *Channel `json:"channel"`
+
+	// The bot's permissions in the channel the interaction was used in.
+	AppPermissions int64 `json:"app_permissions,string"`
+
 	// The message on which interaction was used.
 	// NOTE: this field is only filled when a button click triggered the interaction. Otherwise it will be nil.
 	Message *Message `json:"message"`
