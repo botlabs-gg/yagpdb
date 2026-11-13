@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
@@ -41,27 +42,16 @@ func AddChannelToState(guildID, channelID int64) {
 		return
 	}
 
+	// the state is updated right away so the caller can use the channel, the event then lets the rest of the bot know about it
+	var evt any = &discordgo.ChannelUpdate{Channel: c}
 	if c.Type.IsThread() {
-		stateTracker.HandleEvent(session, &discordgo.ThreadUpdate{Channel: *c})
-	} else {
-		stateTracker.HandleEvent(session, &discordgo.ChannelUpdate{Channel: c})
+		evt = &discordgo.ThreadUpdate{Channel: *c}
 	}
+
+	stateTracker.HandleEvent(session, evt)
+	eventsystem.HandleEvent(session, evt)
 
 	l.Warn("Added channel to state")
-}
-
-func claimAddChannelAttempt(channelID int64) bool {
-	key := discordgo.StrID(channelID)
-
-	addChannelAttemptsMu.Lock()
-	defer addChannelAttemptsMu.Unlock()
-
-	if item := addChannelAttempts.Get(key); item != nil && !item.Expired() {
-		return false
-	}
-
-	addChannelAttempts.Set(key, true, addChannelCooldown)
-	return true
 }
 
 // InteractionChannel returns the channel the interaction was used in, along with the guild containing it.
@@ -76,4 +66,18 @@ func InteractionChannel(gs *dstate.GuildSet, interaction *discordgo.Interaction)
 	}
 
 	return gs.WithInteractionChannel(interaction)
+}
+
+func claimAddChannelAttempt(channelID int64) bool {
+	key := discordgo.StrID(channelID)
+
+	addChannelAttemptsMu.Lock()
+	defer addChannelAttemptsMu.Unlock()
+
+	if item := addChannelAttempts.Get(key); item != nil && !item.Expired() {
+		return false
+	}
+
+	addChannelAttempts.Set(key, true, addChannelCooldown)
+	return true
 }

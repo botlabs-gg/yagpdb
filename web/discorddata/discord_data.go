@@ -32,6 +32,36 @@ func RegisterPlugin() {
 
 var applicationCache = ccache.New(ccache.Configure().MaxSize(10000).ItemsToPrune(100))
 
+func keyEvicted(key string) string {
+	return "evicted:" + key
+}
+
+// evictCached removes the key and remembers when, so a fetch already in flight does not cache what it read
+func evictCached(key string) {
+	applicationCache.Delete(key)
+	applicationCache.Set(keyEvicted(key), time.Now(), time.Minute)
+}
+
+// fetchCached is like applicationCache.Fetch, except a value fetched while the key got evicted is returned without being cached,
+// as it can be older than the change that evicted it
+func fetchCached(key string, ttl time.Duration, fetch func() (any, error)) (any, error) {
+	if item := applicationCache.Get(key); item != nil && !item.Expired() {
+		return item.Value(), nil
+	}
+
+	started := time.Now()
+	value, err := fetch()
+	if err != nil {
+		return nil, err
+	}
+
+	if evicted := applicationCache.Get(keyEvicted(key)); evicted == nil || evicted.Value().(time.Time).Before(started) {
+		applicationCache.Set(key, value, ttl)
+	}
+
+	return value, nil
+}
+
 func keySession(raw string) string {
 	return "discord_session:" + raw
 }
@@ -93,7 +123,7 @@ func keyFullGuild(guildID int64) string {
 //
 // It will will also make sure channels are included in the event we fall back to the discord API
 func GetFullGuild(guildID int64) (*dstate.GuildSet, error) {
-	result, err := applicationCache.Fetch(keyFullGuild(guildID), time.Minute*10, func() (any, error) {
+	result, err := fetchCached(keyFullGuild(guildID), time.Minute*10, func() (any, error) {
 		gs, err := botrest.GetGuild(guildID)
 		if err != nil {
 			// fall back to discord API
@@ -124,7 +154,7 @@ func GetFullGuild(guildID int64) (*dstate.GuildSet, error) {
 		return nil, err
 	}
 
-	return result.Value().(*dstate.GuildSet), nil
+	return result.(*dstate.GuildSet), nil
 }
 
 func keyGuildMember(guildID int64, userID int64) string {
@@ -132,7 +162,7 @@ func keyGuildMember(guildID int64, userID int64) string {
 }
 
 func GetMember(guildID, userID int64) (*discordgo.Member, error) {
-	result, err := applicationCache.Fetch(keyGuildMember(guildID, userID), time.Minute*10, func() (any, error) {
+	result, err := fetchCached(keyGuildMember(guildID, userID), time.Minute*10, func() (any, error) {
 
 		results, err := botrest.GetMembers(guildID, userID)
 
@@ -156,5 +186,5 @@ func GetMember(guildID, userID int64) (*discordgo.Member, error) {
 		return nil, err
 	}
 
-	return result.Value().(*discordgo.Member), nil
+	return result.(*discordgo.Member), nil
 }

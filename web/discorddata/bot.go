@@ -3,6 +3,7 @@ package discorddata
 import (
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 )
 
@@ -15,7 +16,7 @@ func init() {
 		data := event.Data.(*EvictData)
 
 		for _, v := range data.Keys {
-			applicationCache.Delete(v)
+			evictCached(v)
 		}
 	}, EvictData{})
 }
@@ -44,7 +45,18 @@ func (p *Plugin) handleInvalidateGuildCache(evt *eventsystem.EventData) (retry b
 }
 
 func (p *Plugin) handleInvalidateMemberCache(evt *eventsystem.EventData) (retry bool, err error) {
-	PubEvictMember(evt.GS.ID, evt.GuildMemberUpdate().User.ID)
+	if evt.GS == nil {
+		return false, nil
+	}
+
+	userID := evt.GuildMemberUpdate().User.ID
+	if userID == common.BotUser.ID {
+		// the bot's roles decide which channels are in the guild
+		pubEvictCache(keyGuildMember(evt.GS.ID, userID), keyFullGuild(evt.GS.ID))
+		return false, nil
+	}
+
+	PubEvictMember(evt.GS.ID, userID)
 	return false, nil
 }
 
