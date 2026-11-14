@@ -36,7 +36,7 @@
                 </a>
             </li>
             <li>
-                <a href="/manage" class="notification-icon" data-toggle="tooltip" data-placement="bottom" title=""
+                <a href="/news" class="notification-icon" data-toggle="tooltip" data-placement="bottom" title=""
                     data-original-title="News and updates">
                     <i class="far fa-newspaper"></i>
                 </a>
@@ -263,7 +263,19 @@
                         </ul>
                     </li>
                     {{end}}
-                    <li class="mt-5">
+                    <li{{if and .ActiveGuild .IsAdmin}} class="mt-5"{{end}}>
+                        <a class="nav-link" href="/manage">
+                            <i class="fas fa-server" aria-hidden="true"></i>
+                            <span>Your servers</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="/news">
+                            <i class="far fa-newspaper" aria-hidden="true"></i>
+                            <span>News and Updates</span>
+                        </a>
+                    </li>
+                    <li>
                         <a class="nav-link" href="https://help.yagpdb.xyz/" target="_blank">
                             <i class="fas fa-question" aria-hidden="true"></i>
                             <span>Documentation</span>

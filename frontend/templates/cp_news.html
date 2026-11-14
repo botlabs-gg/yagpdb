@@ -1,0 +1,70 @@
+{{define "cp_news"}}
+
+{{template "cp_head" .}}
+<header class="page-header"><h2>News and Updates</h2></header>
+<div class="row">
+    <div class="col-lg-8">
+        {{range $i, $post := .Posts}}
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title float-left"><img class="avatar mr-2" src="{{$post.Message.Author.AvatarURL "256"}}">{{$post.AuthorName}}</h2>
+                <span class="float-right" data-toggle="tooltip" title="{{$post.ParsedTimestamp.Format "02 Jan 2006 15:04"}}">{{humanizeTimeSinceDays $post.ParsedTimestamp}} ago</span>
+            </header>
+            <div class="card-body">
+                {{if eq $i 0}}
+                {{template "cp_news_body" $post}}
+                {{else}}
+                <details>
+                    <summary>{{if $post.Summary}}{{$post.Summary}}{{else}}Read more{{end}}</summary>
+                    <div class="mt-3">{{template "cp_news_body" $post}}</div>
+                </details>
+                {{end}}
+            </div>
+        </section>
+        {{else}}
+        <section class="card">
+            <div class="card-body">There are no news posts yet.</div>
+        </section>
+        {{end}}
+    </div>
+    <div class="col-lg-4">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Need help?</h2>
+            </header>
+            <div class="card-body">
+                <p><a href="https://help.yagpdb.xyz/" target="_blank" rel="noopener"><i class="fas fa-question mr-2"></i>Documentation</a></p>
+                <p><a href="https://discord.gg/4udtcA5" target="_blank" rel="noopener"><i class="fab fa-discord mr-2"></i>Support server</a></p>
+                <p class="mb-0"><a href="https://github.com/botlabs-gg/yagpdb" target="_blank" rel="noopener"><i class="fab fa-github mr-2"></i>YAGPDB is open source on GitHub</a></p>
+            </div>
+        </section>
+        {{if .patreonActive}}
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Thanks to our patrons!</h2>
+            </header>
+            <div class="card-body">
+                {{range .activePatrons}}
+                <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="{{.Name}}">
+                {{end}}
+                {{if .MorePatrons}}<p class="mt-2">and {{.MorePatrons}} more</p>{{end}}
+                <p class="mt-2 mb-0">A Patreon subscription gives you premium slots to assign to servers, see <a href="/premium-perks">the premium page</a>.</p>
+            </div>
+        </section>
+        {{end}}
+    </div>
+</div>
+
+{{template "cp_footer" .}}
+
+{{end}}
+
+{{define "cp_news_body"}}
+{{.RenderedBody}}
+{{range .RenderedEmbeds}}
+<div class="pl-3 my-2" style="border-left: 4px solid {{if ne .ColorHex ""}}{{.ColorHex}}{{else}}#4f545c{{end}};">
+    {{.Content}}
+    {{if ne .ImageURL ""}}<img class="img-fluid" src="{{.ImageURL}}">{{end}}
+</div>
+{{end}}
+{{end}}

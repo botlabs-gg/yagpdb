@@ -1,80 +1,98 @@
 {{define "cp_selectserver"}}
 
 {{template "cp_head" .}}
-<header class="page-header"><h2>News and Updates</h2></header>
-<div class="row">
-    <div class="col-lg-7">
+<header class="page-header"><h2>Your servers</h2></header>
 
-        {{if .Posts}}
-        {{range .Posts}}
-        <secton class="card">
-            <header class="card-header">
-                <h2 class="card-title float-left"><img class="avatar mr-2" src="{{.Message.Author.AvatarURL "256"}}"></img>{{.AuthorName}}</h2>
-                <span class="float-right">{{humanizeTimeSinceDays .ParsedTimestamp}} ago ({{.ParsedTimestamp.Format "02 Jan 06 15:04"}})</span>
-            </header>
-            <div class="card-body">
-                {{.RenderedBody}}
-                {{range .RenderedEmbeds}}
-                <div class="col-auto" style="border-left: 5px solid {{if ne .ColorHex ""}}{{.ColorHex}}{{else}}black{{end}};">
-                    {{.Content}}
-                    {{if ne .ImageURL ""}}<img src="{{.ImageURL}}">{{end}}
-                </div>
-                {{end}}
-            </div>
-        </secton>
-        {{end}}
-
-        <p>
-        {{if .CurrentPostsOffset}}
-        <a class="btn btn-default" href="/manage?offset={{.PreviousPostsOffset}}">Newer Posts</a>
-        {{end}}
-        {{if .NextPostsOffset}}
-        <a class="btn btn-default" href="/manage?offset={{.NextPostsOffset}}">Older Posts</a>
-        {{end}}
-        {{end}}
-        </p>
+{{with .LatestPost}}
+<div class="alert alert-info d-flex align-items-center">
+    <i class="far fa-newspaper mr-3"></i>
+    <div class="flex-grow-1 text-truncate">
+        <strong>What's new</strong> ({{humanizeTimeSinceDays .ParsedTimestamp}} ago){{if .Summary}}: {{.Summary}}{{end}}
     </div>
-    <!-- /.col-lg-6 -->
-    <div class="col-lg-5">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Information</h2>
-            </header>
-            <div class="card-body">
-                <p>To add this bot to your server, click login in the upper right corner, then afterwards select it in the "select server" dropdown up top.</p>
-                <p>Make sure you have manage server permissions and that you are logged into the right account.</p>
-                <p>Afterwards, explore a little to get familiar with the interface and the features it provides.</p>
-                <p>If you stumble into any issues and need help, join the <a href="https://discord.gg/4udtcA5">support server</a>.</p>
-            </div>
-        </section>
-        {{if .patreonActive}}
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Thanks to our patrons!</h2>
-            </header>
-            <div class="card-body">
-                {{range .activePatrons}}{{if ge .AmountCents 1000}}
-                <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{.Name}}"></img>
-                {{end}}{{end}}
-                <br>
-                <p>Only showing patrons with subscription above $10</p>
-                <p>Patreon subscription will grant you premium slots you can assign to servers, see <a href="/premium-perks">the premium page</a> for more info.</p>
-            </div>
-        </section>
-        {{end}}
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Check out...</h2>
-            </header>
-            <div class="card-body">
-                <p>YAGPDB is open source! The project is hosted on GitHub here: <a href="https://github.com/botlabs-gg/yagpdb">botlabs-gg/yagpdb</a>.</p>
-                <p>Looking for the YAGPDB <a href="https://discord.gg/4udtcA5">Discord server</a>?</p>
-            </div>
-        </section>
-    </div>
+    <a class="btn btn-sm btn-primary ml-3" href="/news">Read more</a>
 </div>
-<!-- /.row -->
+{{end}}
+
+{{if not .User}}
+<section class="card">
+    <div class="card-body text-center py-5">
+        <h3>Log in to manage your servers</h3>
+        <p>You need the Manage Server permission on a server to set up the bot there.</p>
+        <a class="btn btn-primary btn-lg" href="/login?goto=%2Fmanage"><i class="fab fa-discord mr-2"></i>Login with Discord</a>
+    </div>
+</section>
+{{else if .GuildsFailed}}
+<section class="card">
+    <div class="card-body">
+        Your servers couldn't be loaded right now, try refreshing the page. You can also pick a server from the menu at the top.
+    </div>
+</section>
+{{else if not (or .ConnectedGuilds .InvitableGuilds)}}
+<section class="card">
+    <div class="card-body text-center py-5">
+        <h3>No servers to manage yet</h3>
+        <p>Servers show up here when you own them or have the Manage Server permission on them.<br>
+            Make sure you are logged into the right Discord account.</p>
+        <a class="btn btn-primary" href="/logout">Log in with another account</a>
+    </div>
+</section>
+{{else}}
+
+{{if .ConnectedGuilds}}
+<div class="row">
+    {{range .ConnectedGuilds}}
+    <div class="col-sm-6 col-lg-4 col-xl-3 mb-4">
+        <section class="card h-100 mb-0">
+            <div class="card-body d-flex flex-column">
+                <a class="d-flex align-items-center mb-3 text-reset" href="/manage/{{.ID}}/home">
+                    {{template "cp_selectserver_icon" .}}
+                    <h4 class="m-0 ml-3 text-truncate" title="{{.Name}}">{{.Name}}</h4>
+                </a>
+                <div class="small mb-3">
+                    <a class="mr-2" href="/manage/{{.ID}}/customcommands">Custom commands</a>
+                    <a class="mr-2" href="/manage/{{.ID}}/moderation">Moderation</a>
+                    <a class="mr-2" href="/manage/{{.ID}}/messagecreator">Message creator</a>
+                    <a href="/manage/{{.ID}}/logging/">Logs</a>
+                </div>
+                <a class="btn btn-primary btn-block mt-auto" href="/manage/{{.ID}}/home">Manage</a>
+            </div>
+        </section>
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+{{if .InvitableGuilds}}
+<h3 class="mt-2 mb-3">Add the bot to another server</h3>
+<div class="row">
+    {{range .InvitableGuilds}}
+    <div class="col-sm-6 col-lg-4 col-xl-3 mb-4">
+        <section class="card h-100 mb-0">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    {{template "cp_selectserver_icon" .}}
+                    <h4 class="m-0 ml-3 text-truncate" title="{{.Name}}">{{.Name}}</h4>
+                </div>
+                <a class="btn btn-default btn-block mt-auto" data-ga-event="bot_invite_started" href="{{.InviteURL}}"><i class="fas fa-plus mr-2"></i>Add bot</a>
+            </div>
+        </section>
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+{{end}}
+
+<p class="text-muted">Need help? See the <a href="https://help.yagpdb.xyz/" target="_blank" rel="noopener">documentation</a> or join the <a href="https://discord.gg/4udtcA5" target="_blank" rel="noopener">support server</a>.</p>
 
 {{template "cp_footer" .}}
 
+{{end}}
+
+{{define "cp_selectserver_icon"}}
+{{if .Icon}}
+<img class="rounded-circle flex-shrink-0" width="56" height="56" src="https://cdn.discordapp.com/icons/{{.ID}}/{{.Icon}}?size=128" alt="">
+{{else}}
+<span class="rounded-circle flex-shrink-0 d-inline-flex align-items-center justify-content-center bg-secondary text-white" style="width: 56px; height: 56px;"><i class="fas fa-server"></i></span>
+{{end}}
 {{end}}

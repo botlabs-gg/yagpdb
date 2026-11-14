@@ -15,6 +15,7 @@ import (
 	"slices"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -136,21 +137,98 @@ func SendAddedServerToSetup(inner http.Handler) http.Handler {
 	})
 }
 
+type selectableGuild struct {
+	*common.GuildWithConnected
+	InviteURL string
+}
+
 func HandleSelectServer(w http.ResponseWriter, r *http.Request) any {
+	ctx := r.Context()
+	_, tmpl := GetCreateTemplateData(ctx)
+
+	if posts := discordblog.GetNewestPosts(1); len(posts) > 0 {
+		tmpl["LatestPost"] = &newsPost{Post: posts[0], Summary: postSummary(posts[0].Message.Content)}
+	}
+
+	if ctx.Value(common.ContextKeyUser) == nil {
+		return tmpl
+	}
+
+	guilds, err := GetUserAccessibleGuilds(ctx, false)
+	if err != nil {
+		CtxLogger(ctx).WithError(err).Error("Failed retrieving the user's servers")
+		tmpl["GuildsFailed"] = true
+		return tmpl
+	}
+
+	redirect := url.QueryEscape(BaseURL() + "/manage")
+	var connected, invitable []*selectableGuild
+	for _, g := range guilds {
+		if g.Connected {
+			connected = append(connected, &selectableGuild{GuildWithConnected: g})
+			continue
+		}
+
+		invitable = append(invitable, &selectableGuild{
+			GuildWithConnected: g,
+			InviteURL:          BotInviteURL(g.ID) + "&response_type=code&redirect_uri=" + redirect,
+		})
+	}
+
+	tmpl["ConnectedGuilds"] = connected
+	tmpl["InvitableGuilds"] = invitable
+	return tmpl
+}
+
+type newsPost struct {
+	*discordblog.Post
+	Summary string
+}
+
+const shownPatrons = 18
+
+func HandleNews(w http.ResponseWriter, r *http.Request) any {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
 	if patreon.ActivePoller != nil {
-		patrons := patreon.ActivePoller.GetPatrons()
+		var patrons []*patreon.Patron
+		for _, p := range patreon.ActivePoller.GetPatrons() {
+			if p.AmountCents >= 1000 {
+				patrons = append(patrons, p)
+			}
+		}
+
 		if len(patrons) > 0 {
 			tmpl["patreonActive"] = true
-			tmpl["activePatrons"] = patrons
+			tmpl["MorePatrons"] = max(len(patrons)-shownPatrons, 0)
+			tmpl["activePatrons"] = patrons[:min(len(patrons), shownPatrons)]
 		}
 	}
 
 	posts := discordblog.GetNewestPosts(10)
-	tmpl["Posts"] = posts
+	news := make([]*newsPost, len(posts))
+	for i, p := range posts {
+		news[i] = &newsPost{Post: p, Summary: postSummary(p.Message.Content)}
+	}
+	tmpl["Posts"] = news
 
 	return tmpl
+}
+
+func postSummary(content string) string {
+	for line := range strings.Lines(content) {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		if runes := []rune(line); len(runes) > 120 {
+			return string(runes[:120]) + "..."
+		}
+		return line
+	}
+
+	return ""
 }
 
 func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, error) {

@@ -119,7 +119,7 @@ func loadTemplates() {
 
 	coreTemplates := []string{
 		"templates/index.html", "templates/cp_main.html",
-		"templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html",
+		"templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_news.html", "templates/cp_logs.html",
 		"templates/status.html", "templates/cp_server_home.html", "templates/cp_core_settings.html",
 	}
 
@@ -308,6 +308,9 @@ func setupRoutes() *goji.Mux {
 	selectServerHandler := SendAddedServerToSetup(RenderHandler(HandleSelectServer, "cp_selectserver"))
 	RootMux.Handle(pat.Get("/manage"), selectServerHandler)
 	RootMux.Handle(pat.Get("/manage/"), selectServerHandler)
+	newsHandler := RenderHandler(HandleNews, "cp_news")
+	RootMux.Handle(pat.Get("/news"), newsHandler)
+	RootMux.Handle(pat.Get("/news/"), newsHandler)
 	RootMux.Handle(pat.Get("/status"), ControllerHandler(HandleStatusHTML, "cp_status"))
 	RootMux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatusHTML, "cp_status"))
 	RootMux.Handle(pat.Get("/status.json"), APIHandler(HandleStatusJSON))
