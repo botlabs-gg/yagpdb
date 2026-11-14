@@ -952,14 +952,19 @@
     function renderEmbed(e) {
         let box = div("mc-embed");
         box.style.borderLeftColor = (typeof e.color === "number") ? intToHex(e.color) : "#4f545c";
+        let top = div("mc-embed-top");
+        let main = div("mc-embed-main");
+        top.appendChild(main);
+        if (e.thumbnail && e.thumbnail.url) top.appendChild(img(e.thumbnail.url, "mc-embed-thumb"));
+        box.appendChild(top);
         if (e.author && e.author.name) {
             let a = div("mc-embed-author");
             if (e.author.icon_url) a.appendChild(img(e.author.icon_url, "mc-embed-author-icon"));
             a.appendChild(span(e.author.name));
-            box.appendChild(a);
+            main.appendChild(a);
         }
-        if (e.title) box.appendChild(div("mc-embed-title", e.title)); // titles render no markdown on Discord
-        if (e.description) { let d = div("mc-embed-desc"); d.appendChild(renderMarkdown(e.description)); box.appendChild(d); }
+        if (e.title) main.appendChild(div("mc-embed-title", e.title)); // titles render no markdown on Discord
+        if (e.description) { let d = div("mc-embed-desc"); d.appendChild(renderMarkdown(e.description)); main.appendChild(d); }
         if (e.fields && e.fields.length) {
             let grid = div("mc-embed-fields");
             e.fields.forEach(function (f) {
@@ -968,10 +973,9 @@
                 let fv = div("mc-embed-field-value"); fv.appendChild(renderMarkdown(f.value || ""));
                 fd.appendChild(fn); fd.appendChild(fv); grid.appendChild(fd);
             });
-            box.appendChild(grid);
+            main.appendChild(grid);
         }
         if (e.image && e.image.url) box.appendChild(img(e.image.url, "mc-embed-image"));
-        if (e.thumbnail && e.thumbnail.url) box.appendChild(img(e.thumbnail.url, "mc-embed-thumb"));
         if (e.footer && (e.footer.text || e.timestamp)) {
             let f = div("mc-embed-footer");
             if (e.footer.icon_url) f.appendChild(img(e.footer.icon_url, "mc-embed-footer-icon"));
