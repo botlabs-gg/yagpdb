@@ -98,6 +98,18 @@
                             The command will run when a role is assigned to or removed from a member,
                             <b>has a cooldown of 5 minutes per user-role combination, reduced to 1 minute for premium servers</b>
                           </small>
+                          {{else if eq .CC.TriggerType 12}}
+                          <small id="trigger-desc-slash_command">
+                            Creates a Slash command, trigger name must not be same as an inbuilt slash command.
+                          </small>
+                          {{else if eq .CC.TriggerType 13}}
+                          <small id="trigger-desc-user_context_menu">
+                            Adds a command to the right-click menu on users.
+                          </small>
+                          {{else if eq .CC.TriggerType 14}}
+                          <small id="trigger-desc-message_context_menu">
+                            Adds a command to the right-click (Apps) menu on messages.
+                          </small>
                           {{end}}
                         </div>
                       </div>
@@ -295,6 +307,38 @@
                 </div>
               </div>
               {{end}}
+              {{if eq .CC.TriggerType 12 13 14}}
+              <div id="cc-application-command-details" class="col-lg-8">
+                <div class="row">
+                  <div class="form-group col-lg-6">
+                    <label>Command name</label>
+                    <input type="text" class="form-control" disabled value="{{.CC.TextTrigger}}">
+                  </div>
+                  <div class="form-group col-lg-6">
+                    <label>Defer a response when triggered</label>
+                    <input type="text" class="form-control" disabled
+                      value="{{if eq .CC.InteractionDeferMode 1}}Message Response{{else if eq .CC.InteractionDeferMode 2}}Ephemeral Message Response{{else if eq .CC.InteractionDeferMode 3}}Update Message Response{{else}}None{{end}}">
+                  </div>
+                </div>
+                {{if eq .CC.TriggerType 12}}
+                <div class="row">
+                  <div class="form-group col-lg-12">
+                    <label>Description</label>
+                    <input type="text" class="form-control" disabled value="{{call .GetCCSlashDescription .CC}}">
+                  </div>
+                </div>
+                {{if call .GetCCSlashUseSubcommands .CC}}
+                {{range call .GetCCSlashSubcommands .CC}}
+                <h5 class="mt-2"><code>/{{$dot.CC.TextTrigger}} {{.Name}}</code> <small>{{.Description}}</small></h5>
+                {{template "cc_public_slash_options" .Options}}
+                {{end}}
+                {{else}}
+                <label>Options</label>
+                {{template "cc_public_slash_options" (call .GetCCSlashOptions .CC)}}
+                {{end}}
+                {{end}}
+              </div>
+              {{end}}
             </div>
             <div class="row mt-3">
               <div class="col-lg-4">
@@ -483,4 +527,39 @@
 
 {{template "cp_footer" .}}
 
+{{end}}
+
+{{define "cc_public_slash_options"}}
+{{if .}}
+<div class="table-responsive">
+  <table class="table table-striped table-sm">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Required</th>
+        <th>Description</th>
+        <th>Choices / Limits</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .}}
+      <tr>
+        <td><code>{{.Name}}</code></td>
+        <td>{{.TypeLabel}}</td>
+        <td>{{if .Required}}Yes{{else}}No{{end}}</td>
+        <td>{{.Description}}</td>
+        <td>
+          {{range $i, $c := .Choices}}{{if $i}}, {{end}}<code>{{$c}}</code>{{end}}
+          {{with .MinValue}}Min: {{.}} {{end}}{{with .MaxValue}}Max: {{.}} {{end}}
+          {{with .MinLength}}Min length: {{.}} {{end}}{{with .MaxLength}}Max length: {{.}}{{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<p><small>No options.</small></p>
+{{end}}
 {{end}}

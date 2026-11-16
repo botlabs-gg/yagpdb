@@ -87,6 +87,7 @@
 
 {{template "cp_alerts" .}}
 
+{{if .CC}}
 <style>
     .cc-editor {
       font-family: Consolas, monospace;
@@ -1694,6 +1695,7 @@
 		    return true;
         });
 </script>
+{{end}}
 
 {{template "cp_footer" .}}
 

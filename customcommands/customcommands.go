@@ -564,12 +564,13 @@ func validateContextMenuData(guildID int64, name string, triggerType CommandTrig
 
 	enabledCount := 0
 	for _, e := range existing {
-		if strings.EqualFold(strings.TrimSpace(e.TextTrigger), name) {
-			return false, "Another context menu command of this type in this server already uses that name"
+		if e.Disabled {
+			continue
 		}
-		if !e.Disabled {
-			enabledCount++
+		if isEnabled && strings.EqualFold(strings.TrimSpace(e.TextTrigger), name) {
+			return false, "Another enabled context menu command of this type in this server already uses that name"
 		}
+		enabledCount++
 	}
 
 	max := MaxContextMenuForContext(guildID)
@@ -635,6 +636,21 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 	return true
 }
 
+// applicationCommandConflict returns why a slash or context menu command can't be
+// enabled in its guild right now, or "" if nothing blocks it.
+func applicationCommandConflict(cc *models.CustomCommand) string {
+	triggerType := CommandTriggerType(cc.TriggerType)
+	if triggerType == CommandTriggerSlash {
+		_, msg := validateSlashCommandData(cc.GuildID, cc.TextTrigger, parseSlashCommandData(cc), cc.LocalID, true)
+		return msg
+	}
+	if IsContextMenuTrigger(triggerType) {
+		_, msg := validateContextMenuData(cc.GuildID, cc.TextTrigger, triggerType, cc.LocalID, true)
+		return msg
+	}
+	return ""
+}
+
 // validateSlashCommandData enforces Discord's slash command rules and the per-guild
 // name-uniqueness and count limits. It is shared by the editor form and the import
 // path so both reject invalid/duplicate commands. currentLocalID is the local_id of
@@ -694,12 +710,13 @@ func validateSlashCommandData(guildID int64, name string, data slashCommandData,
 
 	enabledCount := 0
 	for _, e := range existing {
-		if strings.EqualFold(e.TextTrigger, name) {
+		if e.Disabled {
+			continue
+		}
+		if isEnabled && strings.EqualFold(e.TextTrigger, name) {
 			return false, "Another slash command in this server already uses that name"
 		}
-		if !e.Disabled {
-			enabledCount++
-		}
+		enabledCount++
 	}
 
 	maxSlash := MaxSlashCommandForContext(guildID)
