@@ -635,6 +635,21 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 	return true
 }
 
+// applicationCommandConflict returns why a slash or context menu command can't be
+// enabled in its guild right now, or "" if nothing blocks it.
+func applicationCommandConflict(cc *models.CustomCommand) string {
+	triggerType := CommandTriggerType(cc.TriggerType)
+	if triggerType == CommandTriggerSlash {
+		_, msg := validateSlashCommandData(cc.GuildID, cc.TextTrigger, parseSlashCommandData(cc), cc.LocalID, true)
+		return msg
+	}
+	if IsContextMenuTrigger(triggerType) {
+		_, msg := validateContextMenuData(cc.GuildID, cc.TextTrigger, triggerType, cc.LocalID, true)
+		return msg
+	}
+	return ""
+}
+
 // validateSlashCommandData enforces Discord's slash command rules and the per-guild
 // name-uniqueness and count limits. It is shared by the editor form and the import
 // path so both reject invalid/duplicate commands. currentLocalID is the local_id of

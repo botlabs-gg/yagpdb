@@ -141,6 +141,13 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 	}
 	tmplCtx.Data["SubCommand"] = subName
 
+	subMentions := make(templates.SDict, len(stored.Subcommands))
+	for _, s := range stored.Subcommands {
+		name := strings.ToLower(s.Name)
+		subMentions[name] = fmt.Sprintf("</%s %s:%d>", data.Name, name, data.ID)
+	}
+	tmplCtx.Data["SubCommandMentions"] = subMentions
+
 	provided := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(leafOptions))
 	for _, o := range leafOptions {
 		provided[strings.ToLower(o.Name)] = o
