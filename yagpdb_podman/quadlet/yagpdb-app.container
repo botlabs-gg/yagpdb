@@ -1,0 +1,22 @@
+[Unit]
+Description=Yagpdb-App
+After=yagpdb-valkey.service yagpdb-build.service
+Requires=yagpdb-valkey.service
+[Container]
+Image=localhost/yagpdb:latest
+ContainerName=yagpdb-app
+Network=yagpdb.network
+EnvironmentFile=%h/.config/containers/systemd/yagpdb-app.env
+
+Exec=-all -pa -exthttps=false -https=true #Adjust to "-all -pa -exthttps=true -https=false" if using a reverse proxy
+PublishPort=80:80
+PublishPort=443:443
+Volume=yagpdb-soundboard:/app/soundboard
+Volume=yagpdb-cert:/app/cert
+
+AutoUpdate=local
+[Service]
+Restart=on-failure
+RestartSec=15
+[Install]
+WantedBy=default.target
