@@ -565,6 +565,10 @@ $(function(){
             break;
         }
 
+        if(opt.Help){
+            column.append($("<p class='help-block mb-0'>").text(opt.Help))
+        }
+
         cell.append(wrapper);
     }
 
@@ -657,6 +661,7 @@ $(function(){
                         <label for="am-{{$name}}" class="tgl-btn mb-0"></label>
                     </div>
                     {{end}}
+                    {{if .Help}}<p class="help-block mb-0">{{.Help}}</p>{{end}}
                 </div>
             </div>
         </div>
