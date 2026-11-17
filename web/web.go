@@ -178,6 +178,7 @@ func Run() {
 	}
 
 	loadAd()
+	loadLandingComponentEmbed()
 
 	logger.Info("Running webservers")
 	runServers(mux)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -65,19 +66,57 @@ func botInviteURL() string {
 		common.ConfClientID.GetString(), BotInvitePermissions)
 }
 
-const landingFeatureList = `### Features
-- **Custom Commands** with a full templating language
-- **Basic & Advanced Automoderator**
-- **Moderation**: warnings, mutes, timeouts, kicks and bans with logging
-- **Role Menus** and self-assignable roles
-- **Feeds**: Reddit, YouTube, RSS, Twitch and Streaming announcements
-- **Notifications**: join, leave and boost messages
-- **Server Stats**, **Logging**, **Tickets**, **Reminders**, **Reputation**, **Verification** and more`
+type landingFeature struct {
+	label   string
+	sysName string
+}
+
+type landingFeatureLine struct {
+	format   string
+	features []landingFeature
+}
+
+var landingFeatureLines = []landingFeatureLine{
+	{"%s with a full templating language", []landingFeature{{"**Custom Commands**", "custom_commands"}}},
+	{"%s", []landingFeature{{"**Basic Automoderator**", "legacy_automod"}, {"**Advanced Automoderator**", "automod_v2"}}},
+	{"%s: warnings, mutes, timeouts, kicks and bans with logging", []landingFeature{{"**Moderation**", "moderation"}}},
+	{"%s and self-assignable roles", []landingFeature{{"**Role Menus**", "role_commands"}}},
+	{"**Feeds**: %s", []landingFeature{{"Reddit", "reddit"}, {"YouTube", "youtube"}, {"RSS", "rss"}, {"Twitch", "twitch"}, {"Streaming announcements", "streaming"}}},
+	{"%s: join, leave and boost messages", []landingFeature{{"**Notifications**", "notifications"}}},
+	{"%s and more", []landingFeature{{"**Server Stats**", "server_stats"}, {"**Logging**", "logging"}, {"**Tickets**", "tickets"}, {"**Reminders**", "reminders"}, {"**Reputation**", "reputation"}, {"**Verification**", "verification"}}},
+}
+
+func landingFeatureList() string {
+	var lines []string
+	for _, line := range landingFeatureLines {
+		var active []string
+		for _, f := range line.features {
+			if common.PluginActive(f.sysName) {
+				active = append(active, f.label)
+			}
+		}
+		if len(active) > 0 {
+			lines = append(lines, "- "+fmt.Sprintf(line.format, joinWithAnd(active)))
+		}
+	}
+
+	if len(lines) == 0 {
+		return ""
+	}
+	return "### Features\n" + strings.Join(lines, "\n")
+}
+
+func joinWithAnd(items []string) string {
+	if len(items) < 2 {
+		return strings.Join(items, "")
+	}
+	return strings.Join(items[:len(items)-1], ", ") + " and " + items[len(items)-1]
+}
 
 func landingComponentEmbed() ComponentEmbed {
 	base := BaseURL()
 
-	return ComponentEmbed{Component: discordgo.Container{
+	embed := ComponentEmbed{Component: discordgo.Container{
 		AccentColor: yagpdbAccentColor,
 		Components: []discordgo.TopLevelComponent{
 			discordgo.Section{
@@ -87,31 +126,44 @@ func landingComponentEmbed() ComponentEmbed {
 				Accessory: discordgo.Thumbnail{Media: discordgo.UnfurledMediaItem{URL: base + "/static/icons/android-chrome-512x512.png"}},
 			},
 			discordgo.Separator{Spacing: discordgo.SeparatorSpacingSmall},
-			discordgo.TextDisplay{Content: landingFeatureList},
-			discordgo.Separator{Spacing: discordgo.SeparatorSpacingSmall},
-			discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{
-				LinkButton("Add to Server", botInviteURL()),
-				LinkButton("Documentation", "https://help.yagpdb.xyz"),
-				LinkButton("Premium", base+"/premium-perks"),
-				LinkButton("GitHub", "https://github.com/botlabs-gg/yagpdb"),
-			}},
 		},
 	}}
+
+	if features := landingFeatureList(); features != "" {
+		embed.Component.Components = append(embed.Component.Components,
+			discordgo.TextDisplay{Content: features},
+			discordgo.Separator{Spacing: discordgo.SeparatorSpacingSmall},
+		)
+	}
+
+	embed.Component.Components = append(embed.Component.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{
+		LinkButton("Add to Server", botInviteURL()),
+		LinkButton("Documentation", "https://help.yagpdb.xyz"),
+		LinkButton("Premium", base+"/premium-perks"),
+		LinkButton("GitHub", "https://github.com/botlabs-gg/yagpdb"),
+	}})
+
+	return embed
+}
+
+var landingComponentEmbedJSON []byte
+
+func loadLandingComponentEmbed() {
+	encoded, err := landingComponentEmbed().Encode()
+	if err != nil {
+		logger.WithError(err).Error("failed encoding the landing page component embed")
+		return
+	}
+	landingComponentEmbedJSON = encoded
 }
 
 func HandleLandingComponentEmbed(w http.ResponseWriter, r *http.Request) {
-	serveComponentEmbed(w, r, landingComponentEmbed())
-}
-
-func serveComponentEmbed(w http.ResponseWriter, r *http.Request, embed ComponentEmbed) {
-	encoded, err := embed.Encode()
-	if err != nil {
-		CtxLogger(r.Context()).WithError(err).Error("failed encoding component embed")
-		http.Error(w, "failed encoding component embed", http.StatusInternalServerError)
+	if landingComponentEmbedJSON == nil {
+		http.NotFound(w, r)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/vnd.discord.component-embed+json")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	w.Write(encoded)
+	w.Write(landingComponentEmbedJSON)
 }
