@@ -82,7 +82,7 @@ func landingComponentEmbed() ComponentEmbed {
 		Components: []discordgo.TopLevelComponent{
 			discordgo.Section{
 				Components: []discordgo.SectionComponentPart{
-					discordgo.TextDisplay{Content: fmt.Sprintf("# [YAGPDB](%s)\nYet Another General Purpose Discord Bot. Configure everything from the web control panel.", base)},
+					discordgo.TextDisplay{Content: fmt.Sprintf("# [YAGPDB](%s)\nThe most powerful and customizable discord bot ever created", base)},
 				},
 				Accessory: discordgo.Thumbnail{Media: discordgo.UnfurledMediaItem{URL: base + "/static/icons/android-chrome-512x512.png"}},
 			},
