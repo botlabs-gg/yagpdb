@@ -412,6 +412,7 @@ func setupRootMux() {
 
 	// General handlers
 	mux.Handle(pat.Get("/"), ControllerHandler(HandleLandingPage, "index"))
+	mux.HandleFunc(pat.Get("/component-embed.json"), HandleLandingComponentEmbed)
 	mux.HandleFunc(pat.Get("/login"), HandleLogin)
 	mux.HandleFunc(pat.Get("/confirm_login"), HandleConfirmLogin)
 	mux.HandleFunc(pat.Get("/logout"), HandleLogout)

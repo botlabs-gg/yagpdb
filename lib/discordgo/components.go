@@ -503,8 +503,12 @@ func (Section) IsModalSupported() bool {
 
 func GetTextDisplayContent(component TopLevelComponent) (contents []string) {
 	switch typed := component.(type) {
-	case ActionsRow:
-		return
+	case *Section:
+		return GetTextDisplayContent(*typed)
+	case *Container:
+		return GetTextDisplayContent(*typed)
+	case *TextDisplay:
+		return GetTextDisplayContent(*typed)
 	case Section:
 		for _, c := range typed.Components {
 			comp, ok := c.(TopLevelComponent)

@@ -243,15 +243,16 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 			return errors.New("non top level component passed to message unmarshaller")
 		}
 	}
-
-	if m.Flags&MessageFlagsIsComponentsV2 != 0 {
-		var contents []string
-		for _, c := range m.Components {
-			contents = append(contents, GetTextDisplayContent(c)...)
-		}
-		m.Content = strings.Join(contents, "\n")
-	}
 	return err
+}
+
+// TextContents returns the content of every text display in the message's components, in order.
+func (m *Message) TextContents() []string {
+	var contents []string
+	for _, c := range m.Components {
+		contents = append(contents, GetTextDisplayContent(c)...)
+	}
+	return contents
 }
 
 // Custom UnmarshalJSON for MessageSend to support v2 components
@@ -515,6 +516,7 @@ type MessageEmbed struct {
 	Provider    *MessageEmbedProvider  `json:"provider,omitempty"`
 	Author      *MessageEmbedAuthor    `json:"author,omitempty"`
 	Fields      []*MessageEmbedField   `json:"fields,omitempty"`
+	Components  []TopLevelComponent    `json:"components,omitempty"`
 	Flags       MessageEmbedFlags      `json:"flags,omitempty"`
 
 	//flag that tells the marshaller to marshal struct as nil
@@ -537,6 +539,35 @@ func (e *MessageEmbed) MarshalJSON() ([]byte, error) {
 	}
 	type EmbedAlias MessageEmbed
 	return json.Marshal(&struct{ *EmbedAlias }{EmbedAlias: (*EmbedAlias)(e)})
+}
+
+func (e *MessageEmbed) UnmarshalJSON(data []byte) error {
+	type embedAlias MessageEmbed
+	var v struct {
+		embedAlias
+		RawComponents []unmarshalableMessageComponent `json:"components"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	*e = MessageEmbed(v.embedAlias)
+	e.Components = nil
+	for _, raw := range v.RawComponents {
+		if comp, ok := raw.MessageComponent.(TopLevelComponent); ok {
+			e.Components = append(e.Components, comp)
+		}
+	}
+	return nil
+}
+
+// TextContents returns the content of every text display in a component embed, in order.
+func (e *MessageEmbed) TextContents() []string {
+	var contents []string
+	for _, c := range e.Components {
+		contents = append(contents, GetTextDisplayContent(c)...)
+	}
+	return contents
 }
 
 // MessageReactions holds a reactions object for a message.
