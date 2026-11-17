@@ -5,6 +5,7 @@ package serverstats
 import (
 	"context"
 	"database/sql"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,6 +29,10 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 		SysName:  "server_stats",
 		Category: common.PluginCategoryMisc,
 	}
+}
+
+func (p *Plugin) IsActive() bool {
+	return !confDeprecated.GetBool() && os.Getenv("YAGPDB_SERVERSTATS_DISABLE_SERVERSTATS") == ""
 }
 
 var logger = common.GetPluginLogger(&Plugin{})

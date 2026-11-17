@@ -77,6 +77,11 @@ func ValidateComplexMessageEmbeds(embeds []*MessageEmbed) []*MessageEmbed {
 		if e == nil || IsEmbedEmpty(e) {
 			totalNils++
 		} else {
+			if len(e.Components) > 0 {
+				stripped := *e
+				stripped.Components = nil
+				e = &stripped
+			}
 			if e.Type != "" {
 				e.Type = "rich"
 			}
