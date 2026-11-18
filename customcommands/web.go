@@ -369,6 +369,7 @@ func serveGroupSelected(r *http.Request, templateData web.TemplateData, groupID 
 	templateData["GetCCSlashDescription"] = tmplGetCCSlashDescription
 	templateData["GetCCSlashUseSubcommands"] = tmplGetCCSlashUseSubcommands
 	templateData["GetCCSlashSubcommands"] = tmplGetCCSlashSubcommands
+	templateData["NewSlashOption"] = SlashOptionView{TypeKey: "string"}
 
 	// Whether the guild has already reached the free-tier slash command limit, used
 	// to decide when to surface the premium nudge in the slash command editor.

@@ -22,21 +22,27 @@
                                                             <option value="mentionable" {{if eq .Opt.TypeKey "mentionable"}}selected{{end}}>Mentionable</option>
                                                         </select>
                                                     </div>
-                                                    <div class="col-12 col-md-4 mb-2 mb-md-0">
+                                                    <div class="col-12 col-md-3 mb-2 mb-md-0">
                                                         <label class="small mb-1">Description</label>
                                                         <input type="text" class="form-control" data-slash-field="description" name="{{.Prefix}}.description" maxlength="100" placeholder="description" value="{{.Opt.Description}}">
                                                     </div>
                                                     <div class="col-6 col-md-2 mb-2 mb-md-0">
-                                                        {{checkbox (printf "%s.required" .Prefix) .ReqID "Required" .Opt.Required "data-slash-field=required"}}
+                                                        <div class="form-group d-flex align-items-center mb-0 slash-option-required">
+                                                            <input type="checkbox" class="tgl tgl-flat tgl-sm" data-slash-field="required" name="{{.Prefix}}.required" id="{{.ReqID}}" {{if .Opt.Required}}checked{{end}}>
+                                                            <label class="tgl-btn mb-0" for="{{.ReqID}}"></label>
+                                                            <span class="tgl-desc ml-2">Required</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="col-6 col-md-1 text-right">
-                                                        <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
+                                                    <div class="col-6 col-md-2 text-right text-nowrap">
+                                                        <button type="button" class="btn btn-default btn-sm slash-option-move-up" title="Move up"><i class="fas fa-arrow-up"></i></button>
+                                                        <button type="button" class="btn btn-default btn-sm slash-option-move-down" title="Move down"><i class="fas fa-arrow-down"></i></button>
+                                                        <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove option"><i class="fas fa-minus"></i></button>
                                                     </div>
                                                 </div>
                                                 <div class="form-row slash-opt-extra-choices mt-2 {{if and (ne .Opt.TypeKey "string_menu") (ne .Opt.TypeKey "integer_menu") (ne .Opt.TypeKey "number_menu")}}hidden{{end}}">
                                                     <div class="col-12">
-                                                        <label class="small mb-1">Choices - one per line (turns this into a dropdown / select menu). For Integer/Number arguments each line must be a number.</label>
-                                                        <textarea class="form-control" data-slash-field="choices" name="{{.Prefix}}.choices" rows="3" placeholder="Leave empty for free input">{{range .Opt.Choices}}{{.}}
+                                                        <label class="small mb-1">Choices - one per line (max 25). For Integer/Number options each line must be a number.</label>
+                                                        <textarea class="form-control" data-slash-field="choices" name="{{.Prefix}}.choices" rows="3" placeholder="One choice per line">{{range .Opt.Choices}}{{.}}
 {{end}}</textarea>
                                                     </div>
                                                 </div>
@@ -458,7 +464,7 @@
                                         </div>
                                         <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add Option</button>
                                         <small id="slash-option-limit-msg" class="form-text text-muted hidden">You've reached a maximum of 25 options.</small>
-                                        <small class="form-text text-muted">Required Options are automatically ordered before optional ones by discord</small>
+                                        <small class="form-text text-muted">Required options are always placed before optional ones; the order you set is kept within each group.</small>
                                         </div>
                                     </div>
                                 </div>
@@ -538,86 +544,7 @@
                                     </div>
                                 </template>
                                 <template id="slash-option-template">
-                                    <div class="slash-option-row mb-3">
-                                        <div class="form-row align-items-end">
-                                            <div class="col-12 col-md-3 mb-2 mb-md-0">
-                                                <label class="small mb-1">Name</label>
-                                                <input type="text" class="form-control" data-slash-field="name" maxlength="32" placeholder="name">
-                                            </div>
-                                            <div class="col-12 col-md-2 mb-2 mb-md-0">
-                                                <label class="small mb-1">Type</label>
-                                                <select class="form-control slash-option-type-select" data-slash-field="type" onchange="slashOptTypeChanged(this)">
-                                                    <option value="string">Text</option>
-                                                    <option value="string_menu">Text menu (choices)</option>
-                                                    <option value="integer">Integer</option>
-                                                    <option value="integer_menu">Integer menu (choices)</option>
-                                                    <option value="number">Number</option>
-                                                    <option value="number_menu">Number menu (choices)</option>
-                                                    <option value="boolean">True/False</option>
-                                                    <option value="user">User</option>
-                                                    <option value="channel">Channel</option>
-                                                    <option value="role">Role</option>
-                                                    <option value="mentionable">Mentionable</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                                <label class="small mb-1">Description</label>
-                                                <input type="text" class="form-control" data-slash-field="description" maxlength="100" placeholder="description">
-                                            </div>
-                                            <div class="col-6 col-md-2 mb-2 mb-md-0">
-                                                <div class="form-group d-flex align-items-center mb-0">
-                                                    <input type="checkbox" class="tgl tgl-flat tgl-sm" data-slash-field="required">
-                                                    <label class="tgl-btn mb-0"></label>
-                                                    <span class="tgl-desc ml-2">Required</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6 col-md-1 text-right">
-                                                <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
-                                            </div>
-                                        </div>
-                                        <div class="form-row slash-opt-extra-choices mt-2 hidden">
-                                            <div class="col-12">
-                                                <label class="small mb-1">Choices - one per line (max 25). For Integer/Number arguments each line must be a number.</label>
-                                                <textarea class="form-control" data-slash-field="choices" rows="3" placeholder="One choice per line"></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="form-row slash-opt-extra-text mt-2">
-                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                <label class="small mb-1">Min length</label>
-                                                <input type="number" min="0" class="form-control" data-slash-field="min_length">
-                                            </div>
-                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                <label class="small mb-1">Max length</label>
-                                                <input type="number" min="0" class="form-control" data-slash-field="max_length">
-                                            </div>
-                                        </div>
-                                        <div class="form-row slash-opt-extra-number mt-2 hidden">
-                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                <label class="small mb-1">Min value</label>
-                                                <input type="number" step="any" class="form-control" data-slash-field="min_value">
-                                            </div>
-                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                <label class="small mb-1">Max value</label>
-                                                <input type="number" step="any" class="form-control" data-slash-field="max_value">
-                                            </div>
-                                        </div>
-                                        <div class="form-row slash-opt-extra-channel mt-2 hidden">
-                                            <div class="col-12">
-                                                <label class="small mb-1 d-block">Allowed channel types (leave empty to allow any)</label>
-                                                <select class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-slash-field="channel_types">
-                                                    <option value="0">Text</option>
-                                                    <option value="2">Voice</option>
-                                                    <option value="4">Category</option>
-                                                    <option value="5">Announcement</option>
-                                                    <option value="13">Stage</option>
-                                                    <option value="15">Forum</option>
-                                                    <option value="11">Public Thread</option>
-                                                    <option value="12">Private Thread</option>
-                                                    <option value="10">Announcement Thread</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {{template "slashOptionRow" (dict "Prefix" "" "ReqID" "" "Opt" .NewSlashOption)}}
                                 </template>
                             </div>
                             <div id="cc-time-trigger-details" class="hidden col-lg-8">
@@ -1232,6 +1159,8 @@
             }
         });
 
+        slashSyncMoveButtons(rows);
+
         const count = document.getElementById('slash-options-count');
         if (count) count.textContent = rows.length;
 
@@ -1290,6 +1219,38 @@
         $(this).closest('.slash-option-row').remove();
         renumberSlashOptions();
         validateSlashUI();
+    });
+
+    function slashSyncMoveButtons(rows) {
+        rows.forEach((row, i) => {
+            const up = row.querySelector('.slash-option-move-up');
+            const down = row.querySelector('.slash-option-move-down');
+            if (up) up.disabled = i === 0;
+            if (down) down.disabled = i === rows.length - 1;
+        });
+    }
+
+    function slashMoveOptionRow(btn, dir) {
+        const row = btn.closest('.slash-option-row');
+        if (!row) return;
+        if (dir < 0) {
+            const prev = row.previousElementSibling;
+            if (prev && prev.classList.contains('slash-option-row')) row.parentNode.insertBefore(row, prev);
+        } else {
+            const next = row.nextElementSibling;
+            if (next && next.classList.contains('slash-option-row')) row.parentNode.insertBefore(next, row);
+        }
+        if (row.closest('#slash-subcommands-list')) {
+            slashRenumberSubcommands();
+        } else {
+            renumberSlashOptions();
+        }
+        validateSlashUI();
+    }
+
+    $('#slash-options-list, #slash-subcommands-list').on('click', '.slash-option-move-up, .slash-option-move-down', function (e) {
+        e.preventDefault();
+        slashMoveOptionRow(this, $(this).hasClass('slash-option-move-up') ? -1 : 1);
     });
 
     // Ensure field names/ids are consistent on initial load too.
@@ -1354,6 +1315,7 @@
                     lbl.htmlFor = id;
                 }
             });
+            slashSyncMoveButtons(rows);
             const optCount = card.querySelector('.slash-subcommand-optcount');
             if (optCount) optCount.textContent = rows.length;
             const optAtMax = rows.length >= 25;
