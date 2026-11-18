@@ -181,7 +181,7 @@ func applyPremiumSettings(settings *models.ServerPreview, form *PostForm) string
 	}
 
 	customText := strings.TrimSpace(form.CustomText)
-	if err := ValidateCustomText(customText); err != nil {
+	if err := ValidateCustomText(customText, settings.GuildID); err != nil {
 		return "Invalid custom text: " + err.Error()
 	}
 	settings.CustomText = customText
@@ -194,7 +194,7 @@ func applyPremiumSettings(settings *models.ServerPreview, form *PostForm) string
 			buttons = append(buttons, b)
 		}
 	}
-	if err := ValidateButtons(buttons); err != nil {
+	if err := ValidateButtons(buttons, settings.GuildID); err != nil {
 		return "Invalid button: " + err.Error()
 	}
 	encoded, _ := json.Marshal(buttons)

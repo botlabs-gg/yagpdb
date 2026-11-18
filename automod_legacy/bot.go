@@ -106,6 +106,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 	punishMsg := ""
 	highestPunish := PunishNone
 	muteDuration := 0
+	var timeoutDuration time.Duration
 
 	rules := []Rule{config.Spam, config.Invite, config.Mention, config.Links, config.Words, config.Sites}
 
@@ -136,6 +137,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		if punishment > highestPunish {
 			highestPunish = punishment
 			muteDuration = r.GetMuteDuration()
+			timeoutDuration = r.GetTimeoutDuration()
 		}
 	}
 
@@ -166,6 +168,10 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 			err = moderation.WarnUser(nil, cs.GuildID, cs, m, common.BotUser, &member.User, "Automoderator: "+punishMsg, false)
 		case PunishMute:
 			err = moderation.MuteUnmuteUser(nil, true, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration, false)
+		case PunishTimeout:
+			if until := member.Member.CommunicationDisabledUntil; until == nil || !until.After(time.Now()) {
+				err = moderation.TimeoutUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User, timeoutDuration, false)
+			}
 		case PunishKick:
 			err = moderation.KickUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User, -1, false)
 		case PunishBan:

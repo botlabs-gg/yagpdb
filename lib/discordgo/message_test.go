@@ -83,3 +83,43 @@ func TestComponentEmbedUnmarshal(t *testing.T) {
 		t.Errorf("expected components stripped from a copy when sending")
 	}
 }
+
+func TestGetAllTextContents(t *testing.T) {
+	raw := `{"id":"1","content":"look at this",
+		"poll":{"question":{"text":"poll question"},"answers":[{"answer_id":1,"poll_media":{"text":"answer one"}},{"answer_id":2,"poll_media":{"text":"answer two","emoji":{"name":"🔥"}}}],"expiry":"2026-11-18T00:00:00+00:00","allow_multiselect":false,"layout_type":1},
+		"components":[{"type":17,"components":[
+			{"type":10,"content":"cv2 text"},
+			{"type":1,"components":[{"type":2,"style":5,"label":"Open","url":"https://button.example"}]}
+		]}],
+		"embeds":[
+			{"type":"rich","title":"embed title","description":"embed description","author":{"name":"author name"},"footer":{"text":"footer text"},"fields":[{"name":"field name","value":"field value"}]},
+			{"type":"components","url":"https://preview.example","components":[{"type":17,"components":[
+				{"type":9,"components":[{"type":10,"content":"preview text"}],"accessory":{"type":2,"style":5,"label":"Visit","url":"https://accessory.example"}}
+			]}]}
+		],
+		"message_snapshots":[{"message":{"content":"forwarded","embeds":[{"type":"rich","description":"forwarded embed"}]}}]}`
+
+	var m Message
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{
+		"look at this", "forwarded",
+		"poll question", "answer one", "answer two",
+		"cv2 text", "Open", "https://button.example",
+		"embed title", "embed description", "author name", "footer text", "field name", "field value",
+		"https://preview.example", "preview text", "Visit", "https://accessory.example",
+		"forwarded embed",
+	}
+
+	got := m.GetAllTextContents()
+	if len(got) != len(want) {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %q, want %q", got, want)
+		}
+	}
+}

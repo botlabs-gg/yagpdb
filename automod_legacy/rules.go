@@ -15,7 +15,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/v2/serverpreview"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -26,6 +28,7 @@ type Punishment int
 const (
 	PunishNone Punishment = iota
 	PunishMute
+	PunishTimeout
 	PunishKick
 	PunishBan
 )
@@ -34,6 +37,7 @@ type Rule interface {
 	Check(m *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error)
 	ShouldIgnore(cs *dstate.ChannelState, msg *discordgo.Message, m *dstate.MemberState) bool
 	GetMuteDuration() int
+	GetTimeoutDuration() time.Duration
 }
 
 type BaseRule struct {
@@ -43,17 +47,44 @@ type BaseRule struct {
 	ViolationsExpire int `valid:"0,44640"`
 
 	// Execute these punishments after certain number of repeated violaions
-	MuteAfter    int `valid:"0,1000"`
-	MuteDuration int `valid:"0,44640"`
-	KickAfter    int `valid:"0,1000"`
-	BanAfter     int `valid:"0,1000"`
+	MuteAfter       int `valid:"0,1000"`
+	MuteDuration    int `valid:"0,44640"`
+	TimeoutAfter    int `valid:"0,1000"`
+	TimeoutDuration int `valid:"0,40320"`
+	KickAfter       int `valid:"0,1000"`
+	BanAfter        int `valid:"0,1000"`
 
 	IgnoreRole     string   `valid:"role,true"`
 	IgnoreChannels []string `valid:"channel,false"`
 }
 
+type IncludeExtraTextOption struct {
+	IncludeExtraText bool
+}
+
+func (o IncludeExtraTextOption) texts(m *discordgo.Message) []string {
+	if o.IncludeExtraText {
+		return m.GetAllTextContents()
+	}
+	return []string{m.Content}
+}
+
+func messageTexts(m *discordgo.Message, includeExtraText bool) []string {
+	if includeExtraText {
+		return m.GetAllTextContents()
+	}
+	return m.GetMessageContents()
+}
+
 func (r BaseRule) GetMuteDuration() int {
 	return r.MuteDuration
+}
+
+func (r BaseRule) GetTimeoutDuration() time.Duration {
+	if r.TimeoutDuration < 1 {
+		return moderation.DefaultTimeoutDuration
+	}
+	return time.Duration(r.TimeoutDuration) * time.Minute
 }
 
 func (r BaseRule) IgnoreRoleInt() int64 {
@@ -84,19 +115,25 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 		common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire*60))
 	}
 
-	mute := r.MuteAfter > 0 && violations >= r.MuteAfter
-	kick := r.KickAfter > 0 && violations >= r.KickAfter
-	ban := r.BanAfter > 0 && violations >= r.BanAfter
-
-	if ban {
-		p = PunishBan
-	} else if kick {
-		p = PunishKick
-	} else if mute {
-		p = PunishMute
-	}
+	p = r.punishmentFor(violations)
 
 	return
+}
+
+func (r BaseRule) punishmentFor(violations int) Punishment {
+	reached := func(after int) bool { return after > 0 && violations >= after }
+
+	switch {
+	case reached(r.BanAfter):
+		return PunishBan
+	case reached(r.KickAfter):
+		return PunishKick
+	case reached(r.TimeoutAfter):
+		return PunishTimeout
+	case reached(r.MuteAfter):
+		return PunishMute
+	}
+	return PunishNone
 }
 
 // Returns true if this rule should be ignored
@@ -176,10 +213,11 @@ func (s *SpamRule) FindSpam(evt *discordgo.Message, cs *dstate.ChannelState) boo
 
 type InviteRule struct {
 	BaseRule `valid:"traverse"`
+	IncludeExtraTextOption
 }
 
 func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	if !CheckMessageForBadInvites(evt) {
+	if !CheckMessageForBadInvites(evt, i.IncludeExtraText) {
 		return
 	}
 
@@ -245,11 +283,14 @@ func (c *cachedGuildInvites) set(guildID int64, invites map[string]bool) {
 
 var invitesCache cachedGuildInvites
 
-func CheckMessageForBadInvites(msg *discordgo.Message) (containsBadInvites bool) {
+func CheckMessageForBadInvites(msg *discordgo.Message, includeExtraText bool) (containsBadInvites bool) {
 	guildID := msg.GuildID
-	for _, content := range msg.GetMessageContents() {
+	for _, content := range messageTexts(msg, includeExtraText) {
 		// check third party sites
 		if common.ContainsInvite(content, false, true) != nil {
+			return true
+		}
+		if serverpreview.ContainsOtherServerPreviewLink(content, guildID) {
 			return true
 		}
 		content := confusables.NormalizeQueryEncodedText(content)
@@ -367,12 +408,11 @@ func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (de
 
 type LinksRule struct {
 	BaseRule `valid:"traverse"`
+	IncludeExtraTextOption
 }
 
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-
-	content := confusables.NormalizeQueryEncodedText(evt.Content)
-	if !common.LinkRegex.MatchString(forwardSlashReplacer.Replace(content)) {
+	if !l.containsLink(evt) {
 		return
 	}
 
@@ -387,8 +427,19 @@ func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 	return
 }
 
+func (l *LinksRule) containsLink(evt *discordgo.Message) bool {
+	for _, content := range l.texts(evt) {
+		content = confusables.NormalizeQueryEncodedText(content)
+		if common.LinkRegex.MatchString(forwardSlashReplacer.Replace(content)) {
+			return true
+		}
+	}
+	return false
+}
+
 type WordsRule struct {
-	BaseRule          `valid:"traverse"`
+	BaseRule `valid:"traverse"`
+	IncludeExtraTextOption
 	BuiltinSwearWords bool
 	BannedWords       string          `valid:",25000"`
 	compiledWords     map[string]bool `json:"-"`
@@ -410,7 +461,12 @@ func (w *WordsRule) GetCompiled() map[string]bool {
 
 func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 
-	word := w.CheckMessage(evt.Content)
+	var word string
+	for _, content := range w.texts(evt) {
+		if word = w.CheckMessage(content); word != "" {
+			break
+		}
+	}
 	if word == "" {
 		return
 	}
@@ -445,6 +501,7 @@ func (w *WordsRule) CheckMessage(content string) (word string) {
 
 type SitesRule struct {
 	BaseRule `valid:"traverse"`
+	IncludeExtraTextOption
 
 	GoogleSafeBrowsingEnabled bool
 	ScamLinkProtection        bool
@@ -487,7 +544,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 }
 
 func (s *SitesRule) checkMessage(message *discordgo.Message) (banned bool, item string, threatList string) {
-	for _, content := range message.GetMessageContents() {
+	for _, content := range messageTexts(message, s.IncludeExtraText) {
 		content = confusables.NormalizeQueryEncodedText(content)
 		matches := common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(content), -1)
 		for _, v := range matches {

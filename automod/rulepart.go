@@ -138,6 +138,7 @@ type SettingDef struct {
 	Min, Max    int
 	Default     any    `json:",omitempty"`
 	Placeholder string `json:",omitempty"`
+	Help        string `json:",omitempty"`
 }
 
 type RulePartType int

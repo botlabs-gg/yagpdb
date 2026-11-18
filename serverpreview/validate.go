@@ -59,7 +59,7 @@ func ValidateSlug(slug string) error {
 	return nil
 }
 
-func ValidateCustomText(text string) error {
+func ValidateCustomText(text string, guildID int64) error {
 	if utf8.RuneCountInString(text) > MaxCustomTextLength {
 		return errors.New("the custom text is longer than 500 characters")
 	}
@@ -68,10 +68,10 @@ func ValidateCustomText(text string) error {
 		return errors.New("the custom text can't contain masked links like [text](url), paste the link directly instead")
 	}
 
-	return checkLinks(text)
+	return checkLinks(text, guildID)
 }
 
-func ValidateButtons(buttons []Button) error {
+func ValidateButtons(buttons []Button, guildID int64) error {
 	if len(buttons) > MaxButtons {
 		return errors.New("a preview can have at most 3 custom buttons")
 	}
@@ -90,7 +90,7 @@ func ValidateButtons(buttons []Button) error {
 			return errors.New("button links must be full https:// links")
 		}
 
-		if err := checkLinks(b.URL); err != nil {
+		if err := checkLinks(b.URL, guildID); err != nil {
 			return err
 		}
 	}
@@ -128,9 +128,13 @@ func ValidatePreviewSize(settings *models.ServerPreview) error {
 	return nil
 }
 
-// checkLinks rejects server invites and links flagged as scams or unsafe.
+// checkLinks rejects server invites, previews of other servers, and links flagged as scams or unsafe.
 // It fails closed, so a link is rejected when the lookups can't be performed.
-func checkLinks(text string) error {
+func checkLinks(text string, guildID int64) error {
+	if ContainsOtherServerPreviewLink(text, guildID) {
+		return errors.New("links to other servers' previews aren't allowed")
+	}
+
 	if !common.LinkRegex.MatchString(text) {
 		return nil
 	}

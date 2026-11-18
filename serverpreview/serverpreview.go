@@ -78,6 +78,28 @@ func GetSettings(guildID int64) (*models.ServerPreview, error) {
 	return v.(*models.ServerPreview), nil
 }
 
+// GuildIDForKey returns the server a preview link key points to, or 0 when it points to none.
+func GuildIDForKey(key string) (int64, error) {
+	guildID, _, err := resolveGuildID(key)
+	return guildID, err
+}
+
+// ContainsOtherServerPreviewLink reports whether s links to the server preview of a server other than guildID.
+// It fails closed, so a link that can't be looked up counts as one.
+func ContainsOtherServerPreviewLink(s string, guildID int64) bool {
+	for _, key := range common.ServerPreviewLinkKeys(s) {
+		linkedGuildID, err := GuildIDForKey(key)
+		if err != nil {
+			logger.WithError(err).WithField("guild", guildID).Error("failed looking up server preview link")
+			return true
+		}
+		if linkedGuildID != 0 && linkedGuildID != guildID {
+			return true
+		}
+	}
+	return false
+}
+
 // resolveGuildID turns a preview key, either a server ID or a premium slug, into a server ID.
 func resolveGuildID(key string) (guildID int64, viaSlug bool, err error) {
 	if id, err := strconv.ParseInt(key, 10, 64); err == nil {

@@ -51,13 +51,13 @@ func (p StarterProtections) rules() []starterRule {
 
 	deleteMessage := starterRulePart{300, nil}
 
-	add(p.ServerInvites, "Block server invites", starterRulePart{9, nil},
+	add(p.ServerInvites, "Block server invites", starterRulePart{9, IncludeExtraTextTriggerData{}},
 		deleteMessage, starterRulePart{305, WarnUserEffectData{CustomReason: "Posted a server invite"}})
 	add(p.MassMentions, "Block mass mentions", starterRulePart{2, MentionsTriggerData{Treshold: 5}},
 		deleteMessage, starterRulePart{314, TimeoutUserEffectData{Duration: 10, CustomReason: "Mass mentions"}})
 	add(p.Spam, "Stop message spam", starterRulePart{11, SlowmodeTriggerData{Treshold: 5, Interval: 5}},
 		deleteMessage, starterRulePart{314, TimeoutUserEffectData{Duration: 10, CustomReason: "Spamming messages"}})
-	add(p.PhishingLinks, "Block phishing links", starterRulePart{33, nil},
+	add(p.PhishingLinks, "Block phishing links", starterRulePart{33, IncludeExtraTextTriggerData{}},
 		deleteMessage, starterRulePart{305, WarnUserEffectData{CustomReason: "Posted a phishing link"}})
 
 	return rules

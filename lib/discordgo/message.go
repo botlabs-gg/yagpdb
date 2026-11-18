@@ -125,6 +125,8 @@ type Message struct {
 	// embeds can currently only be sent by webhooks.
 	Embeds []*MessageEmbed `json:"embeds"`
 
+	Poll *Poll `json:"poll,omitempty"`
+
 	// A list of users mentioned in the message.
 	Mentions []*User `json:"mentions"`
 
@@ -188,6 +190,96 @@ func (m *Message) GetMessageContents() []string {
 		}
 	}
 	return contents
+}
+
+// GetAllTextContents returns GetMessageContents plus the poll text, and the text and
+// links in the embeds and components of the message and its forwarded snapshots.
+func (m *Message) GetAllTextContents() []string {
+	contents := m.GetMessageContents()
+	if m.Poll != nil {
+		contents = append(contents, m.Poll.TextContents()...)
+	}
+
+	messages := []*Message{m}
+	for _, s := range m.MessageSnapshots {
+		if s.Message != nil {
+			messages = append(messages, s.Message)
+		}
+	}
+
+	for _, msg := range messages {
+		for _, c := range msg.Components {
+			contents = appendComponentTexts(contents, c)
+		}
+		for _, e := range msg.Embeds {
+			if e != nil {
+				contents = e.appendTexts(contents)
+			}
+		}
+	}
+
+	return contents
+}
+
+func (e *MessageEmbed) appendTexts(dst []string) []string {
+	dst = appendNonEmpty(dst, e.Title, e.Description, e.URL)
+	if e.Author != nil {
+		dst = appendNonEmpty(dst, e.Author.Name, e.Author.URL)
+	}
+	if e.Footer != nil {
+		dst = appendNonEmpty(dst, e.Footer.Text)
+	}
+	for _, f := range e.Fields {
+		if f != nil {
+			dst = appendNonEmpty(dst, f.Name, f.Value)
+		}
+	}
+	for _, c := range e.Components {
+		dst = appendComponentTexts(dst, c)
+	}
+	return dst
+}
+
+func appendComponentTexts(dst []string, c MessageComponent) []string {
+	switch t := c.(type) {
+	case *Container:
+		return appendComponentTexts(dst, *t)
+	case *Section:
+		return appendComponentTexts(dst, *t)
+	case *ActionsRow:
+		return appendComponentTexts(dst, *t)
+	case *TextDisplay:
+		return appendComponentTexts(dst, *t)
+	case *Button:
+		return appendComponentTexts(dst, *t)
+	case Container:
+		for _, child := range t.Components {
+			dst = appendComponentTexts(dst, child)
+		}
+	case Section:
+		for _, child := range t.Components {
+			dst = appendComponentTexts(dst, child)
+		}
+		dst = appendComponentTexts(dst, t.Accessory)
+	case ActionsRow:
+		for _, child := range t.Components {
+			dst = appendComponentTexts(dst, child)
+		}
+	case TextDisplay:
+		dst = appendNonEmpty(dst, t.Content)
+	case Button:
+		dst = appendNonEmpty(dst, t.Label, t.URL)
+	}
+	return dst
+}
+
+func appendNonEmpty(dst []string, values ...string) []string {
+	for _, v := range values {
+		if v != "" {
+			dst = append(dst, v)
+		}
+	}
+	return dst
 }
 
 func (m *Message) GetMessageEmbeds() []*MessageEmbed {
