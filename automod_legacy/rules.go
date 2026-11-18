@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/v2/serverpreview"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -287,6 +288,9 @@ func CheckMessageForBadInvites(msg *discordgo.Message, includeExtraText bool) (c
 	for _, content := range messageTexts(msg, includeExtraText) {
 		// check third party sites
 		if common.ContainsInvite(content, false, true) != nil {
+			return true
+		}
+		if serverpreview.ContainsOtherServerPreviewLink(content, guildID) {
 			return true
 		}
 		content := confusables.NormalizeQueryEncodedText(content)

@@ -19,6 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/v2/serverpreview"
 )
 
 var SanitizeTextName = "Also match visually similar characters such as \"Ĥéĺĺó\""
@@ -593,7 +594,7 @@ func (inv *ServerInviteTrigger) Name() string {
 }
 
 func (inv *ServerInviteTrigger) Description() string {
-	return "Triggers on messages containing invites to other servers, also includes some 3rd party server lists."
+	return "Triggers on messages containing invites to other servers, also includes some 3rd party server lists and server preview links."
 }
 
 func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {
@@ -1615,6 +1616,9 @@ func (gv *GlobalnameInviteTrigger) UserSettings() []*SettingDef {
 
 func (gv *GlobalnameInviteTrigger) CheckGlobalname(t *TriggerContext) (bool, error) {
 	if common.ContainsInvite(t.MS.User.Globalname, true, true) != nil {
+		return true, nil
+	}
+	if serverpreview.ContainsOtherServerPreviewLink(t.MS.User.Globalname, t.GS.ID) {
 		return true, nil
 	}
 

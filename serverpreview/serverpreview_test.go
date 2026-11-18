@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/serverpreview/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
@@ -30,33 +31,39 @@ func TestValidateSlug(t *testing.T) {
 }
 
 func TestValidateCustomText(t *testing.T) {
-	if err := ValidateCustomText("Welcome to our **community**!"); err != nil {
+	common.ConfHost.LoadedValue = "yagpdb.xyz"
+	if err := ValidateCustomText("Welcome to our **community**! Share yagpdb.xyz/s/100 with friends", 100); err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
-	if ValidateCustomText(strings.Repeat("a", MaxCustomTextLength+1)) == nil {
+	if ValidateCustomText(strings.Repeat("a", MaxCustomTextLength+1), 100) == nil {
 		t.Error("expected text over the limit to be rejected")
 	}
-	if ValidateCustomText("click [here](https://evil.example.com)") == nil {
+	if ValidateCustomText("click [here](https://evil.example.com)", 100) == nil {
 		t.Error("expected masked links to be rejected")
 	}
-	if ValidateCustomText("join us at https://discord.gg/abcdef") == nil {
+	if ValidateCustomText("also try yagpdb.xyz/s/200", 100) == nil {
+		t.Error("expected a link to another server's preview to be rejected")
+	}
+	if ValidateCustomText("join us at https://discord.gg/abcdef", 100) == nil {
 		t.Error("expected server invites to be rejected")
 	}
 }
 
 func TestValidateButtons(t *testing.T) {
+	common.ConfHost.LoadedValue = "yagpdb.xyz"
 	cases := map[string][]Button{
-		"too many":     {{"a", "https://a.example"}, {"b", "https://b.example"}, {"c", "https://c.example"}, {"d", "https://d.example"}},
-		"no label":     {{"", "https://a.example"}},
-		"long label":   {{strings.Repeat("a", MaxButtonLabelLength+1), "https://a.example"}},
-		"not https":    {{"Site", "http://a.example"}},
-		"not a link":   {{"Site", "a.example"}},
-		"other scheme": {{"Site", "javascript:alert(1)"}},
-		"invite":       {{"Join", "https://discord.gg/abcdef"}},
-		"long url":     {{"Site", "https://a.example/" + strings.Repeat("a", MaxButtonURLLength)}},
+		"too many":      {{"a", "https://a.example"}, {"b", "https://b.example"}, {"c", "https://c.example"}, {"d", "https://d.example"}},
+		"no label":      {{"", "https://a.example"}},
+		"long label":    {{strings.Repeat("a", MaxButtonLabelLength+1), "https://a.example"}},
+		"not https":     {{"Site", "http://a.example"}},
+		"not a link":    {{"Site", "a.example"}},
+		"other scheme":  {{"Site", "javascript:alert(1)"}},
+		"invite":        {{"Join", "https://discord.gg/abcdef"}},
+		"other preview": {{"Join", "https://yagpdb.xyz/s/200"}},
+		"long url":      {{"Site", "https://a.example/" + strings.Repeat("a", MaxButtonURLLength)}},
 	}
 	for name, buttons := range cases {
-		if ValidateButtons(buttons) == nil {
+		if ValidateButtons(buttons, 100) == nil {
 			t.Errorf("%s: expected an error", name)
 		}
 	}
@@ -261,6 +268,23 @@ func TestIsLinkPreviewBot(t *testing.T) {
 	} {
 		if got := isLinkPreviewBot(ua); got != want {
 			t.Errorf("isLinkPreviewBot(%q) = %t, want %t", ua, got, want)
+		}
+	}
+}
+
+func TestContainsOtherServerPreviewLink(t *testing.T) {
+	common.ConfHost.LoadedValue = "yagpdb.xyz"
+
+	for text, want := range map[string]bool{
+		"join us https://yagpdb.xyz/s/100":             false,
+		"join us https://yagpdb.xyz/s/200":             true,
+		"join us yagpdb.xyz/s/100 or yagpdb.xyz/s/200": true,
+		"join us https://YAGPDB.xyz//s//200":           true,
+		"see https://yagpdb.xyz/manage/200":            false,
+		"no links here":                                false,
+	} {
+		if got := ContainsOtherServerPreviewLink(text, 100); got != want {
+			t.Errorf("ContainsOtherServerPreviewLink(%q) = %t, want %t", text, got, want)
 		}
 	}
 }
