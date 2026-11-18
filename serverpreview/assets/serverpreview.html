@@ -1,0 +1,179 @@
+{{define "cp_server_preview"}}
+{{template "cp_head" .}}
+
+<link rel="stylesheet" href="/static/css/discordpreview.css?{{.StartedAtUnix}}">
+<style>
+    .sp-preview-wrap { position: sticky; top: 16px; }
+    .sp-preview-error { color: #fa777c; }
+</style>
+
+<header class="page-header">
+    <h2>Server Preview</h2>
+</header>
+
+{{template "cp_alerts" .}}
+<div class="row" id="sp-root" data-guildid="{{.ActiveGuild.ID}}">
+    <div class="col-lg-7">
+        {{if .PreviewSettings.Suspended}}
+        <div class="alert alert-danger">Server previews were disabled for this server by YAGPDB staff.</div>
+        {{end}}
+        <form method="POST" action="/manage/{{.ActiveGuild.ID}}/server-preview" data-async-form>
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Preview link</h2>
+                </header>
+                <div class="card-body">
+                    <p>Share your server's preview link and Discord shows a card with your server's banner, name, icon, member counts, description and a Join button.</p>
+                    {{checkbox "Enabled" "server-preview-enabled" "Enable the server preview" .PreviewSettings.Enabled}}
+                    <p class="help-block">While this is off, the preview link shows nothing.</p>
+
+                    {{checkbox "ShowMemberCount" "server-preview-member-count" "Show member counts" (not .PreviewSettings.HideMemberCount)}}
+                    {{checkbox "ShowDescription" "server-preview-description" "Show the server description" (not .PreviewSettings.HideDescription)}}
+
+                    <div class="form-group">
+                        <label for="server-preview-invite-channel">Invite channel</label>
+                        <select id="server-preview-invite-channel" name="InviteChannel" class="form-control">
+                            {{textChannelOptions .ActiveGuild.Channels .PreviewSettings.InviteChannelID true "None"}}
+                        </select>
+                        <p class="help-block">Required. YAGPDB creates one permanent invite in this channel, and the preview link and Join button lead to it. Deleting that invite or channel turns the preview off. If your server has a vanity URL, that is used instead.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Customization <span class="premium-color"><i class="fas fa-crown"></i> Premium</span></h2>
+                </header>
+                <div class="card-body">
+                    {{if not .IsGuildPremium}}<p>These options need <a href="/premium">premium</a>.</p>{{end}}
+                    <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
+                        <div class="form-group">
+                            <label for="server-preview-slug">Custom link</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text">/s/</span></div>
+                                <input type="text" id="server-preview-slug" class="form-control" name="Slug" maxlength="32" value="{{.PreviewSettings.Slug.String}}" placeholder="mycoolserver">
+                            </div>
+                            <p class="help-block">3 to 32 lowercase letters, numbers and hyphens.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="server-preview-accent">Accent colour</label>
+                            <input type="color" id="server-preview-accent" class="form-control" name="AccentColor" value="{{.PreviewAccentColor}}" style="max-width: 80px;">
+                        </div>
+
+                        {{checkbox "HideFooter" "server-preview-footer" "Hide the \"Powered by\" line" .PreviewSettings.HideFooter}}
+
+                        <div class="form-group">
+                            <label for="server-preview-text">Custom text</label>
+                            <textarea id="server-preview-text" class="form-control" name="CustomText" rows="5" maxlength="500">{{.PreviewSettings.CustomText}}</textarea>
+                            <p class="help-block">Up to 500 characters with Discord markdown.</p>
+                        </div>
+
+                        <label>Custom buttons</label>
+                        <p class="help-block">Up to 3 link buttons.</p>
+                        {{range $i, $b := .PreviewButtons}}
+                        <div class="form-row mb-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="Buttons.{{$i}}.Label" maxlength="40" value="{{$b.Label}}" placeholder="Label">
+                            </div>
+                            <div class="col-md-8">
+                                <input type="url" class="form-control" name="Buttons.{{$i}}.URL" maxlength="512" value="{{$b.URL}}" placeholder="https://">
+                            </div>
+                        </div>
+                        {{end}}
+                    </fieldset>
+                </div>
+            </section>
+
+            <button type="submit" class="btn btn-success btn-block" {{if .PreviewSettings.Suspended}}disabled{{end}}>Save</button>
+        </form>
+    </div>
+    <div class="col-lg-5">
+        <div class="sp-preview-wrap">
+            <section class="card">
+                <header class="card-header">
+                    <h2 class="card-title">Preview</h2>
+                </header>
+                <div class="card-body">
+                    {{if .PreviewSlugURL}}{{template "sp_copy_link" (dict "ID" "sp-link-slug" "Label" "Custom link" "URL" .PreviewSlugURL)}}{{end}}
+                    {{template "sp_copy_link" (dict "ID" "sp-link-id" "Label" "Preview link" "URL" .PreviewURL)}}
+                    <div class="mc-discord-preview" id="sp-preview"></div>
+                    <p class="sp-preview-error small mt-2 mb-0" id="sp-preview-error"></p>
+                    <p class="help-block small mt-2 mb-0">Approximately how the link looks in Discord. Member counts update every few minutes.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/discordpreview.js?{{.StartedAtUnix}}"></script>
+<script>
+    (function () {
+        let root = document.getElementById("sp-root");
+        if (!root) return;
+
+        let form = root.querySelector("form");
+        let previewEl = document.getElementById("sp-preview");
+        let errorEl = document.getElementById("sp-preview-error");
+        let renderURL = "/manage/" + root.getAttribute("data-guildid") + "/server-preview/render";
+        let timer = null;
+        let latest = 0;
+
+        function refresh() {
+            let params = new URLSearchParams(new FormData(form));
+            params.delete("Slug");
+            params.delete("Enabled");
+            let request = ++latest;
+
+            fetch(renderURL + "?" + params.toString(), { credentials: "same-origin" })
+                .then(function (resp) { return resp.json(); })
+                .then(function (data) {
+                    if (request !== latest) return;
+                    if (!data.ok) {
+                        errorEl.textContent = data.error || "Couldn't render the preview.";
+                        return;
+                    }
+                    errorEl.textContent = "";
+                    previewEl.innerHTML = "";
+                    previewEl.appendChild(YAGDiscordPreview.renderComponent(data.component));
+                })
+                .catch(function () {
+                    if (request === latest) errorEl.textContent = "Couldn't render the preview.";
+                });
+        }
+
+        function scheduleRefresh() {
+            clearTimeout(timer);
+            timer = setTimeout(refresh, 300);
+        }
+
+        root.querySelectorAll("[data-copy-target]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                navigator.clipboard.writeText(document.getElementById(button.getAttribute("data-copy-target")).value).then(function () {
+                    button.textContent = "Copied!";
+                    setTimeout(function () { button.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
+                });
+            });
+        });
+
+        form.addEventListener("input", scheduleRefresh);
+        form.addEventListener("change", scheduleRefresh);
+        refresh();
+    })();
+</script>
+
+{{template "cp_footer" .}}
+{{end}}
+
+{{define "sp_copy_link"}}
+<div class="form-group">
+    <label for="{{.ID}}" class="small mb-1">{{.Label}}</label>
+    <div class="input-group input-group-sm">
+        <input type="text" id="{{.ID}}" class="form-control" value="{{.URL}}" readonly onfocus="this.select()">
+        <div class="input-group-append">
+            <a class="btn btn-default" href="{{.URL}}" target="_blank" rel="noopener" title="Open"><i class="fas fa-external-link-alt"></i></a>
+            <button type="button" class="btn btn-primary" data-copy-target="{{.ID}}"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+    </div>
+</div>
+{{end}}

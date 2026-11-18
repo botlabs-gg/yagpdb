@@ -465,8 +465,13 @@ type SidebarItem struct {
 	Icon            string
 	CustomIconImage string
 	New             bool
+	NewUntil        time.Time
 	External        bool
 	IsPremium       bool
+}
+
+func (s *SidebarItem) IsNew() bool {
+	return s.New || time.Now().Before(s.NewUntil)
 }
 
 var sideBarItems = make(map[string][]*SidebarItem)

@@ -184,84 +184,14 @@
                     {{range (index .SidebarItems "Top")}}
                     {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
                     {{end}}
-                    <li class="nav-parent">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-cogs" aria-hidden="true"></i>
-                            <span>Core</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "Core")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
-                     <li class="nav-parent">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-closed-captioning" aria-hidden="true"></i>
-                            <span>Custom Commands</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "CustomCommands")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
-                    <li class="nav-parent">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-user-shield" aria-hidden="true"></i>
-                            <span>Moderation</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "Moderation")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
-                    <li class="nav-parent   ">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-rss" aria-hidden="true"></i>
-                            <span>Notifications & Feeds</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "Feeds")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
-                    <li class="nav-parent">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-tags" aria-hidden="true"></i>
-                            <span>Roles</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "Roles")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
-                    <li class="nav-parent">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-bolt" aria-hidden="true"></i>
-                            <span>Tools & Utilities</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "Tools")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Core" "Icon" "fas fa-cogs" "Items" (index .SidebarItems "Core"))}}
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Custom Commands" "Icon" "fas fa-closed-captioning" "Items" (index .SidebarItems "CustomCommands"))}}
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Moderation" "Icon" "fas fa-user-shield" "Items" (index .SidebarItems "Moderation"))}}
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Notifications & Feeds" "Icon" "fas fa-rss" "Items" (index .SidebarItems "Feeds"))}}
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Roles" "Icon" "fas fa-tags" "Items" (index .SidebarItems "Roles"))}}
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Tools & Utilities" "Icon" "fas fa-bolt" "Items" (index .SidebarItems "Tools"))}}
                 
-                    <li class="nav-parent">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-trophy" aria-hidden="true"></i>
-                            <span>Fun</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            {{range (index .SidebarItems "Fun")}}
-                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}
-                        </ul>
-                    </li>
+                    {{template "sidebar_group" (dict "ActiveGuild" $ag "Name" "Fun" "Icon" "fas fa-trophy" "Items" (index .SidebarItems "Fun"))}}
                     {{end}}
                     <li{{if and .ActiveGuild .IsAdmin}} class="mt-5"{{end}}>
                         <a class="nav-link" href="/manage">
@@ -307,6 +237,22 @@
 {{end}}
 {{end}}
 
+{{define "sidebar_group"}}
+{{$ag := .ActiveGuild}}
+{{$new := false}}{{range .Items}}{{if .IsNew}}{{$new = true}}{{end}}{{end}}
+<li class="nav-parent">
+    <a class="nav-link" href="#">
+        <i class="{{.Icon}}" aria-hidden="true"></i>
+        <span>{{.Name}}{{if $new}}<span class="badge badge-success" style="margin: 0 0 0 .5em;">New!</span>{{end}}</span>
+    </a>
+    <ul class="nav nav-children">
+        {{range .Items}}
+        {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
+        {{end}}
+    </ul>
+</li>
+{{end}}
+
 {{define "sidebar_item"}}
 {{$ag := .ActiveGuild}}
 {{$item := .Item}}
@@ -314,7 +260,7 @@
     <a class="nav-link {{if $item.IsPremium}}premium-color{{end}}" {{if not $item.External}}data-partial-load="true"{{else}}target="_blank"{{end}} href="{{if not $item.External}}/manage/{{$ag.ID}}/{{$item.URL}}{{else}}{{$item.URL}}{{end}}">
         {{if $item.Icon}}<i class="{{$item.Icon}}" aria-hidden="true"></i>{{end}}
         {{if $item.CustomIconImage}}<image src="{{$item.CustomIconImage}}" width="24" class="nav-sidebar-icon-custom mr-1" />{{end}}
-        {{if $item.New}}<span class="float-right badge badge-success">New!</span>{{end}}
+        {{if $item.IsNew}}<span class="float-right badge badge-success">New!</span>{{end}}
         <span>{{$item.Name}}</span>
     </a>
 </li>

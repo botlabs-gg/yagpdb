@@ -44,6 +44,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/rss"
 	"github.com/botlabs-gg/yagpdb/v2/rsvp"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/v2/serverpreview"
 	"github.com/botlabs-gg/yagpdb/v2/serverstats"
 	"github.com/botlabs-gg/yagpdb/v2/soundboard"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands"
@@ -71,6 +72,7 @@ func main() {
 	commands.RegisterPlugin()
 	stdcommands.RegisterPlugin()
 	serverstats.RegisterPlugin()
+	serverpreview.RegisterPlugin()
 	notifications.RegisterPlugin()
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
