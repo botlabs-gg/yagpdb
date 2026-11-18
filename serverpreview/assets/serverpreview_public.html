@@ -1,0 +1,51 @@
+{{define "serverpreview_public"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Preview.Name}}</title>
+    <meta property="og:title" content="{{.Preview.Name}}" />
+    <meta property="og:description" content="{{if .Preview.Description}}{{.Preview.Description}}{{else}}Join {{.Preview.Name}} on Discord{{end}}" />
+    <meta property="og:url" content="{{.BaseURL}}{{.Preview.Path}}" />
+    {{if .Preview.BannerURL}}<meta property="og:image" content="{{.Preview.BannerURL}}" />
+    {{else if .Preview.IconURL}}<meta property="og:image" content="{{.Preview.IconURL}}" />{{end}}
+    <meta property="og:type" content="website" />
+    <link rel="discord:component-embed" type="application/json" href="{{.BaseURL}}{{.Preview.Path}}/embed.json">
+    <style>
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1e1f22; color: #f2f3f5; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+        .card { max-width: 420px; width: 100%; margin: 16px; background: #2b2d31; border-radius: 12px; text-align: center; overflow: hidden; }
+        .banner { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+        .body { padding: 32px; }
+        .icon { width: 96px; height: 96px; border-radius: 24px; }
+        .card .banner + .body .icon { margin-top: -80px; border: 6px solid #2b2d31; }
+        .card h1 { font-size: 24px; margin: 16px 0 8px; }
+        .card p { color: #b5bac1; margin: 0 0 24px; }
+        .counts { display: flex; justify-content: center; gap: 16px; margin: 0 0 16px; font-size: 14px; color: #b5bac1; }
+        .counts b { color: #f2f3f5; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .dot.online { background: #23a55a; }
+        .dot.members { background: #80848e; }
+        .join { display: inline-block; padding: 10px 24px; background: #5865f2; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 600; }
+        .footer { margin-top: 24px; font-size: 12px; color: #b5bac1; }
+        .footer a { color: #b5bac1; }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        {{if .Preview.BannerURL}}<img class="banner" src="{{.Preview.BannerURL}}" alt="">{{end}}
+        <div class="body">
+            {{if .Preview.IconURL}}<img class="icon" src="{{.Preview.IconURL}}" alt="">{{end}}
+            <h1>{{.Preview.Name}}</h1>
+            {{if .Preview.ShowMemberCount}}<div class="counts"><span><span class="dot online"></span><b>{{.Preview.OnlineCount}}</b> Online</span><span><span class="dot members"></span><b>{{.Preview.MemberCount}}</b> Members</span></div>{{end}}
+            {{if .Preview.Description}}<p>{{.Preview.Description}}</p>{{end}}
+            {{if .Preview.InviteURL}}<a class="join" href="{{.Preview.InviteURL}}" rel="noopener">Join Server</a>{{end}}
+            <div class="footer">Powered by <a href="{{.BaseURL}}">{{.BotName}}</a></div>
+        </div>
+    </div>
+</body>
+
+</html>
+{{end}}

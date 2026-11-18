@@ -53,6 +53,7 @@ var (
 		discordgo.GatewayIntentGuildMembers,
 		discordgo.GatewayIntentGuildModeration,
 		discordgo.GatewayIntentGuildExpressions,
+		discordgo.GatewayIntentGuildInvites,
 		discordgo.GatewayIntentGuildVoiceStates,
 		discordgo.GatewayIntentGuildPresences,
 		discordgo.GatewayIntentGuildMessages,

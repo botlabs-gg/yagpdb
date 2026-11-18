@@ -43,9 +43,10 @@ func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("messagecreator/assets/messagecreator.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
-		Name: "Message Creator",
-		URL:  "messagecreator",
-		Icon: "fas fa-paper-plane",
+		Name:     "Message Creator",
+		URL:      "messagecreator",
+		Icon:     "fas fa-paper-plane",
+		NewUntil: time.Date(2027, time.February, 1, 0, 0, 0, 0, time.UTC),
 	})
 
 	muxer := goji.SubMux()

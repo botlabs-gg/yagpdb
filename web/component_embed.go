@@ -82,7 +82,7 @@ var landingFeatureLines = []landingFeatureLine{
 	{"%s: warnings, mutes, timeouts, kicks and bans with logging", []landingFeature{{"**Moderation**", "moderation"}}},
 	{"%s and self-assignable roles", []landingFeature{{"**Role Menus**", "role_commands"}}},
 	{"**Feeds**: %s", []landingFeature{{"Reddit", "reddit"}, {"YouTube", "youtube"}, {"RSS", "rss"}, {"Twitch", "twitch"}, {"Streaming announcements", "streaming"}}},
-	{"%s: join, leave and boost messages", []landingFeature{{"**Notifications**", "notifications"}}},
+	{"%s: join, leave and topic change messages", []landingFeature{{"**Notifications**", "notifications"}}},
 	{"%s and more", []landingFeature{{"**Server Stats**", "server_stats"}, {"**Logging**", "logging"}, {"**Tickets**", "tickets"}, {"**Reminders**", "reminders"}, {"**Reputation**", "reputation"}, {"**Verification**", "verification"}}},
 }
 
