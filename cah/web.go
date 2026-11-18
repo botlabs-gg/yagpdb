@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/v2/cah/models"
@@ -155,9 +156,10 @@ type BuiltinPackView struct {
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("cah/assets/cah.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
-		Name: "Cards Against Humanity",
-		URL:  "cah/",
-		Icon: "fas fa-clone",
+		Name:     "Cards Against Humanity",
+		URL:      "cah/",
+		Icon:     "fas fa-clone",
+		NewUntil: time.Date(2027, time.February, 1, 0, 0, 0, 0, time.UTC),
 	})
 
 	cpMux := goji.SubMux()
