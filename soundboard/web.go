@@ -166,7 +166,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		tooBig, err = DownloadNewSoundFile(file, destFile, 10000000)
 	} else if r.FormValue("SoundURL") != "" {
 		var resp *http.Response
-		resp, err = http.Get(r.FormValue("SoundURL"))
+		resp, err = common.ExternalHTTPClient.Get(r.FormValue("SoundURL"))
 		if err != nil {
 			logger.WithError(err).Error("Failed downloading soundboard sound")
 			tmpl.AddAlerts(web.ErrorAlert("Failed downloading sound from: " + r.FormValue("SoundURL") + " Make sure the link is correct"))
