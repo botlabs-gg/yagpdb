@@ -2,6 +2,7 @@ package serverpreview
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,6 +46,7 @@ type Preview struct {
 	BannerURL   string
 	InviteURL   string
 	Path        string
+	Version     string
 	EmbedJSON   []byte
 
 	ShowMemberCount bool
@@ -57,10 +59,12 @@ func newPreview(settings *models.ServerPreview, guild *discordgo.Guild) *Preview
 		GuildID:         guild.ID,
 		Name:            guild.Name,
 		IconURL:         guildIconURL(guild),
-		BannerURL:       guildBannerURL(guild),
 		ShowMemberCount: !settings.HideMemberCount,
 		MemberCount:     formatCount(guild.ApproximateMemberCount),
 		OnlineCount:     formatCount(guild.ApproximatePresenceCount),
+	}
+	if !settings.HideBanner {
+		preview.BannerURL = guildBannerURL(guild)
 	}
 	if !settings.HideDescription {
 		preview.Description = common.CutStringShort(guild.Description, MaxDescriptionLength)
@@ -139,6 +143,7 @@ func buildPreview(settings *models.ServerPreview, viaSlug bool) (*Preview, error
 	preview := newPreview(settings, guild)
 	preview.InviteURL = inviteURL(settings, guild)
 	preview.Path = path
+	preview.Version = VersionQuery(settings)
 	if preview.InviteURL == "" {
 		return (*Preview)(nil), nil
 	}
@@ -214,6 +219,14 @@ func previewEmbed(settings *models.ServerPreview, preview *Preview, isPremium bo
 	}
 
 	return web.ComponentEmbed{Component: container}
+}
+
+// VersionQuery changes on every save. Discord caches link previews per URL, so a versioned link makes it fetch the latest preview.
+func VersionQuery(settings *models.ServerPreview) string {
+	if settings.UpdatedAt.IsZero() {
+		return ""
+	}
+	return "?v=" + strconv.FormatInt(settings.UpdatedAt.Unix(), 36)
 }
 
 func botName() string {

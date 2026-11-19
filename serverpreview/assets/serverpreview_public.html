@@ -8,11 +8,11 @@
     <title>{{.Preview.Name}}</title>
     <meta property="og:title" content="{{.Preview.Name}}" />
     <meta property="og:description" content="{{if .Preview.Description}}{{.Preview.Description}}{{else}}Join {{.Preview.Name}} on Discord{{end}}" />
-    <meta property="og:url" content="{{.BaseURL}}{{.Preview.Path}}" />
+    <meta property="og:url" content="{{.BaseURL}}{{.Preview.Path}}{{.Preview.Version}}" />
     {{if .Preview.BannerURL}}<meta property="og:image" content="{{.Preview.BannerURL}}" />
     {{else if .Preview.IconURL}}<meta property="og:image" content="{{.Preview.IconURL}}" />{{end}}
     <meta property="og:type" content="website" />
-    <link rel="discord:component-embed" type="application/json" href="{{.BaseURL}}{{.Preview.Path}}/embed.json">
+    <link rel="discord:component-embed" type="application/json" href="{{.BaseURL}}{{.Preview.Path}}/embed.json{{.Preview.Version}}">
     <style>
         body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1e1f22; color: #f2f3f5; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
         .card { max-width: 420px; width: 100%; margin: 16px; background: #2b2d31; border-radius: 12px; text-align: center; overflow: hidden; }

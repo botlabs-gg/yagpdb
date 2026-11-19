@@ -29,6 +29,7 @@
 
                     {{checkbox "ShowMemberCount" "server-preview-member-count" "Show member counts" (not .PreviewSettings.HideMemberCount)}}
                     {{checkbox "ShowDescription" "server-preview-description" "Show the server description" (not .PreviewSettings.HideDescription)}}
+                    {{checkbox "ShowBanner" "server-preview-banner" "Show the server banner" (not .PreviewSettings.HideBanner)}}
 
                     <div class="form-group">
                         <label for="server-preview-invite-channel">Invite channel</label>
@@ -100,6 +101,7 @@
                     <div class="mc-discord-preview" id="sp-preview"></div>
                     <p class="sp-preview-error small mt-2 mb-0" id="sp-preview-error"></p>
                     <p class="help-block small mt-2 mb-0">Approximately how the link looks in Discord. Member counts update every few minutes.</p>
+                    <p class="help-block small mt-2 mb-0">Discord caches link previews, so messages that already have the link keep showing the old preview. The links above change every time you save, so share the new link to show your latest changes. Older links still work.</p>
                 </div>
             </section>
         </div>

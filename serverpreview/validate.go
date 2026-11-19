@@ -114,6 +114,7 @@ func ValidatePreviewSize(settings *models.ServerPreview) error {
 	worstCase.HideFooter = false
 	worstCase.HideMemberCount = false
 	worstCase.HideDescription = false
+	worstCase.HideBanner = false
 
 	preview := newPreview(&worstCase, guild)
 	preview.InviteURL = "https://discord.gg/" + strings.Repeat("a", 32)

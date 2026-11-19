@@ -38,6 +38,7 @@ type ServerPreview struct {
 	UpdatedAt       time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	HideMemberCount bool        `boil:"hide_member_count" json:"hide_member_count" toml:"hide_member_count" yaml:"hide_member_count"`
 	HideDescription bool        `boil:"hide_description" json:"hide_description" toml:"hide_description" yaml:"hide_description"`
+	HideBanner      bool        `boil:"hide_banner" json:"hide_banner" toml:"hide_banner" yaml:"hide_banner"`
 
 	R *serverPreviewR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L serverPreviewL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -57,6 +58,7 @@ var ServerPreviewColumns = struct {
 	UpdatedAt       string
 	HideMemberCount string
 	HideDescription string
+	HideBanner      string
 }{
 	GuildID:         "guild_id",
 	Enabled:         "enabled",
@@ -71,6 +73,7 @@ var ServerPreviewColumns = struct {
 	UpdatedAt:       "updated_at",
 	HideMemberCount: "hide_member_count",
 	HideDescription: "hide_description",
+	HideBanner:      "hide_banner",
 }
 
 var ServerPreviewTableColumns = struct {
@@ -87,6 +90,7 @@ var ServerPreviewTableColumns = struct {
 	UpdatedAt       string
 	HideMemberCount string
 	HideDescription string
+	HideBanner      string
 }{
 	GuildID:         "server_previews.guild_id",
 	Enabled:         "server_previews.enabled",
@@ -101,6 +105,7 @@ var ServerPreviewTableColumns = struct {
 	UpdatedAt:       "server_previews.updated_at",
 	HideMemberCount: "server_previews.hide_member_count",
 	HideDescription: "server_previews.hide_description",
+	HideBanner:      "server_previews.hide_banner",
 }
 
 // Generated where
@@ -303,6 +308,7 @@ var ServerPreviewWhere = struct {
 	UpdatedAt       whereHelpertime_Time
 	HideMemberCount whereHelperbool
 	HideDescription whereHelperbool
+	HideBanner      whereHelperbool
 }{
 	GuildID:         whereHelperint64{field: "\"server_previews\".\"guild_id\""},
 	Enabled:         whereHelperbool{field: "\"server_previews\".\"enabled\""},
@@ -317,6 +323,7 @@ var ServerPreviewWhere = struct {
 	UpdatedAt:       whereHelpertime_Time{field: "\"server_previews\".\"updated_at\""},
 	HideMemberCount: whereHelperbool{field: "\"server_previews\".\"hide_member_count\""},
 	HideDescription: whereHelperbool{field: "\"server_previews\".\"hide_description\""},
+	HideBanner:      whereHelperbool{field: "\"server_previews\".\"hide_banner\""},
 }
 
 // ServerPreviewRels is where relationship names are stored.
@@ -336,9 +343,9 @@ func (*serverPreviewR) NewStruct() *serverPreviewR {
 type serverPreviewL struct{}
 
 var (
-	serverPreviewAllColumns            = []string{"guild_id", "enabled", "suspended", "invite_channel_id", "invite_code", "slug", "accent_color", "hide_footer", "custom_text", "buttons", "updated_at", "hide_member_count", "hide_description"}
+	serverPreviewAllColumns            = []string{"guild_id", "enabled", "suspended", "invite_channel_id", "invite_code", "slug", "accent_color", "hide_footer", "custom_text", "buttons", "updated_at", "hide_member_count", "hide_description", "hide_banner"}
 	serverPreviewColumnsWithoutDefault = []string{"guild_id"}
-	serverPreviewColumnsWithDefault    = []string{"enabled", "suspended", "invite_channel_id", "invite_code", "slug", "accent_color", "hide_footer", "custom_text", "buttons", "updated_at", "hide_member_count", "hide_description"}
+	serverPreviewColumnsWithDefault    = []string{"enabled", "suspended", "invite_channel_id", "invite_code", "slug", "accent_color", "hide_footer", "custom_text", "buttons", "updated_at", "hide_member_count", "hide_description", "hide_banner"}
 	serverPreviewPrimaryKeyColumns     = []string{"guild_id"}
 	serverPreviewGeneratedColumns      = []string{}
 )

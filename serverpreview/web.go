@@ -65,6 +65,7 @@ type PostForm struct {
 	InviteChannel   int64 `valid:"channel,true"`
 	ShowMemberCount bool
 	ShowDescription bool
+	ShowBanner      bool
 
 	Slug        string `valid:",0,32"`
 	AccentColor string `valid:",0,7"`
@@ -93,9 +94,10 @@ func handleGetSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		accent = defaultAccentColor
 	}
 	tmpl["PreviewAccentColor"] = fmt.Sprintf("#%06x", accent)
-	tmpl["PreviewURL"] = fmt.Sprintf("%s/s/%d", web.BaseURL(), guild.ID)
+	version := VersionQuery(settings)
+	tmpl["PreviewURL"] = fmt.Sprintf("%s/s/%d%s", web.BaseURL(), guild.ID, version)
 	if settings.Slug.Valid && premium.ContextPremium(r.Context()) {
-		tmpl["PreviewSlugURL"] = web.BaseURL() + "/s/" + settings.Slug.String
+		tmpl["PreviewSlugURL"] = web.BaseURL() + "/s/" + settings.Slug.String + version
 	}
 	return tmpl, nil
 }
@@ -128,6 +130,7 @@ func handlePostSettings(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	updated.Enabled = form.Enabled
 	updated.HideMemberCount = !form.ShowMemberCount
 	updated.HideDescription = !form.ShowDescription
+	updated.HideBanner = !form.ShowBanner
 
 	if form.InviteChannel != updated.InviteChannelID || (updated.InviteCode == "" && form.InviteChannel != 0) {
 		code, err := CreateInvite(form.InviteChannel)
@@ -225,6 +228,7 @@ func handleRenderPreview(w http.ResponseWriter, r *http.Request) any {
 	settings := *current
 	settings.HideMemberCount = query.Get("ShowMemberCount") != "on"
 	settings.HideDescription = query.Get("ShowDescription") != "on"
+	settings.HideBanner = query.Get("ShowBanner") != "on"
 
 	if isPremium {
 		settings.AccentColor = 0
@@ -278,12 +282,17 @@ func handlePublicPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed loading this server preview, try again later.", http.StatusInternalServerError)
 		return
 	}
+	isBot := isLinkPreviewBot(r.UserAgent())
 	if preview == nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		if isBot {
+			http.NotFound(w, r)
+		} else {
+			http.Redirect(w, r, "/", http.StatusFound)
+		}
 		return
 	}
 
-	if !isLinkPreviewBot(r.UserAgent()) {
+	if !isBot {
 		http.Redirect(w, r, preview.InviteURL, http.StatusFound)
 		return
 	}

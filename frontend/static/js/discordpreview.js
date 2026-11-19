@@ -4,10 +4,10 @@
 
     let BUTTON_STYLES = {
         1: { bg: "#5865f2", fg: "#fff" },
-        2: { bg: "#4f545c", fg: "#fff" },
+        2: { bg: "rgba(151, 151, 159, 0.12)", fg: "#dbdee1", border: "rgba(151, 151, 159, 0.2)" },
         3: { bg: "#248046", fg: "#fff" },
         4: { bg: "#da373c", fg: "#fff" },
-        5: { bg: "#4f545c", fg: "#fff" }
+        5: { bg: "rgba(151, 151, 159, 0.12)", fg: "#dbdee1", border: "rgba(151, 151, 159, 0.2)" }
     };
 
     function renderComponents(comps, parent) { comps.forEach(function (c) { parent.appendChild(renderComponent(c)); }); }
@@ -57,6 +57,7 @@
                 if (c.emoji && (c.emoji.id || c.emoji.name)) b.appendChild(emojiNode(c.emoji));
                 b.appendChild(span(c.label || (c.style === 5 ? "Link" : "Button")));
                 b.style.backgroundColor = st.bg; b.style.color = st.fg;
+                if (st.border) b.style.borderColor = st.border;
                 if (c.style === 5) { // link buttons show an external-link indicator, like Discord
                     let icon = document.createElement("i");
                     icon.className = "fas fa-external-link-alt mc-v2-link-icon";
