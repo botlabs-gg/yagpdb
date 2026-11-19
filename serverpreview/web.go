@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/serverpreview/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
@@ -116,13 +118,17 @@ func handlePostSettings(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		return tmpl.AddAlerts(web.ErrorAlert("Server previews were disabled for this server by YAGPDB staff.")), nil
 	}
 
-	if form.Enabled && form.InviteChannel == 0 {
-		discordGuild, err := getGuildWithCounts(guild.ID)
+	if form.Enabled {
+		if form.InviteChannel == 0 {
+			return tmpl.AddAlerts(web.ErrorAlert("Pick an invite channel, the preview needs an invite for its Join button.")), nil
+		}
+
+		perms, err := botrest.GetChannelPermissions(guild.ID, form.InviteChannel)
 		if err != nil {
 			return tmpl, err
 		}
-		if discordGuild.VanityURLCode == "" {
-			return tmpl.AddAlerts(web.ErrorAlert("Pick an invite channel, the preview needs an invite for its Join button.")), nil
+		if perms&discordgo.PermissionCreateInstantInvite == 0 {
+			return tmpl.AddAlerts(web.ErrorAlert("YAGPDB is missing the Create Invite permission in the invite channel, give it that permission or pick another channel.")), nil
 		}
 	}
 
@@ -257,7 +263,7 @@ func handleRenderPreview(w http.ResponseWriter, r *http.Request) any {
 	}
 
 	preview := newPreview(&settings, discordGuild)
-	if discordGuild.VanityURLCode != "" || query.Get("InviteChannel") != "" && query.Get("InviteChannel") != "0" {
+	if query.Get("InviteChannel") != "" && query.Get("InviteChannel") != "0" {
 		preview.InviteURL = "https://discord.gg/"
 	}
 

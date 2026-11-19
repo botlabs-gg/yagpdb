@@ -36,7 +36,7 @@
                         <select id="server-preview-invite-channel" name="InviteChannel" class="form-control">
                             {{textChannelOptions .ActiveGuild.Channels .PreviewSettings.InviteChannelID true "None"}}
                         </select>
-                        <p class="help-block">Required. YAGPDB creates one permanent invite in this channel, and the preview link and Join button lead to it. Deleting that invite or channel turns the preview off. If your server has a vanity URL, that is used instead.</p>
+                        <p class="help-block">Required. YAGPDB creates one permanent invite in this channel, and the preview link and Join button lead to it. Deleting that invite or channel turns the preview off. If your server has a vanity URL, that is used instead, and this invite is the fallback if the vanity URL is lost.</p>
                     </div>
                 </div>
             </section>
