@@ -10,6 +10,7 @@ import (
 var (
 	createTableRegex          = regexp.MustCompile(`(?i)create table if not exists ([0-9a-z_]*) *\(`)
 	alterTableAddColumnRegex  = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) add column if not exists "?([0-9a-z_]*)"?`)
+	alterTableDropColumnRegex = regexp.MustCompile(`(?i)^alter table ([0-9a-z_]*) drop column if exists "?([0-9a-z_]*)"?;?$`)
 	addIndexRegex             = regexp.MustCompile(`(?i)create (unique )?index if not exists ([0-9a-z_]*) on ([0-9a-z_]*)`)
 	addNotNullConstraintRegex = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) alter column "?([0-9a-z_]*)"? set not null`)
 )
@@ -68,6 +69,14 @@ func checkSkipSchemaInit(schema string) (exists bool, err error) {
 
 	if matches := addNotNullConstraintRegex.FindAllStringSubmatch(trimmed, -1); len(matches) > 0 {
 		return checkNotNullConstraintExists(matches[0][1], matches[0][2])
+	}
+
+	if matches := alterTableDropColumnRegex.FindStringSubmatch(trimmed); matches != nil {
+		exists, err := checkColumnExists(matches[1], matches[2])
+		if err != nil {
+			return false, err
+		}
+		return !exists, nil
 	}
 
 	return false, nil
