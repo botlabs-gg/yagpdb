@@ -657,8 +657,8 @@ $(function(){
                     </select>
                     {{else if eq .Kind "bool"}}
                     <div class="d-flex align-items-center">
-                        <input type="checkbox" class="tgl tgl-flat tgl-sm" id="am-{{$name}}" name="{{$name}}" {{if  (index $dot.settings .Key)}}checked{{end}}>
-                        <label for="am-{{$name}}" class="tgl-btn mb-0"></label>
+                        <input type="checkbox" class="tgl tgl-flat tgl-sm" id="am-part-{{$dot.part.ID}}-{{.Key}}" name="{{$name}}" {{if  (index $dot.settings .Key)}}checked{{end}}>
+                        <label for="am-part-{{$dot.part.ID}}-{{.Key}}" class="tgl-btn mb-0"></label>
                     </div>
                     {{end}}
                     {{if .Help}}<p class="help-block mb-0">{{.Help}}</p>{{end}}
