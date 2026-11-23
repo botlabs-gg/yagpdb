@@ -40,6 +40,17 @@ func (c *CtxChannel) Mention() (string, error) {
 	return "<#" + discordgo.StrID(c.ID) + ">", nil
 }
 
+func (c *CtxChannel) Link() (string, error) {
+	if c == nil {
+		return "", errors.New("channel not found")
+	}
+	guild := "@me"
+	if !c.IsPrivate {
+		guild = discordgo.StrID(c.GuildID)
+	}
+	return "https://discord.com/channels/" + guild + "/" + discordgo.StrID(c.ID), nil
+}
+
 func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 	if cs == nil {
 		return nil
