@@ -1,0 +1,16 @@
+[Unit]
+Description=Valkey Cache Server
+After=yagpdb-postgres.service
+Requires=yagpdb-postgres.service
+[Container]
+Image=docker.io/valkey/valkey:alpine
+ContainerName=yagpdb-valkey
+Network=yagpdb.network
+Exec=valkey-server --maxmemory-policy noeviction
+
+AutoUpdate=registry
+[Service]
+Restart=on-failure
+RestartSec=15
+[Install]
+WantedBy=default.target

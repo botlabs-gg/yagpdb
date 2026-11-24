@@ -1,0 +1,11 @@
+[Unit]
+Description=Build yagpd container image from upstream Git
+
+[Build]
+SetWorkingDirectory=https://github.com/botlabs-gg/yagpdb.git#master
+File=yagpdb_docker/Dockerfile
+ImageTag=localhost/yagpdb:latest
+Pull=newer
+
+[Install]
+WantedBy=default.target

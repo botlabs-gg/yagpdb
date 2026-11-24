@@ -1,0 +1,16 @@
+[Unit]
+Description=yagpdb postgres
+After=network-online.target
+[Container]
+Image=docker.io/library/postgres:18-alpine
+ContainerName=yagpdb-postgres
+Network=yagpdb.network
+EnvironmentFile=%h/.config/containers/systemd/yagpdb-db.env
+Volume=yagpdb-pgdata:/var/lib/postgresql/data
+
+AutoUpdate=registry
+[Service]
+Restart=on-failure
+RestartSec=15
+[Install]
+WantedBy=default.target
