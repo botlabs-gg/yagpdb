@@ -110,7 +110,7 @@ func handleContextMenuInteraction(evt *eventsystem.EventData, cs *dstate.Channel
 //
 //	.TargetUser    the target's User object - the clicked user for user commands, or the
 //	               author of the clicked message for message commands
-//	.TargetMember  the matching MemberState for that same target
+//	.TargetMember  the matching Member for that same target, nil if they are not in the server
 //	.Author        the User object of the person who invoked the command
 //	.Message       the clicked message (message commands only)
 //	.CommandType   "user" or "message"
@@ -139,7 +139,7 @@ func ExecuteCustomCommandFromContextMenu(cc *models.CustomCommand, gs *dstate.Gu
 		tmplCtx.Data["CommandType"] = "user"
 		user := resolveSlashUser(data, data.TargetID)
 		tmplCtx.Data["TargetUser"] = user
-		tmplCtx.Data["TargetMember"], _ = bot.GetMember(gs.ID, user.ID)
+		tmplCtx.Data["TargetMember"] = contextMenuTargetMember(gs.ID, user.ID)
 	case discordgo.MessageApplicationCommand:
 		tmplCtx.Data["CommandType"] = "message"
 		if data.Resolved != nil {
@@ -149,13 +149,21 @@ func ExecuteCustomCommandFromContextMenu(cc *models.CustomCommand, gs *dstate.Gu
 				tmplCtx.Data["Message"] = target
 				if target.Author != nil {
 					tmplCtx.Data["TargetUser"] = target.Author
-					tmplCtx.Data["TargetMember"], _ = bot.GetMember(gs.ID, target.Author.ID)
+					tmplCtx.Data["TargetMember"] = contextMenuTargetMember(gs.ID, target.Author.ID)
 				}
 			}
 		}
 	}
 
 	return ExecuteCustomCommand(cc, tmplCtx)
+}
+
+func contextMenuTargetMember(guildID, userID int64) any {
+	ms, err := bot.GetMember(guildID, userID)
+	if err != nil {
+		return nil
+	}
+	return ms.DgoMember()
 }
 
 // buildContextMenuCommandRequest converts a stored context menu custom command into the
