@@ -296,3 +296,119 @@ func TestComponentBuilderFromNonV2Message(t *testing.T) {
 		t.Fatal("expected an error converting a non components v2 message")
 	}
 }
+
+func newSetDelTestBuilder(t *testing.T) (*ComponentBuilder, Slice) {
+	t.Helper()
+	buttons := Slice{SDict{"label": "A", "custom_id": "a"}, SDict{"label": "B", "custom_id": "b"}}
+	builder, err := CreateComponentBuilder(
+		"text", "hello",
+		"buttons", buttons,
+		"container", SDict{"components": &ComponentBuilder{
+			Components: []string{"section", "menus"},
+			Values: []any{
+				SDict{"text": "section text", "button": SDict{"label": "S", "custom_id": "s"}},
+				SDict{"custom_id": "menu", "options": Slice{SDict{"label": "o", "value": "o"}}},
+			},
+		}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return builder, buttons
+}
+
+func mustButton(t *testing.T, label, customID string) *discordgo.Button {
+	t.Helper()
+	button, err := CreateButton(SDict{"label": label, "custom_id": customID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return button
+}
+
+func TestComponentBuilderSetDel(t *testing.T) {
+	builder, buttons := newSetDelTestBuilder(t)
+
+	if _, err := builder.Set("a", mustButton(t, "X", "x")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := builder.Set("s", SDict{"label": "T", "custom_id": "t"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := builder.Del("b"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := builder.Del("templates-menu"); err != nil {
+		t.Fatal(err)
+	}
+
+	got := messageJSON(t, builder)
+	for _, want := range []string{"templates-x", "templates-t", "section text"} {
+		if !strings.Contains(got, `"`+want+`"`) {
+			t.Errorf("expected %q in %s", want, got)
+		}
+	}
+	for _, unwanted := range []string{"templates-a", "templates-b", "templates-s", "templates-menu"} {
+		if strings.Contains(got, `"`+unwanted+`"`) {
+			t.Errorf("did not expect %q in %s", unwanted, got)
+		}
+	}
+	if buttons[0].(SDict)["custom_id"] != "a" || len(buttons) != 2 {
+		t.Error("Set or Del mutated the slice passed to the builder")
+	}
+
+	if _, err := builder.Del("t"); err == nil {
+		t.Error("expected an error deleting a section button")
+	}
+	for _, id := range []string{"missing", "", "templates-"} {
+		if _, err := builder.Del(id); err == nil {
+			t.Errorf("Del %q: expected an error", id)
+		}
+		if _, err := builder.Set(id, mustButton(t, "Y", "y")); err == nil {
+			t.Errorf("Set %q: expected an error", id)
+		}
+	}
+	if _, err := builder.Set("x", nil); err == nil {
+		t.Error("expected an error setting a nil component")
+	}
+}
+
+func TestComponentBuilderSetDelFromMessage(t *testing.T) {
+	source, _ := newSetDelTestBuilder(t)
+	sent, err := source.ToComplexMessage()
+	if err != nil {
+		t.Fatal(err)
+	}
+	builder, err := componentBuilderFromMessage(&discordgo.Message{Flags: sent.Flags, Components: sent.Components})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := builder.Set("s", mustButton(t, "T", "t")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := builder.Set("menu", SDict{"custom_id": "menu2", "options": Slice{SDict{"label": "o", "value": "o"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := builder.Del("a"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := builder.Del("b"); err != nil {
+		t.Fatal(err)
+	}
+
+	got := messageJSON(t, builder)
+	if !strings.Contains(got, `"templates-t"`) || !strings.Contains(got, `"templates-menu2"`) {
+		t.Errorf("replacements missing from %s", got)
+	}
+	if strings.Contains(got, `"templates-a"`) || strings.Contains(got, `"templates-b"`) || strings.Contains(got, `"templates-s"`) {
+		t.Errorf("old components still present in %s", got)
+	}
+	if !reflect.DeepEqual(builder.Components, []string{"text", "container"}) {
+		t.Errorf("expected the emptied actions row to be removed, got %v", builder.Components)
+	}
+
+	if !strings.Contains(messageJSON(t, source), `"templates-s"`) {
+		t.Error("editing the copied builder changed the source")
+	}
+}

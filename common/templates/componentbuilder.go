@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"emperror.dev/errors"
@@ -574,4 +575,248 @@ func legacyToJSONValue(typ reflect.Type, value any, depth int) (any, error) {
 		return converted, nil
 	}
 	return value, nil
+}
+
+const maxComponentEditDepth = 64
+
+type componentEdit struct {
+	customID    string
+	replacement any
+	depth       int
+}
+
+func (e *componentEdit) matches(id string) bool {
+	return strings.TrimPrefix(id, TemplateCustomIDPrefix) == e.customID
+}
+
+func (s *ComponentBuilder) editByCustomID(customID string, edit *componentEdit) error {
+	edit.customID = strings.TrimPrefix(customID, TemplateCustomIDPrefix)
+	if edit.customID == "" {
+		return errors.New("no custom_id provided")
+	}
+
+	edited, found, err := edit.builder(s)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("no component with custom_id %q found", edit.customID)
+	}
+
+	s.Components = edited.Components
+	s.Values = edited.Values
+	return nil
+}
+
+// apply returns value with the matching component replaced or removed. remove
+// reports that value itself should be dropped from its parent, either because
+// it is the deleted component or because it is left empty.
+func (e *componentEdit) apply(value any) (result any, found, remove bool, err error) {
+	if e.depth > maxComponentEditDepth {
+		return nil, false, false, errStoredValueTooDeep
+	}
+	e.depth++
+	defer func() { e.depth-- }()
+
+	switch typed := value.(type) {
+	case nil:
+		return value, false, false, nil
+	case *discordgo.Button:
+		return e.leaf(value, typed.CustomID)
+	case *discordgo.SelectMenu:
+		return e.leaf(value, typed.CustomID)
+	case *discordgo.ActionsRow:
+		return e.actionsRow(typed)
+	case *discordgo.Section:
+		return e.section(typed)
+	case *discordgo.Container:
+		return e.container(typed)
+	case *ComponentBuilder:
+		edited, found, err := e.builder(typed)
+		return edited, found, found && len(edited.Components) == 0, err
+	}
+
+	if m, ok := asStringMap(value); ok {
+		return e.stringMap(value, m)
+	}
+
+	val := reflect.ValueOf(value)
+	if val.Kind() == reflect.Slice || val.Kind() == reflect.Array {
+		return e.slice(value, val)
+	}
+	return value, false, false, nil
+}
+
+func (e *componentEdit) leaf(value any, customID string) (any, bool, bool, error) {
+	if !e.matches(customID) {
+		return value, false, false, nil
+	}
+	if e.replacement == nil {
+		return nil, true, true, nil
+	}
+	return e.replacement, true, false, nil
+}
+
+func (e *componentEdit) builder(b *ComponentBuilder) (*ComponentBuilder, bool, error) {
+	for i, v := range b.Values {
+		result, found, remove, err := e.apply(v)
+		if err != nil {
+			return nil, false, err
+		}
+		if !found {
+			continue
+		}
+
+		edited := &ComponentBuilder{
+			Components: slices.Clone(b.Components),
+			Values:     slices.Clone(b.Values),
+		}
+		if remove {
+			edited.Components = slices.Delete(edited.Components, i, i+1)
+			edited.Values = slices.Delete(edited.Values, i, i+1)
+		} else {
+			edited.Values[i] = result
+		}
+		return edited, true, nil
+	}
+	return b, false, nil
+}
+
+func (e *componentEdit) slice(value any, val reflect.Value) (any, bool, bool, error) {
+	for i := range val.Len() {
+		result, found, remove, err := e.apply(val.Index(i).Interface())
+		if err != nil {
+			return nil, false, false, err
+		}
+		if !found {
+			continue
+		}
+
+		edited := make(Slice, 0, val.Len())
+		for j := range val.Len() {
+			switch {
+			case j != i:
+				edited = append(edited, val.Index(j).Interface())
+			case !remove:
+				edited = append(edited, result)
+			}
+		}
+		return edited, true, len(edited) == 0, nil
+	}
+	return value, false, false, nil
+}
+
+func (e *componentEdit) stringMap(value any, m map[string]any) (any, bool, bool, error) {
+	for k, v := range m {
+		if strings.EqualFold(k, "custom_id") {
+			return e.leaf(value, ToString(v))
+		}
+	}
+
+	for k, v := range m {
+		result, found, remove, err := e.apply(v)
+		if err != nil {
+			return nil, false, false, err
+		}
+		if !found {
+			continue
+		}
+		if remove && strings.EqualFold(k, "button") {
+			return nil, false, false, errors.New("a section's button can't be deleted, replace it with .Set instead")
+		}
+
+		edited := make(SDict, len(m))
+		for key, val := range m {
+			edited[key] = val
+		}
+		if remove {
+			delete(edited, k)
+		} else {
+			edited[k] = result
+		}
+		return edited, true, false, nil
+	}
+	return value, false, false, nil
+}
+
+func (e *componentEdit) actionsRow(row *discordgo.ActionsRow) (any, bool, bool, error) {
+	for i, c := range row.Components {
+		result, found, remove, err := e.apply(c)
+		if err != nil {
+			return nil, false, false, err
+		}
+		if !found {
+			continue
+		}
+
+		edited := *row
+		edited.Components = slices.Clone(row.Components)
+		if remove {
+			edited.Components = slices.Delete(edited.Components, i, i+1)
+			return &edited, true, len(edited.Components) == 0, nil
+		}
+
+		component, err := toInteractiveComponent(c, result)
+		if err != nil {
+			return nil, false, false, err
+		}
+		edited.Components[i] = component
+		return &edited, true, false, nil
+	}
+	return row, false, false, nil
+}
+
+func (e *componentEdit) section(section *discordgo.Section) (any, bool, bool, error) {
+	result, found, remove, err := e.apply(section.Accessory)
+	if err != nil || !found {
+		return section, false, false, err
+	}
+	if remove {
+		return nil, false, false, errors.New("a section's button can't be deleted, replace it with .Set instead")
+	}
+
+	component, err := toInteractiveComponent(section.Accessory, result)
+	if err != nil {
+		return nil, false, false, err
+	}
+	accessory, ok := component.(discordgo.AccessoryComponent)
+	if !ok {
+		return nil, false, false, errors.New("component can't be used as a section accessory")
+	}
+
+	edited := *section
+	edited.Accessory = accessory
+	return &edited, true, false, nil
+}
+
+func (e *componentEdit) container(container *discordgo.Container) (any, bool, bool, error) {
+	for i, c := range container.Components {
+		result, found, remove, err := e.apply(c)
+		if err != nil {
+			return nil, false, false, err
+		}
+		if !found {
+			continue
+		}
+
+		edited := *container
+		edited.Components = slices.Clone(container.Components)
+		if remove {
+			edited.Components = slices.Delete(edited.Components, i, i+1)
+		} else {
+			edited.Components[i] = result.(discordgo.TopLevelComponent)
+		}
+		return &edited, true, false, nil
+	}
+	return container, false, false, nil
+}
+
+func toInteractiveComponent(previous, replacement any) (discordgo.InteractiveComponent, error) {
+	if component, ok := replacement.(discordgo.InteractiveComponent); ok {
+		return component, nil
+	}
+	if _, ok := previous.(*discordgo.SelectMenu); ok {
+		return CreateSelectMenu(replacement)
+	}
+	return CreateButton(replacement)
 }

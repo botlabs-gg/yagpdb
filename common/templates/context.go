@@ -1486,6 +1486,27 @@ func (s *ComponentBuilder) Get(key string) (result []any) {
 	return
 }
 
+func (s *ComponentBuilder) Set(customID string, component any) (string, error) {
+	if component == nil {
+		return "", errors.New("no component provided")
+	}
+
+	if err := s.editByCustomID(customID, &componentEdit{replacement: component}); err != nil {
+		return "", err
+	}
+
+	if isContainer(component) {
+		if err := detectCyclicValue(s.Values); err != nil {
+			return "", template.UncatchableError(err)
+		}
+	}
+	return "", nil
+}
+
+func (s *ComponentBuilder) Del(customID string) (string, error) {
+	return "", s.editByCustomID(customID, &componentEdit{})
+}
+
 func (s *ComponentBuilder) ToComplexMessage() (*discordgo.MessageSend, error) {
 	msg := &discordgo.MessageSend{
 		AllowedMentions: discordgo.AllowedMentions{
