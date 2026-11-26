@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -416,11 +417,11 @@ func (p *Plugin) AddCommands() {
 		})
 
 	container.AddCommand(cmdOpenTicket, cmdOpenTicket.GetTrigger())
-	container.AddCommand(cmdAddParticipant, cmdAddParticipant.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
-	container.AddCommand(cmdRemoveParticipant, cmdRemoveParticipant.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
-	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
-	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
-	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
+	container.AddCommand(cmdAddParticipant, cmdAddParticipant.GetTrigger().SetMiddlewares(RequireActiveTicketMW, RequireTicketStaffMW))
+	container.AddCommand(cmdRemoveParticipant, cmdRemoveParticipant.GetTrigger().SetMiddlewares(RequireActiveTicketMW, RequireTicketStaffMW))
+	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW, RequireTicketStaffMW))
+	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW, RequireTicketStaffOrAuthorMW))
+	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW, RequireTicketAdminMW))
 	container.AddCommand(cmdMenuCreate, cmdMenuCreate.GetTrigger().SetMiddlewares(ProhibitActiveTicketMW))
 
 	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
@@ -453,6 +454,64 @@ func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
 		return inner(data)
 	}
 }
+
+const (
+	errNotTicketStaff         = "Only ticket staff (ticket mod or admin roles, or the Manage Channels permission) can use this command."
+	errNotTicketStaffOrAuthor = "Only the ticket author or ticket staff (ticket mod or admin roles, or the Manage Channels permission) can close this ticket."
+	errNotTicketAdmin         = "Only ticket admins (ticket admin roles, or the Manage Server or Administrator permission) can use this command."
+)
+
+func isTicketStaff(conf *models.TicketConfig, roles []int64, guildPerms int64) bool {
+	if common.ContainsInt64SliceOneOf(roles, conf.ModRoles) || isTicketAdmin(conf, roles, guildPerms) {
+		return true
+	}
+	return guildPerms&discordgo.PermissionManageChannels != 0
+}
+
+func isTicketAdmin(conf *models.TicketConfig, roles []int64, guildPerms int64) bool {
+	if common.ContainsInt64SliceOneOf(roles, conf.AdminRoles) {
+		return true
+	}
+	return guildPerms&(discordgo.PermissionAdministrator|discordgo.PermissionManageGuild) != 0
+}
+
+func memberRolesAndGuildPerms(data *dcmd.Data) ([]int64, int64, error) {
+	ms := data.GuildData.MS
+	if ms == nil || ms.Member == nil {
+		return nil, 0, nil
+	}
+	perms, err := data.GuildData.GS.GetMemberPermissions(0, ms.User.ID, ms.Member.Roles)
+	return ms.Member.Roles, perms, err
+}
+
+func ticketPermMW(allowed func(data *dcmd.Data, conf *models.TicketConfig, roles []int64, perms int64) bool, denied string) func(dcmd.RunFunc) dcmd.RunFunc {
+	return func(inner dcmd.RunFunc) dcmd.RunFunc {
+		return func(data *dcmd.Data) (any, error) {
+			conf := data.Context().Value(CtxKeyConfig).(*models.TicketConfig)
+			roles, perms, err := memberRolesAndGuildPerms(data)
+			if err != nil {
+				return nil, err
+			}
+			if !allowed(data, conf, roles, perms) {
+				return denied, nil
+			}
+			return inner(data)
+		}
+	}
+}
+
+var RequireTicketStaffMW = ticketPermMW(func(_ *dcmd.Data, conf *models.TicketConfig, roles []int64, perms int64) bool {
+	return isTicketStaff(conf, roles, perms)
+}, errNotTicketStaff)
+
+var RequireTicketAdminMW = ticketPermMW(func(_ *dcmd.Data, conf *models.TicketConfig, roles []int64, perms int64) bool {
+	return isTicketAdmin(conf, roles, perms)
+}, errNotTicketAdmin)
+
+var RequireTicketStaffOrAuthorMW = ticketPermMW(func(data *dcmd.Data, conf *models.TicketConfig, roles []int64, perms int64) bool {
+	currentTicket := data.Context().Value(CtxKeyCurrentTicket).(*Ticket)
+	return currentTicket.Ticket.AuthorID == data.Author.ID || isTicketStaff(conf, roles, perms)
+}, errNotTicketStaffOrAuthor)
 
 func ProhibitActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (any, error) {
@@ -564,35 +623,78 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 	return nil
 }
 
+const (
+	maxAttachmentArchiveSize = 8000000
+	maxAttachmentsTotalSize  = 100000000
+)
+
+var errAttachmentTooLarge = errors.New("attachment too large")
+
+var attachmentHTTPClient = &http.Client{Timeout: 30 * time.Second}
+
+func downloadAttachment(url string, limit int64) ([]byte, error) {
+	resp, err := attachmentHTTPClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > limit {
+		return nil, errAttachmentTooLarge
+	}
+	return data, nil
+}
+
 func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups [][]*discordgo.MessageAttachment, adminOnly bool) {
-	var buf bytes.Buffer
+	channel := transcriptChannel(conf, adminOnly)
+	var skipped []string
+	totalDownloaded := 0
+
+	download := func(att *discordgo.MessageAttachment, limit int) []byte {
+		remaining := maxAttachmentsTotalSize - totalDownloaded
+		if limit > remaining {
+			limit = remaining
+		}
+		if limit <= 0 {
+			skipped = append(skipped, att.Filename)
+			return nil
+		}
+		data, err := downloadAttachment(att.URL, int64(limit))
+		if err != nil {
+			skipped = append(skipped, att.Filename)
+			return nil
+		}
+		totalDownloaded += len(data)
+		return data
+	}
+
 	for _, ag := range groups {
 		if len(ag) == 1 {
-			resp, err := http.Get(ag[0].URL)
-			if err != nil {
-				continue
-			}
-
-			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			data := download(ag[0], maxAttachmentArchiveSize)
+			if data == nil {
 				continue
 			}
 
 			fName := fmt.Sprintf("attachments-%d-%s-%s", ticket.LocalID, ticket.Title, ag[0].Filename)
-			_, _ = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
-				fName, fName, resp.Body)
+			_, _ = common.BotSession.ChannelFileSendWithMessage(channel, fName, fName, bytes.NewReader(data))
 			continue
 		}
 
-		// zip multiple files togheter
+		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
+		archived := 0
+		groupSize := 0
 		for _, v := range ag {
-
-			resp, err := http.Get(v.URL)
-			if err != nil {
-				continue
-			}
-
-			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			data := download(v, maxAttachmentArchiveSize-groupSize)
+			if data == nil {
 				continue
 			}
 
@@ -602,21 +704,31 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 				continue
 			}
 
-			_, err = io.Copy(f, resp.Body)
-			if err != nil {
+			if _, err = f.Write(data); err != nil {
 				continue
 			}
-
+			groupSize += len(data)
+			archived++
 		}
 
 		zw.Close()
-		fname := fmt.Sprintf("attachments-%d-%s.zip", ticket.LocalID, ticket.Title)
-		_, err := common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly), fname, fname, &buf)
-		buf.Reset()
+		if archived == 0 {
+			continue
+		}
 
+		fname := fmt.Sprintf("attachments-%d-%s.zip", ticket.LocalID, ticket.Title)
+		_, err := common.BotSession.ChannelFileSendWithMessage(channel, fname, fname, &buf)
 		if err != nil {
 			logger.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] failed archiving batch of attachments")
 		}
+	}
+
+	if len(skipped) > 0 {
+		msg := fmt.Sprintf("Skipped %d attachment(s) from ticket #%d that failed to download or exceeded the size limit: %s", len(skipped), ticket.LocalID, strings.Join(skipped, ", "))
+		_, _ = common.BotSession.ChannelMessageSendComplex(channel, &discordgo.MessageSend{
+			Content:         common.CutStringShort(msg, 2000),
+			AllowedMentions: discordgo.AllowedMentions{},
+		})
 	}
 }
 
