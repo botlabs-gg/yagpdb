@@ -3,11 +3,13 @@ package templates
 import (
 	"encoding/base64"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var ErrTooManyInteractionResponses = errors.New("cannot respond to an interaction > 1 time; consider using a followup")
@@ -442,6 +444,13 @@ func (c *Context) tokenArg(interactionToken any) (sendType sendMessageType, toke
 		if parts[0] != "interaction" {
 			return
 		}
+		isCurrent := c.CurrentFrame.Interaction != nil && sToken == c.CurrentFrame.Interaction.Token
+		if !isCurrent {
+			interactionID, err := strconv.ParseInt(parts[1], 10, 64)
+			if err != nil || c.GS == nil || !interactionInGuild(interactionID, c.GS.ID) {
+				return
+			}
+		}
 		token = sToken
 	}
 
@@ -449,4 +458,28 @@ func (c *Context) tokenArg(interactionToken any) (sendType sendMessageType, toke
 		sendType = sendMessageInteractionResponse
 	}
 	return
+}
+
+// Interaction tokens stay valid for 15 minutes.
+const interactionGuildTTLSeconds = 15 * 60
+
+func keyInteractionGuild(interactionID int64) string {
+	return "cc_interaction_guild:" + strconv.FormatInt(interactionID, 10)
+}
+
+// RecordInteractionGuild marks an interaction as belonging to a guild, so templates in
+// that guild may use its token.
+func RecordInteractionGuild(interactionID, guildID int64) error {
+	return common.RedisPool.Do(radix.FlatCmd(nil, "SET", keyInteractionGuild(interactionID), guildID, "EX", interactionGuildTTLSeconds))
+}
+
+var interactionInGuild = func(interactionID, guildID int64) bool {
+	var recordedGuildID int64
+	reply := radix.MaybeNil{Rcv: &recordedGuildID}
+	err := common.RedisPool.Do(radix.Cmd(&reply, "GET", keyInteractionGuild(interactionID)))
+	if err != nil {
+		logger.WithError(err).Error("failed checking interaction guild")
+		return false
+	}
+	return !reply.Nil && recordedGuildID == guildID
 }

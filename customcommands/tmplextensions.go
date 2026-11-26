@@ -255,7 +255,7 @@ func tmplRunCC(ctx *templates.Context) any {
 
 			Member:       ctx.MS,
 			Message:      ctx.Msg,
-			CurrentFrame: ctx.CurrentFrame,
+			CurrentFrame: delayedRunFrame(ctx.CurrentFrame),
 
 			ExecutedFrom: ctx.ExecutedFrom,
 		}
@@ -283,6 +283,19 @@ func tmplRunCC(ctx *templates.Context) any {
 
 		return "", nil
 	}
+}
+
+// delayedRunFrame copies the frame persisted for a delayed run without the mention
+// permissions, so the delayed run has to opt in to mentions itself.
+func delayedRunFrame(frame *templates.ContextFrame) *templates.ContextFrame {
+	if frame == nil {
+		return nil
+	}
+	persisted := *frame
+	persisted.MentionEveryone = false
+	persisted.MentionHere = false
+	persisted.MentionRoles = nil
+	return &persisted
 }
 
 // tmplScheduleUniqueCC schedules a custom command to be ran in the future, but you can provide a key where it will overwrite existing
@@ -344,7 +357,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) any {
 			Member:       ctx.MS,
 			Message:      ctx.Msg,
 			UserKey:      stringedKey,
-			CurrentFrame: ctx.CurrentFrame,
+			CurrentFrame: delayedRunFrame(ctx.CurrentFrame),
 
 			ExecutedFrom: ctx.ExecutedFrom,
 		}

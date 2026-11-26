@@ -2354,12 +2354,12 @@ func (c *Context) FindRole(role any, accept roleInputType) *discordgo.Role {
 			return c.findRoleByName(t)
 		}
 	case *discordgo.Role:
-		if (accept & acceptRoleObject) != 0 {
-			return t
+		if (accept&acceptRoleObject) != 0 && t != nil {
+			return c.GS.GetRole(t.ID)
 		}
 	case discordgo.Role:
 		if (accept & acceptRoleObject) != 0 {
-			return &t
+			return c.GS.GetRole(t.ID)
 		}
 	default:
 		if (accept & acceptRoleID) != 0 {

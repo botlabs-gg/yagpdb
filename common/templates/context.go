@@ -339,6 +339,11 @@ func (c *Context) setupContextFuncs() {
 		f(c)
 	}
 
+	// setup funcs from other packages assign ContextFuncs directly
+	for _, name := range c.DisabledContextFuncs {
+		delete(c.ContextFuncs, name)
+	}
+
 	c.contextFuncsAdded = true
 }
 

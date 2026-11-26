@@ -78,6 +78,7 @@ type cmdExecFunc func(cmd string, args ...any) (any, error)
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
 	execUser := func(cmd string, args ...any) (any, error) {
 		messageCopy := *ctx.Msg
+		messageCopy.Author, messageCopy.Member = execInvoker(ctx)
 		if ctx.CurrentFrame.CS != nil { //Check if CS is not a nil pointer
 			messageCopy.ChannelID = ctx.CurrentFrame.CS.ID
 		}
@@ -92,7 +93,8 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	execBot := func(cmd string, args ...any) (any, error) {
 
 		botUserCopy := *common.BotUser
-		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.String() + ")"
+		invoker, _ := execInvoker(ctx)
+		botUserCopy.Username = "YAGPDB (cc: " + invoker.String() + ")"
 
 		messageCopy := *ctx.Msg
 		messageCopy.Author = &botUserCopy
@@ -116,6 +118,17 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	}
 
 	return execUser, execBot
+}
+
+// execInvoker returns who exec runs as. For interaction triggered commands this is the
+// user of the interaction, since ctx.Msg may be the target message of a context menu.
+func execInvoker(ctx *templates.Context) (*discordgo.User, *discordgo.Member) {
+	if i := ctx.CurrentFrame.Interaction; i != nil && i.Interaction != nil && i.Member != nil && i.Member.User != nil {
+		member := *i.Member
+		member.GuildID = ctx.GS.ID
+		return member.User, &member
+	}
+	return ctx.Msg.Author, ctx.Msg.Member
 }
 
 func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...any) (any, error) {
