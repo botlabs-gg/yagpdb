@@ -244,8 +244,9 @@ func tmplRunCC(ctx *templates.Context) any {
 			newCtx.Data["ExecData"] = data
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
 			newCtx.ExecutedFrom = ctx.ExecutedFrom
+			newCtx.RunningCCs = slices.Clone(ctx.RunningCCs)
 
-			go ExecuteCustomCommand(cmd, newCtx)
+			ExecuteCustomCommand(cmd, newCtx)
 			return "", nil
 		}
 

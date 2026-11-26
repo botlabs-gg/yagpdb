@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 )
 
@@ -31,6 +33,19 @@ func tmplUsernames(tmplCtx *templates.Context) any {
 
 		target := templates.ToInt64(userIDi)
 		result := make([]*CCNameChange, 0)
+
+		// username history is collected across all servers, so like the usernames command only
+		// members of this server can be looked up, and only if it has username logging on
+		config, err := GetConfig(common.PQ, context.Background(), tmplCtx.GS.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !config.UsernameLoggingEnabled.Bool {
+			return nil, errors.New("Username logging is disabled on this server")
+		}
+		if ms, err := bot.GetMember(tmplCtx.GS.ID, target); err != nil || ms == nil {
+			return nil, errors.New("pastUsernames only works for members of this server")
+		}
 
 		usernames, err := GetUsernames(context.Background(), target, 15, offset)
 		if err != nil {
@@ -59,6 +74,14 @@ func tmplNicknames(tmplCtx *templates.Context) any {
 
 		target := templates.ToInt64(userIDi)
 		result := make([]*CCNameChange, 0)
+
+		config, err := GetConfig(common.PQ, context.Background(), tmplCtx.GS.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !config.NicknameLoggingEnabled.Bool {
+			return nil, errors.New("Nickname logging is disabled on this server")
+		}
 
 		nicknames, err := GetNicknames(context.Background(), target, tmplCtx.GS.ID, 15, offset)
 		if err != nil {

@@ -567,7 +567,7 @@ func parseAllowedMentions(Data any) (*discordgo.AllowedMentions, error) {
 			}
 			for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
-					return nil, fmt.Errorf(`allowed Mentions Parsing: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
+					return nil, fmt.Errorf(`allowed Mentions Parsing: "%s" IDSlice: invalid ID passed - %s`, k, describeInput(elem))
 				}
 				newslice = append(newslice, ToInt64(elem))
 			}

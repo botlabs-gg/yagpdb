@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -259,6 +260,12 @@ type Context struct {
 	CurrentFrame *ContextFrame
 
 	ExecutedFrom ExecutedFromType
+
+	// RunningCCs are the custom commands already executing in this synchronous execCC chain, whose locks are held.
+	RunningCCs []int64
+
+	// execUsage is shared by nested template executions so they draw from the parent's budget.
+	execUsage *template.Usage
 
 	contextFuncsAdded bool
 }
@@ -557,8 +564,14 @@ func (c *Context) executeParsed() (string, error) {
 		}
 	}()
 
-	allocated, err := parsed.ExecuteCountingAlloc(w, c.Data)
-	if allocated > LogAllocAbove {
+	nested := c.execUsage != nil
+	if !nested {
+		c.execUsage = &template.Usage{}
+		defer func() { c.execUsage = nil }()
+	}
+
+	err = parsed.ExecuteWithUsage(w, c.Data, c.execUsage)
+	if allocated := c.execUsage.AllocatedBytes; !nested && allocated > LogAllocAbove {
 		logger.WithFields(logrus.Fields{
 			"guild_id":      c.GS.ID,
 			"executed_from": c.ExecutedFrom,
@@ -748,11 +761,11 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 		}
 		if !c.CurrentFrame.EphemeralResponse {
 			if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
-				go func(frame *ContextFrame) {
-					for _, v := range frame.AddResponseReactionNames {
+				go func(names []string) {
+					for _, v := range names {
 						common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
 					}
-				}(c.CurrentFrame)
+				}(slices.Clone(c.CurrentFrame.AddResponseReactionNames))
 			}
 
 			if c.CurrentFrame.PublishResponse && c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
@@ -1082,76 +1095,100 @@ func isContainer(v any) bool {
 	}
 }
 
-// Cyclic value detection is modified from encoding/json/encode.go.
-const startDetectingCyclesAfter = 250
-
+// cyclicValueDetector remembers every container it has fully checked, so a container referenced many
+// times is only walked once and a heavily aliased value can't make the check exponential.
 type cyclicValueDetector struct {
-	ptrLevel uint
-	ptrSeen  map[any]struct{}
+	inProgress map[any]struct{}
+	done       map[any]struct{}
+}
+
+type sliceIdentity struct {
+	ptr uintptr
+	len int
+}
+
+func canHoldContainer(t reflect.Type) bool {
+	switch t.Kind() {
+	case reflect.Interface, reflect.Map, reflect.Slice, reflect.Array, reflect.Pointer:
+		return true
+	}
+	return false
 }
 
 func (c *cyclicValueDetector) Check(v reflect.Value) error {
 	if v.IsValid() && v.CanInterface() {
 		if builder, ok := v.Interface().(*ComponentBuilder); ok && builder != nil {
-			return c.checkBuilder(builder)
+			return c.visit(builder, "*templates.ComponentBuilder", func() error {
+				return c.Check(reflect.ValueOf(builder.Values))
+			})
 		}
 	}
 
 	v, _ = indirect(v)
 	switch v.Kind() {
 	case reflect.Map:
-		if c.ptrLevel++; c.ptrLevel > startDetectingCyclesAfter {
-			ptr := v.Pointer()
-			if _, ok := c.ptrSeen[ptr]; ok {
-				return fmt.Errorf("encountered a cycle via %s", v.Type())
-			}
-			c.ptrSeen[ptr] = struct{}{}
+		checkKeys := canHoldContainer(v.Type().Key())
+		if v.Len() == 0 || !checkKeys && !canHoldContainer(v.Type().Elem()) {
+			return nil
 		}
-
-		it := v.MapRange()
-		for it.Next() {
-			if err := c.Check(it.Value()); err != nil {
-				return err
+		return c.visit(v.Pointer(), v.Type().String(), func() error {
+			it := v.MapRange()
+			for it.Next() {
+				if checkKeys {
+					if err := c.Check(it.Key()); err != nil {
+						return err
+					}
+				}
+				if err := c.Check(it.Value()); err != nil {
+					return err
+				}
 			}
+			return nil
+		})
+	case reflect.Slice:
+		if v.Len() == 0 || !canHoldContainer(v.Type().Elem()) {
+			return nil
 		}
-		c.ptrLevel--
-		return nil
-	case reflect.Array, reflect.Slice:
-		if c.ptrLevel++; c.ptrLevel > startDetectingCyclesAfter {
-			ptr := struct {
-				ptr uintptr
-				len int
-			}{v.Pointer(), v.Len()}
-			if _, ok := c.ptrSeen[ptr]; ok {
-				return fmt.Errorf("encountered a cycle via %s", v.Type())
-			}
-			c.ptrSeen[ptr] = struct{}{}
+		return c.visit(sliceIdentity{v.Pointer(), v.Len()}, v.Type().String(), func() error {
+			return c.checkElems(v)
+		})
+	case reflect.Array:
+		if !canHoldContainer(v.Type().Elem()) {
+			return nil
 		}
-
-		for i := 0; i < v.Len(); i++ {
-			elem := v.Index(i)
-			if err := c.Check(elem); err != nil {
-				return err
-			}
-		}
-		c.ptrLevel--
-		return nil
-	default:
-		return nil
+		return c.checkElems(v)
 	}
+	return nil
 }
 
-func (c *cyclicValueDetector) checkBuilder(builder *ComponentBuilder) error {
-	if _, ok := c.ptrSeen[builder]; ok {
-		return errors.New("encountered a cycle via *templates.ComponentBuilder")
+func (c *cyclicValueDetector) checkElems(v reflect.Value) error {
+	for i := 0; i < v.Len(); i++ {
+		if err := c.Check(v.Index(i)); err != nil {
+			return err
+		}
 	}
-	c.ptrSeen[builder] = struct{}{}
-	defer delete(c.ptrSeen, builder)
-	return c.Check(reflect.ValueOf(builder.Values))
+	return nil
+}
+
+func (c *cyclicValueDetector) visit(key any, typeName string, walk func() error) error {
+	if _, ok := c.done[key]; ok {
+		return nil
+	}
+	if _, ok := c.inProgress[key]; ok {
+		return fmt.Errorf("encountered a cycle via %s", typeName)
+	}
+
+	c.inProgress[key] = struct{}{}
+	err := walk()
+	delete(c.inProgress, key)
+	if err == nil {
+		c.done[key] = struct{}{}
+	}
+	return err
 }
 
 func detectCyclicValue(v any) error {
-	c := &cyclicValueDetector{ptrSeen: make(map[any]struct{})}
+	c := &cyclicValueDetector{inProgress: make(map[any]struct{}), done: make(map[any]struct{})}
 	return c.Check(reflect.ValueOf(v))
 }
 
@@ -1162,7 +1199,7 @@ func (d Dict) Set(key any, value any) (string, error) {
 		return "", errors.New("key cannot be nil")
 	}
 	d[key] = value
-	if isContainer(value) {
+	if isContainer(key) || isContainer(value) {
 		if err := detectCyclicValue(d); err != nil {
 			return "", template.UncatchableError(err)
 		}
@@ -1614,9 +1651,77 @@ func withOutputLimit(f func(...any) string, limit int) func(...any) (string, err
 	}
 }
 
+// formatPadding sums the widths and precisions in a printf format, which fmt pads the output to
+// however small the arguments are.
+func formatPadding(format string, args []any) int {
+	starValue := 0
+	for _, arg := range args {
+		rv := reflect.ValueOf(arg)
+		var n int64
+		switch rv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			n = rv.Int()
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			n = int64(min(rv.Uint(), math.MaxInt32))
+		default:
+			continue
+		}
+		if n < 0 {
+			n = -n
+		}
+		starValue = max(starValue, int(min(n, math.MaxInt32)))
+	}
+
+	skipArgIndex := func(i int) int {
+		if i < len(format) && format[i] == '[' {
+			if end := strings.IndexByte(format[i:], ']'); end >= 0 {
+				return i + end + 1
+			}
+		}
+		return i
+	}
+	readNumber := func(i int) (int, int) {
+		n := 0
+		for ; i < len(format) && format[i] >= '0' && format[i] <= '9'; i++ {
+			n = min(n*10+int(format[i]-'0'), math.MaxInt32)
+		}
+		return n, i
+	}
+
+	total := 0
+	for i := 0; i < len(format); i++ {
+		if format[i] != '%' {
+			continue
+		}
+		i++
+		for i < len(format) && strings.IndexByte("+-# 0", format[i]) >= 0 {
+			i++
+		}
+
+		for part := 0; part < 2; part++ {
+			i = skipArgIndex(i)
+			if i < len(format) && format[i] == '*' {
+				total += starValue
+				i++
+			} else {
+				var n int
+				n, i = readNumber(i)
+				total += n
+			}
+			i = skipArgIndex(i)
+			if part == 1 || i >= len(format) || format[i] != '.' {
+				break
+			}
+			i++
+		}
+	}
+	return total
+}
+
 func withOutputLimitF(f func(string, ...any) string, limit int) func(string, ...any) (string, error) {
 	return func(format string, args ...any) (string, error) {
-		if exceedsSerializedSize(sizeModeFormat, limit-len(format), args...) {
+		budget := limit - len(format) - formatPadding(format, args)
+		if budget < 0 || exceedsSerializedSize(sizeModeFormat, budget, args...) {
 			return "", fmt.Errorf("string grew too long (max %d)", limit)
 		}
 		out := f(format, args...)

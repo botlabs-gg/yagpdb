@@ -72,6 +72,15 @@ func (c *Context) parseMessageInput(msg any) (*discordgo.MessageSend, error) {
 	return msgSend, nil
 }
 
+// describeInput formats a template value for an error message without expanding containers.
+func describeInput(v any) string {
+	switch v.(type) {
+	case string, int, int32, int64, uint, uint32, uint64, float32, float64, bool, nil:
+		return common.CutStringShort(fmt.Sprint(v), 100)
+	}
+	return fmt.Sprintf("%T", v)
+}
+
 func (c *Context) tmplSendDM(s ...any) (string, error) {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.ExecutedFrom == ExecutedFromLeave {
 		return "", nil
@@ -87,6 +96,9 @@ func (c *Context) tmplSendDM(s ...any) (string, error) {
 	}
 
 	if msgSend.Content != "" && reflect.TypeOf(s[0]).Kind() != reflect.Pointer && reflect.TypeOf(s[0]).Kind() != reflect.Struct {
+		if exceedsSerializedSize(sizeModeFormat, maxOutputLength, s...) {
+			return "", errOutputTooBig
+		}
 		msgSend.Content = fmt.Sprint(s...)
 	}
 
@@ -261,7 +273,7 @@ func (c *Context) sendNestedTemplate(channel any, dm bool, name string, data ...
 	if len(data) > 1 {
 		dict, _ := Dictionary(data...)
 		c.Data["TemplateArgs"] = dict
-		if !c.checkSafeDictNoRecursion(dict, 0) {
+		if c.containsContextData(dict) {
 			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
 		}
 	} else if len(data) == 1 {
@@ -289,80 +301,47 @@ func (c *Context) sendNestedTemplate(channel any, dm bool, name string, data ...
 	return "", err
 }
 
-func (c *Context) checkSafeStringDictNoRecursion(d SDict, n int) bool {
-	if n > 1000 {
+// containsContextData reports whether v holds the context's own data map, visiting each container once.
+func (c *Context) containsContextData(v any) bool {
+	target := reflect.ValueOf(c.Data).Pointer()
+	seen := make(map[any]struct{})
+
+	var walk func(rv reflect.Value) bool
+	walk = func(rv reflect.Value) bool {
+		rv, _ = indirect(rv)
+		switch rv.Kind() {
+		case reflect.Map:
+			if rv.Pointer() == target {
+				return true
+			}
+			if _, ok := seen[rv.Pointer()]; ok || !canHoldContainer(rv.Type().Elem()) {
+				return false
+			}
+			seen[rv.Pointer()] = struct{}{}
+			it := rv.MapRange()
+			for it.Next() {
+				if walk(it.Value()) {
+					return true
+				}
+			}
+		case reflect.Slice:
+			if rv.Len() == 0 || !canHoldContainer(rv.Type().Elem()) {
+				return false
+			}
+			key := sliceIdentity{rv.Pointer(), rv.Len()}
+			if _, ok := seen[key]; ok {
+				return false
+			}
+			seen[key] = struct{}{}
+			for i := 0; i < rv.Len(); i++ {
+				if walk(rv.Index(i)) {
+					return true
+				}
+			}
+		}
 		return false
 	}
-
-	for _, v := range d {
-		if cast, ok := v.(Dict); ok {
-			if !c.checkSafeDictNoRecursion(cast, n+1) {
-				return false
-			}
-		}
-
-		if cast, ok := v.(*Dict); ok {
-			if !c.checkSafeDictNoRecursion(*cast, n+1) {
-				return false
-			}
-		}
-
-		if cast, ok := v.(SDict); ok {
-			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
-				return false
-			}
-		}
-
-		if cast, ok := v.(*SDict); ok {
-			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
-				return false
-			}
-		}
-
-		if reflect.DeepEqual(v, c.Data) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
-	if n > 1000 {
-		return false
-	}
-
-	for _, v := range d {
-		if cast, ok := v.(Dict); ok {
-			if !c.checkSafeDictNoRecursion(cast, n+1) {
-				return false
-			}
-		}
-
-		if cast, ok := v.(*Dict); ok {
-			if !c.checkSafeDictNoRecursion(*cast, n+1) {
-				return false
-			}
-		}
-
-		if cast, ok := v.(SDict); ok {
-			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
-				return false
-			}
-		}
-
-		if cast, ok := v.(*SDict); ok {
-			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
-				return false
-			}
-		}
-
-		if reflect.DeepEqual(v, c.Data) {
-			return false
-		}
-	}
-
-	return true
+	return walk(reflect.ValueOf(v))
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel any, msg any) (any, error) {
@@ -379,6 +358,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		if cid != c.ChannelArgNoDM(channel) {
+			if c.IncreaseCheckCallCounter("send_dm", 1) {
+				return "", ErrTooManyCalls
+			}
 			sendType = sendMessageDM
 		}
 
@@ -2363,7 +2345,7 @@ func (c *Context) targetHasRole(target any, roleInput any, accept roleInputType)
 
 	targetID := TargetUserID(target)
 	if targetID == 0 {
-		return false, fmt.Errorf("target %v not found", target)
+		return false, fmt.Errorf("target %s not found", describeInput(target))
 	}
 
 	ms, err := bot.GetMember(c.GS.ID, targetID)
@@ -2377,7 +2359,7 @@ func (c *Context) targetHasRole(target any, roleInput any, accept roleInputType)
 
 	role := c.FindRole(roleInput, accept)
 	if role == nil {
-		return false, fmt.Errorf("role %v not found", roleInput)
+		return false, fmt.Errorf("role %s not found", describeInput(roleInput))
 	}
 
 	return slices.Contains(ms.Member.Roles, role.ID), nil
@@ -2469,7 +2451,7 @@ func (c *Context) addRole(roleInput any, accept roleInputType, optionalArgs ...a
 
 	role := c.FindRole(roleInput, accept)
 	if role == nil {
-		return "", fmt.Errorf("role %v not found", roleInput)
+		return "", fmt.Errorf("role %s not found", describeInput(roleInput))
 	}
 
 	if delay > time.Second {
@@ -2572,7 +2554,7 @@ func (c *Context) removeRole(roleInput any, accept roleInputType, optionalArgs .
 
 	role := c.FindRole(roleInput, accept)
 	if role == nil {
-		return "", fmt.Errorf("role %v not found", roleInput)
+		return "", fmt.Errorf("role %s not found", describeInput(roleInput))
 	}
 
 	if delay > time.Second {

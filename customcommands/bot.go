@@ -752,15 +752,18 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		GuildID: cmd.GuildID,
 		CCID:    cmd.LocalID,
 	}
-	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
+	if !slices.Contains(tmplCtx.RunningCCs, cmd.LocalID) {
+		lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 
-	if lockHandle == -1 {
-		f.Warn("Exceeded max lock attempts for cc")
-		updatePostCommandRan(cmd, errors.New("Gave up trying to execute, already an existing instance executing"))
-		return nil
+		if lockHandle == -1 {
+			f.Warn("Exceeded max lock attempts for cc")
+			updatePostCommandRan(cmd, errors.New("Gave up trying to execute, already an existing instance executing"))
+			return nil
+		}
+
+		defer CCExecLock.Unlock(lockKey, lockHandle)
 	}
-
-	defer CCExecLock.Unlock(lockKey, lockHandle)
+	tmplCtx.RunningCCs = append(tmplCtx.RunningCCs, cmd.LocalID)
 
 	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
