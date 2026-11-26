@@ -9,6 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/multiratelimit"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -18,14 +19,25 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
+// Running reaction CCs costs REST calls, so this keeps a few users spamming reactions from using up the
+// bot's global rate limit.
+var reactionTriggerLimit = multiratelimit.NewMultiRatelimiter(0.5, 6)
+
+type reactionTriggerLimitKey struct {
+	GuildID int64
+	UserID  int64
+}
+
 func handleMessageReactions(evt *eventsystem.EventData) {
 	var reaction *discordgo.MessageReaction
+	var member *discordgo.Member
 	var added bool
 
 	switch e := evt.EvtInterface.(type) {
 	case *discordgo.MessageReactionAdd:
 		added = true
 		reaction = e.MessageReaction
+		member = e.Member
 	case *discordgo.MessageReactionRemove:
 		reaction = e.MessageReaction
 	}
@@ -56,7 +68,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	ms, triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, reaction.UserID, reaction, added)
+	ms, triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, reaction, member, added)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 			// example scenario: removing reactions of a user that's not on the server
@@ -110,7 +122,7 @@ func BotCachedGetCommandsWithReactionTrigger(guildID int64, ctx context.Context)
 	return v.([]*models.CustomCommand), nil
 }
 
-func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, userID int64, reaction *discordgo.MessageReaction, add bool) (ms *dstate.MemberState, matches []*TriggeredCC, err error) {
+func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, reaction *discordgo.MessageReaction, member *discordgo.Member, add bool) (ms *dstate.MemberState, matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithReactionTrigger(cs.GuildID, ctx)
 	if err != nil {
 		return nil, nil, errors.WrapIf(err, "BotCachedGetCommandsWithReactionTriggers")
@@ -134,9 +146,16 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 		return nil, matched, nil
 	}
 
-	ms, err = bot.GetMember(cs.GuildID, userID)
-	if err != nil {
-		return nil, nil, errors.WithStackIf(err)
+	if !reactionTriggerLimit.AllowN(reactionTriggerLimitKey{GuildID: cs.GuildID, UserID: reaction.UserID}, time.Now(), 1) {
+		return nil, nil, nil
+	}
+
+	ms = reactionMemberWithoutFetch(cs.GuildID, reaction.UserID, member)
+	if ms == nil {
+		ms, err = bot.GetMember(cs.GuildID, reaction.UserID)
+		if err != nil {
+			return nil, nil, errors.WithStackIf(err)
+		}
 	}
 
 	if ms.User.Bot {
@@ -163,6 +182,22 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 	}
 
 	return ms, filtered, nil
+}
+
+// Prefers the state member since it also has presence, then the member sent with the reaction event.
+func reactionMemberWithoutFetch(guildID, userID int64, eventMember *discordgo.Member) *dstate.MemberState {
+	if bot.State != nil {
+		if ms := bot.State.GetMember(guildID, userID); ms != nil && ms.Member != nil {
+			return ms
+		}
+	}
+
+	if eventMember == nil || eventMember.User == nil {
+		return nil
+	}
+	ms := dstate.MemberStateFromMember(eventMember)
+	ms.GuildID = guildID
+	return ms
 }
 
 func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.GuildSet, ms *dstate.MemberState, cs *dstate.ChannelState, reaction *discordgo.MessageReaction, added bool, message *discordgo.Message) error {

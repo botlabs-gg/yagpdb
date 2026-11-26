@@ -39,7 +39,7 @@ func hasHigherPriority(a *models.CustomCommand, b *models.CustomCommand) bool {
 	}
 }
 
-func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData, msg *discordgo.Message) (matches []*TriggeredCC, err error) {
+func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData, msg *discordgo.Message, isEdit bool) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.GuildID, ctx)
 	if err != nil {
 		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
@@ -50,9 +50,17 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		return nil, errors.WrapIf(err, "GetCommandPrefix")
 	}
 
+	return matchMessageTriggers(cmds, prefix, cs, ms, msg, isEdit, CCActionExecLimit(msg.GuildID)), nil
+}
+
+// For edits only commands with TriggerOnEdit are considered, before the limit is applied.
+func matchMessageTriggers(cmds []*models.CustomCommand, prefix string, cs *dstate.ChannelState, ms *dstate.MemberState, msg *discordgo.Message, isEdit bool, limit int) []*TriggeredCC {
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
 		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) || cmd.R.Group != nil && cmd.R.Group.Disabled {
+			continue
+		}
+		if isEdit && !cmd.TriggerOnEdit {
 			continue
 		}
 		content := msg.Content
@@ -73,12 +81,11 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		return hasHigherPriority(matched[i].CC, matched[j].CC)
 	})
 
-	limit := CCActionExecLimit(msg.GuildID)
 	if len(matched) > limit {
 		matched = matched[:limit]
 	}
 
-	return matched, nil
+	return matched
 }
 
 func HandleMessageUpdate(evt *eventsystem.EventData) {
@@ -102,7 +109,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 	var matchedCustomCommands []*TriggeredCC
 	var err error
 	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
-		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mu.Message)
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mu.Message, true)
 	})
 	if err != nil {
 		logger.WithError(err).Error("Error matching custom commands")
@@ -115,9 +122,6 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 
 	metricsExecutedCommands.With(prometheus.Labels{"trigger": "message"}).Inc()
 	for _, matched := range matchedCustomCommands {
-		if !matched.CC.TriggerOnEdit {
-			continue
-		}
 		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mu.Message, true)
 		if err != nil {
 			logger.WithField("guild", mu.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
@@ -143,7 +147,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	var matchedCustomCommands []*TriggeredCC
 	var err error
 	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
-		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mc.Message)
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mc.Message, false)
 	})
 	if err != nil {
 		logger.WithError(err).Error("Error matching custom commands")
