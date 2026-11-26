@@ -105,7 +105,7 @@ func handleVoiceJoin(guildID int64, userID int64, channelID int64) (retry bool, 
 		switch code {
 		case discordgo.ErrCodeUnknownRole:
 			logger.WithError(err).WithField("guild", guildID).WithField("user", userID).WithField("role", config.RoleID).Warn("Failed adding voice role (role not found), deleting config")
-			DeleteVoiceRoles(ctx, config.ID)
+			DeleteVoiceRoles(ctx, config.GuildID, config.ID)
 			return false, nil
 		case discordgo.ErrCodeMissingPermissions:
 			logger.WithError(err).WithField("guild", guildID).WithField("user", userID).WithField("role", config.RoleID).Warn("Failed adding voice role (permissions issue), disabling config")
@@ -147,7 +147,7 @@ func handleVoiceLeave(guildID int64, userID int64, channelID int64) (retry bool,
 		switch code {
 		case discordgo.ErrCodeUnknownRole:
 			logger.WithError(err).WithField("guild", guildID).WithField("user", userID).WithField("role", config.RoleID).Warn("Failed removing voice role (role not found), deleting config")
-			DeleteVoiceRoles(ctx, config.ID)
+			DeleteVoiceRoles(ctx, config.GuildID, config.ID)
 			return false, nil
 		case discordgo.ErrCodeMissingPermissions:
 			logger.WithError(err).WithField("guild", guildID).WithField("user", userID).WithField("role", config.RoleID).Warn("Failed removing voice role (permissions issue), disabling config")
@@ -235,9 +235,17 @@ func DisableVoiceRoles(ctx context.Context, id int64) error {
 	return err
 }
 
+// findGuildVoiceRole finds a voice role config by id, only within the given guild.
+func findGuildVoiceRole(ctx context.Context, guildID, id int64) (*models.VoiceRole, error) {
+	return models.VoiceRoles(
+		models.VoiceRoleWhere.GuildID.EQ(guildID),
+		models.VoiceRoleWhere.ID.EQ(id),
+	).OneG(ctx)
+}
+
 // DeleteVoiceRoles deletes a voice role config
-func DeleteVoiceRoles(ctx context.Context, id int64) error {
-	config, err := models.FindVoiceRoleG(ctx, id)
+func DeleteVoiceRoles(ctx context.Context, guildID, id int64) error {
+	config, err := findGuildVoiceRole(ctx, guildID, id)
 	if err == sql.ErrNoRows {
 		// No config for this channel, ignore
 		return nil

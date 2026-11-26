@@ -222,7 +222,7 @@ func handleUpdateVoiceRole(w http.ResponseWriter, r *http.Request) (web.Template
 	// Check concurrent limits if enabling
 	if form.Enabled {
 		// Get current config to see if it was already enabled
-		currentConfig, err := models.FindVoiceRoleG(ctx, id)
+		currentConfig, err := findGuildVoiceRole(ctx, activeGuild.ID, id)
 		if err != nil {
 			return tmpl, errors.WithMessage(err, "failed finding config")
 		}
@@ -245,7 +245,7 @@ func handleUpdateVoiceRole(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	// Update the config
-	config, err := models.FindVoiceRoleG(ctx, id)
+	config, err := findGuildVoiceRole(ctx, activeGuild.ID, id)
 	if err != nil {
 		return tmpl, errors.WithMessage(err, "failed finding config")
 	}
@@ -271,7 +271,7 @@ func handleUpdateVoiceRole(w http.ResponseWriter, r *http.Request) (web.Template
 
 func handleDeleteVoiceRole(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, tmpl := web.GetBaseCPContextData(ctx)
+	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	idStr := pat.Param(r, "id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -279,7 +279,7 @@ func handleDeleteVoiceRole(w http.ResponseWriter, r *http.Request) (web.Template
 		return tmpl.AddAlerts(web.ErrorAlert("Invalid ID")), nil
 	}
 
-	err = DeleteVoiceRoles(ctx, id)
+	err = DeleteVoiceRoles(ctx, activeGuild.ID, id)
 	if err != nil {
 		return tmpl, errors.WithMessage(err, "failed deleting voice role config")
 	}
