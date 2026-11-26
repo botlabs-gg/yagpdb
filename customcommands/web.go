@@ -74,6 +74,8 @@ var (
 	panelLogKeyEnabledSharingCommand  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_enabled_sharing_command", FormatString: "Enabled a sharable link for command: %d"})
 	panelLogKeyDisabledSharingCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_disabled_sharing_command", FormatString: "Disabled a sharable link for command: %d"})
 	panelLogKeyImportedCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_imported_command", FormatString: "Imported command: %d from another server"})
+	panelLogKeyEnabledCommand         = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_enabled_command", FormatString: "Enabled custom command: %d"})
+	panelLogKeyDisabledCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_disabled_command", FormatString: "Disabled custom command: %d"})
 
 	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Created a new custom command group: %s"})
 	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated custom command group: %s"})
@@ -141,6 +143,8 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/new"), newCommandHandler)
 	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil))
+	subMux.Handle(pat.Post("/commands/:cmd/enable"), web.ControllerPostHandler(handleSetCommandEnabled(true), getHandler, nil))
+	subMux.Handle(pat.Post("/commands/:cmd/disable"), web.ControllerPostHandler(handleSetCommandEnabled(false), getHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/update_and_run"), web.ControllerPostHandler(handleUpdateAndRunNow, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/import/:cmd"), PublicCommandMW(newCommandHandler))
@@ -735,6 +739,79 @@ func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	featureflags.MarkGuildDirty(activeGuild.ID)
 	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, err
+}
+
+// handleSetCommandEnabled backs the switch on the command list. Enabling applies the same limits as
+// saving the command from its edit page.
+func handleSetCommandEnabled(enable bool) web.ControllerHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+		ctx := r.Context()
+		activeGuild, templateData := web.GetBaseCPContextData(ctx)
+
+		cmdID, err := strconv.ParseInt(pat.Param(r, "cmd"), 10, 64)
+		if err != nil {
+			return templateData, err
+		}
+
+		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, cmdID)).OneG(ctx)
+		if err == sql.ErrNoRows {
+			return templateData.AddAlerts(web.ErrorAlert("Custom command not found")), nil
+		}
+		if err != nil {
+			return templateData, err
+		}
+
+		if cmd.GroupID.Valid {
+			templateData["CurrentGroupID"] = cmd.GroupID.Int64
+		}
+
+		if cmd.Disabled == !enable {
+			return templateData, nil
+		}
+
+		if enable {
+			enabledCount, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false", activeGuild.ID)).CountG(ctx)
+			if err != nil {
+				return templateData, err
+			}
+			if int(enabledCount) >= MaxCommandsForContext(ctx) {
+				return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+			}
+
+			if !validateCCResponseLength(cmd.Responses, activeGuild.ID) {
+				return templateData.AddAlerts(web.ErrorAlert("Max combined command size can be 10k for free servers, and 20k for premium servers")), nil
+			}
+
+			cmd.Disabled = false
+			if msg := applicationCommandConflict(cmd); msg != "" {
+				return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Custom command #%d can't be enabled: %s", cmd.LocalID, msg))), nil
+			}
+		}
+
+		cmd.Disabled = !enable
+		if _, err = cmd.UpdateG(ctx, boil.Whitelist("disabled")); err != nil {
+			return templateData, err
+		}
+
+		// a disabled timed command's pending run is dropped without rescheduling, so enabling has to schedule it again
+		if enable {
+			err = UpdateCommandNextRunTime(cmd, false, true)
+		} else {
+			err = DelNextRunEvent(cmd.GuildID, cmd.LocalID)
+		}
+		if err != nil {
+			web.CtxLogger(ctx).WithError(err).WithField("guild", cmd.GuildID).Error("failed updating next custom command run time")
+		}
+
+		logKey := panelLogKeyDisabledCommand
+		if enable {
+			logKey = panelLogKeyEnabledCommand
+		}
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(ctx, logKey, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: cmd.LocalID}))
+
+		EvictCustomCommandCache(activeGuild.ID)
+		return templateData, nil
+	}
 }
 
 const RunCmdCooldownSeconds = 5
