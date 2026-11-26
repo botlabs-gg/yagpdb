@@ -79,6 +79,66 @@
         padding: .47rem .75rem;
     }
 
+    .cc-toggle {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 8px 8px 8px 0;
+    }
+
+    .cc-toggle .tgl-btn {
+        margin: 0;
+        width: 2.75em;
+        height: 1.5em;
+        min-width: 2.75em;
+        padding: 1px;
+        border-width: 3px;
+    }
+
+    .cc-toggle .tgl-btn:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+    }
+
+    .card-header .cc-toggle-text {
+        min-width: 4.5em;
+        color: #fff;
+        font-size: .85em;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 991px) and (min-width: 576px) {
+        .cc-toggle-text {
+            display: none;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .cc-row .card-header {
+            flex-wrap: wrap;
+        }
+
+        .cc-row .cc-title {
+            flex: 1 1 100%;
+        }
+
+        .accordion .cc-title a {
+            padding-bottom: 4px !important;
+        }
+
+        .cc-toggle {
+            margin-right: auto;
+            padding: 0 0 8px 16px;
+        }
+
+        .cc-row .cc-actions {
+            padding-top: 0;
+        }
+    }
+
     @media (max-width: 767px) {
         .accordion .card-header .cc-actions .btn {
             width: 2.75rem;
@@ -267,6 +327,13 @@
                     {{end}}
                 </a>
             </h2>
+            <form class="cc-toggle no-unsaved-popup" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/{{if .Disabled}}enable{{else}}disable{{end}}" data-async-form>
+                <input type="checkbox" class="tgl tgl-flat" id="cc-enabled-{{.LocalID}}" {{if not .Disabled}}checked{{end}} onchange="$(this.form).submit()">
+                <label for="cc-enabled-{{.LocalID}}" class="tgl-btn" tabindex="0" role="switch" aria-checked="{{if .Disabled}}false{{else}}true{{end}}"
+                    aria-label="Custom command #{{.LocalID}} enabled" title="{{if .Disabled}}Enable{{else}}Disable{{end}} this custom command"
+                    onkeydown="if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); this.click(); }"></label>
+                <span class="cc-toggle-text" aria-hidden="true">{{if .Disabled}}Disabled{{else}}Enabled{{end}}</span>
+            </form>
             <form class="cc-actions" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
                 {{if and (eq .TriggerType 5) (not .Disabled) }}
                 <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately" aria-label="Run now"
