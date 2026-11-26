@@ -34,7 +34,11 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 	}
 
 	if targetID != 0 {
-		targetMember, _ := bot.GetMember(cmdData.GuildData.GS.ID, targetID)
+		targetMember, err := bot.GetMember(cmdData.GuildData.GS.ID, targetID)
+		if err != nil && !bot.IsMemberNotFound(err) {
+			// skipping the rank check on a failed lookup would let anyone act on members ranked above them
+			return config, nil, commands.NewUserError("Couldn't look up that member to check your rank against theirs, try again")
+		}
 		if targetMember != nil {
 			gs := cmdData.GuildData.GS
 
@@ -113,7 +117,10 @@ func checkHierarchy(cmdData *dcmd.Data, targetID int64) error {
 	gs := cmdData.GuildData.GS
 	targetMember, err := bot.GetMember(gs.ID, targetID)
 	if err != nil {
-		return nil
+		if bot.IsMemberNotFound(err) {
+			return nil
+		}
+		return commands.NewUserError("Couldn't look up that member to check the bot's rank against theirs, try again")
 	}
 
 	above := bot.IsMemberAbove(gs, botMember, targetMember)
@@ -1224,6 +1231,13 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Can't give roles above you", nil
 			}
 
+			// give role roles don't need Manage Roles, so stop them handing out permissions they don't have themselves
+			gs := parsed.GuildData.GS
+			invokerPerms := dstate.CalculateBasePermissions(gs.ID, gs.OwnerID, gs.Roles, parsed.Author.ID, parsed.GuildData.MS.Member.Roles)
+			if role.Permissions&^invokerPerms != 0 {
+				return "Can't give roles that have permissions you don't have", nil
+			}
+
 			dur := parsed.Args[2].Value.(time.Duration)
 
 			// no point if the user has the role and is not updating the expiracy
@@ -1245,7 +1259,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// cancel the event to add the role
-			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GuildData.GS.ID, parsed.Author.ID, role.ID)
+			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GuildData.GS.ID, target.ID, role.ID)
 
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "

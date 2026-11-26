@@ -20,6 +20,9 @@ type ReadyTracker interface {
 	IsShardReady(shardID int) bool
 }
 
+// ErrMemberNotFound is returned when the gateway reports the user isn't a member of the guild.
+var ErrMemberNotFound = errors.New("not found")
+
 var metricsRequests = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "yagpdb_memberfetcher_requests_total",
 	Help: "The total number members added to queue",
@@ -372,7 +375,7 @@ func (s *shardMemberFetcher) sendGWResult(req *MemberFetchRequest, member *disco
 
 		req.resp <- &MemberFetchResult{
 			Member:   nil,
-			Err:      errors.New("not found"),
+			Err:      ErrMemberNotFound,
 			GuildID:  req.Guild,
 			MemberID: req.Member,
 		}

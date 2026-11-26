@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/shardmemberfetcher"
@@ -34,6 +35,13 @@ func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 	}
 
 	return dstate.MemberStateFromMember(member), nil
+}
+
+// IsMemberNotFound reports whether an error from GetMember means the user isn't in the guild, as opposed to the
+// lookup itself failing.
+func IsMemberNotFound(err error) bool {
+	return errors.Is(err, shardmemberfetcher.ErrMemberNotFound) ||
+		common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser)
 }
 
 func GetMemberVoiceState(guildID, userID int64) (*discordgo.VoiceState, error) {
