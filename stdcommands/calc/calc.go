@@ -34,7 +34,12 @@ var Command = &commands.YAGCommand{
 		defer computeLock.Unlock()
 		toCompute := data.Args[0].Str()
 		toCompute = replacer.Replace(toCompute)
+
+		// the library keeps a global result history that @ reads from, so it would grow forever
+		// and expose other users' results
+		compute.ClearHistory()
 		result, err := compute.Evaluate(toCompute)
+		compute.ClearHistory()
 		if err != nil {
 			return "Failed evaluating the expression.", nil
 		}
