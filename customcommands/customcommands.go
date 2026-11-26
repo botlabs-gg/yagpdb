@@ -23,14 +23,13 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/karlseguin/ccache"
 	"github.com/robfig/cron/v3"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
-	RegexCache = *ccache.New(ccache.Configure())
+	RegexCache = common.NewUserRegexCache()
 	logger     = common.GetPluginLogger(&Plugin{})
 )
 
@@ -527,6 +526,14 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 
 	if cc.TriggerTypeForm == "user_context_menu" || cc.TriggerTypeForm == "message_context_menu" {
 		if !cc.validateContextMenuCommand(tmpl, guild_id) {
+			return false
+		}
+	}
+
+	switch triggerTypeFromForm(cc.TriggerTypeForm) {
+	case CommandTriggerRegex, CommandTriggerComponent, CommandTriggerModal:
+		if err := common.CheckUserRegex(cc.Trigger, common.MaxTriggerRegexProgramSize); err != nil {
+			tmpl.AddAlerts(web.ErrorAlert("Invalid trigger regex: " + err.Error()))
 			return false
 		}
 	}

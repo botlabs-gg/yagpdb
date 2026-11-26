@@ -225,20 +225,10 @@ func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomComm
 }
 
 func matchRegexSplitArgs(pattern, msg string) (match bool, stripped string, args []string) {
-	item, err := RegexCache.Fetch(pattern, time.Minute*10, func() (any, error) {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-
-		return re, nil
-	})
-
-	if err != nil {
+	re := common.FetchUserRegex(RegexCache, pattern, common.MaxTriggerRegexProgramSize)
+	if re == nil {
 		return false, "", nil
 	}
-
-	re := item.Value().(*regexp.Regexp)
 
 	idx := re.FindStringIndex(msg)
 	if idx == nil {

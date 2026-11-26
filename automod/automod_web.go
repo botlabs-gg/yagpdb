@@ -670,6 +670,13 @@ func ReadRuleRowData(guild *dstate.GuildSet, tmpl web.TemplateData, rawData []Ru
 				return nil, false, nil
 			}
 
+			if regexData, ok := dst.(*BaseRegexTriggerData); ok {
+				if err := common.CheckUserRegex(regexData.Regex, common.MaxTriggerRegexProgramSize); err != nil {
+					tmpl.AddAlerts(web.ErrorAlert("Invalid regex: " + err.Error()))
+					return nil, false, nil
+				}
+			}
+
 			parsed.ParsedSettings = dst
 
 		}

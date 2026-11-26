@@ -62,6 +62,10 @@ func messageTexts(m *discordgo.Message, includeExtraText bool) []string {
 
 /////////////////////////////////////////////////////////////
 
+func compiledTriggerRegex(pattern string) *regexp.Regexp {
+	return common.FetchUserRegex(RegexCache, pattern, common.MaxTriggerRegexProgramSize)
+}
+
 type BaseRegexTriggerData struct {
 	Regex            string `valid:",1,250"`
 	SanitizeText     bool
@@ -1105,20 +1109,10 @@ func (r *MessageRegexTrigger) UserSettings() []*SettingDef {
 func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	dataCast := triggerCtx.Data.(*BaseRegexTriggerData)
 
-	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (any, error) {
-		re, err := regexp.Compile(dataCast.Regex)
-		if err != nil {
-			return nil, err
-		}
-
-		return re, nil
-	})
-
-	if err != nil {
+	re := compiledTriggerRegex(dataCast.Regex)
+	if re == nil {
 		return false, nil
 	}
-
-	re := item.Value().(*regexp.Regexp)
 
 	includeExtraText := dataCast.IncludeExtraText && !r.BaseRegexTrigger.Inverse
 	for _, content := range messageTexts(m, includeExtraText) {
@@ -1298,20 +1292,10 @@ func (r *NicknameRegexTrigger) Description() string {
 func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	dataCast := t.Data.(*BaseRegexTriggerData)
 
-	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (any, error) {
-		re, err := regexp.Compile(dataCast.Regex)
-		if err != nil {
-			return nil, err
-		}
-
-		return re, nil
-	})
-
-	if err != nil {
+	re := compiledTriggerRegex(dataCast.Regex)
+	if re == nil {
 		return false, nil
 	}
-
-	re := item.Value().(*regexp.Regexp)
 
 	var sanitizedNick string
 	if dataCast.SanitizeText {
@@ -1432,20 +1416,10 @@ func (r *GlobalnameRegexTrigger) Description() string {
 func (r *GlobalnameRegexTrigger) CheckGlobalname(t *TriggerContext) (bool, error) {
 	dataCast := t.Data.(*BaseRegexTriggerData)
 
-	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (any, error) {
-		re, err := regexp.Compile(dataCast.Regex)
-		if err != nil {
-			return nil, err
-		}
-
-		return re, nil
-	})
-
-	if err != nil {
+	re := compiledTriggerRegex(dataCast.Regex)
+	if re == nil {
 		return false, nil
 	}
-
-	re := item.Value().(*regexp.Regexp)
 
 	var sanitizedGlobalname string
 	if dataCast.SanitizeText {

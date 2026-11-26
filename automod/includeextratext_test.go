@@ -3,8 +3,8 @@ package automod
 import (
 	"testing"
 
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/karlseguin/ccache"
 )
 
 func linkPreviewMessage(previewText string) *discordgo.Message {
@@ -43,7 +43,7 @@ func TestAnyLinkIncludeExtraText(t *testing.T) {
 
 func TestMessageRegexIncludeExtraText(t *testing.T) {
 	if RegexCache == nil {
-		RegexCache = ccache.New(ccache.Configure())
+		RegexCache = common.NewUserRegexCache()
 	}
 	m := linkPreviewMessage("forbidden phrase")
 
