@@ -76,7 +76,11 @@ func (p *Plugin) AddCommands() {
 
 				go analytics.RecordActiveUnit(data.GuildData.GS.ID, p, "playing sound")
 
-				if RequestPlaySound(data.GuildData.GS.ID, voiceChannel, data.ChannelID, sound.ID) {
+				queued, err := RequestPlaySound(data.GuildData.GS.ID, voiceChannel, data.ChannelID, sound.ID)
+				if err != nil {
+					return err.Error(), nil
+				}
+				if queued {
 					return "Queued up", nil
 				}
 

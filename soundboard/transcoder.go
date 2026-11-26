@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
@@ -30,6 +32,19 @@ func init() {
 	cp := *dca.StdEncodeOptions
 	transcoderOptions = &cp
 	transcoderOptions.Bitrate = 100
+	// uploads are local files, so ffmpeg must not follow references to urls or other protocols
+	transcoderOptions.ProtocolWhitelist = "file,pipe"
+	transcoderOptions.MaxDuration = maxSoundDurationSeconds
+}
+
+const maxSoundDurationSeconds = 600
+
+// streams for as long as a sound plays, so only connecting and the response headers are time limited
+var bgworkerSoundClient = &http.Client{
+	Transport: &http.Transport{
+		DialContext:           (&net.Dialer{Timeout: 5 * time.Second}).DialContext,
+		ResponseHeaderTimeout: 10 * time.Second,
+	},
 }
 
 var _ commands.CommandProvider = (*Plugin)(nil)
@@ -177,9 +192,13 @@ func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) 
 func getSoundFromBGWorker(soundID int) (rc io.ReadCloser, err error) {
 	path := "http://" + backgroundworkers.HTTPAddr.GetString() + "/soundboard/sounddata/" + strconv.Itoa(soundID)
 
-	resp, err := http.Get(path)
+	resp, err := bgworkerSoundClient.Get(path)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, errors.Errorf("background worker returned status %d for sound %d", resp.StatusCode, soundID)
 	}
 
 	return resp.Body, nil

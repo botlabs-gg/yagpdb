@@ -50,6 +50,11 @@ type EncodeOptions struct {
 	VBR              bool             // Wether vbr is used or not (variable bitrate)
 	Threads          int              // Number of threads to use, 0 for auto
 	StartTime        int              // Start Time of the input stream in seconds
+	MaxDuration      int              // Maximum output length in seconds, 0 for no limit
+
+	// Protocols ffmpeg may open for the input and anything it references (ex "file,pipe"), empty for ffmpeg's default.
+	// Set this for untrusted input, since playlist-like formats can reference other files and URLs.
+	ProtocolWhitelist string
 
 	// The ffmpeg audio filters to use, see https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters for more info
 	// Leave empty to use no filters.
@@ -200,8 +205,8 @@ func (e *EncodeSession) run() {
 	}
 
 	// Launch ffmpeg with a variety of different fruits and goodies mixed togheter
-	args := []string{
-		"-stats",
+	args := append([]string{"-stats"}, e.protocolArgs()...)
+	args = append(args,
 		"-i", inFile,
 		"-reconnect", "1",
 		"-reconnect_at_eof", "1",
@@ -214,12 +219,15 @@ func (e *EncodeSession) run() {
 		"-compression_level", strconv.Itoa(e.options.CompressionLevel),
 		"-ar", strconv.Itoa(e.options.FrameRate),
 		"-ac", strconv.Itoa(e.options.Channels),
-		"-b:a", strconv.Itoa(e.options.Bitrate * 1000),
+		"-b:a", strconv.Itoa(e.options.Bitrate*1000),
 		"-application", string(e.options.Application),
 		"-frame_duration", strconv.Itoa(e.options.FrameDuration),
 		"-packet_loss", strconv.Itoa(e.options.PacketLoss),
 		"-threads", strconv.Itoa(e.options.Threads),
 		"-ss", strconv.Itoa(e.options.StartTime),
+	)
+	if e.options.MaxDuration > 0 {
+		args = append(args, "-t", strconv.Itoa(e.options.MaxDuration))
 	}
 
 	// Build audio filter with volume control
@@ -290,6 +298,13 @@ func (e *EncodeSession) run() {
 	}
 }
 
+func (e *EncodeSession) protocolArgs() []string {
+	if e.options.ProtocolWhitelist == "" {
+		return nil
+	}
+	return []string{"-protocol_whitelist", e.options.ProtocolWhitelist}
+}
+
 func (e *EncodeSession) writeMetadataFrame() {
 	// Setup the metadata
 	metadata := Metadata{
@@ -317,7 +332,7 @@ func (e *EncodeSession) writeMetadataFrame() {
 	var cmdBuf bytes.Buffer
 	// get ffprobe data
 	if e.pipeReader == nil {
-		ffprobe := exec.Command("ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", e.filePath)
+		ffprobe := exec.Command("ffprobe", append(e.protocolArgs(), "-v", "quiet", "-print_format", "json", "-show_format", e.filePath)...)
 		ffprobe.Stdout = &cmdBuf
 
 		err := ffprobe.Start()
@@ -370,7 +385,7 @@ func (e *EncodeSession) writeMetadataFrame() {
 		cmdBuf.Reset()
 
 		// get cover art
-		cover := exec.Command("ffmpeg", "-loglevel", "0", "-i", e.filePath, "-f", "singlejpeg", "pipe:1")
+		cover := exec.Command("ffmpeg", append(e.protocolArgs(), "-loglevel", "0", "-i", e.filePath, "-f", "singlejpeg", "pipe:1")...)
 		cover.Stdout = &cmdBuf
 
 		err = cover.Start()

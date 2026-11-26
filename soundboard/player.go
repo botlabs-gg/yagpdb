@@ -2,6 +2,7 @@ package soundboard
 
 import (
 	"io"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -28,8 +29,12 @@ var (
 	playersmu = sync.NewCond(&sync.Mutex{})
 )
 
+const maxQueuedSounds = 25
+
+var ErrQueueFull = errors.New("the soundboard queue for this server is full, try again once some sounds have played")
+
 // RequestPlaySound either queues up a sound to be played in an existing player or creates a new one
-func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID int) (queued bool) {
+func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID int) (queued bool, err error) {
 	item := &PlayRequest{
 		ChannelID:      channelID,
 		GuildID:        guildID,
@@ -39,18 +44,20 @@ func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID in
 
 	playersmu.L.Lock()
 	if p, ok := players[guildID]; ok {
-		// add to existing player queue
-		p.queue = append(p.queue, item)
+		if len(p.queue)+len(p.afterStop) >= maxQueuedSounds {
+			playersmu.L.Unlock()
+			return false, ErrQueueFull
+		}
+
+		if p.stop {
+			// the player is shutting down, a new one picks this up once it has left voice
+			p.afterStop = append(p.afterStop, item)
+		} else {
+			p.queue = append(p.queue, item)
+		}
 		queued = true
 	} else {
-		// create new player
-		p = &Player{
-			ChannelID: channelID,
-			GuildID:   guildID,
-			queue:     []*PlayRequest{item},
-		}
-		players[guildID] = p
-		go p.Run()
+		startPlayer(guildID, []*PlayRequest{item})
 	}
 
 	playersmu.L.Unlock()
@@ -58,7 +65,18 @@ func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID in
 	// wake up all players to recheck their queues
 	playersmu.Broadcast()
 
-	return
+	return queued, nil
+}
+
+// startPlayer must be called with playersmu.L held
+func startPlayer(guildID int64, queue []*PlayRequest) {
+	p := &Player{
+		ChannelID: queue[0].ChannelID,
+		GuildID:   guildID,
+		queue:     queue,
+	}
+	players[guildID] = p
+	go p.Run()
 }
 
 func resetPlayerServer(guildID int64) string {
@@ -85,6 +103,7 @@ type Player struct {
 	timeLastPlay time.Time
 	playing      bool
 	stop         bool
+	afterStop    []*PlayRequest // requests made while shutting down
 
 	// below fields are only safe to deal with in the main run goroutine
 	vc *discordgo.VoiceConnection
@@ -97,7 +116,7 @@ func (p *Player) Run() {
 	for {
 		p.waitForNextElement()
 		if p.stop {
-			playersmu.L.Unlock()
+			p.shutdown()
 			return
 		}
 
@@ -116,7 +135,7 @@ func (p *Player) Run() {
 		playersmu.L.Unlock()
 
 		var err error
-		p.vc, err = playSound(p, p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item, changeChannel)
+		p.vc, err = playSoundRecovered(p, p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item, changeChannel)
 		if err != nil {
 			logger.WithError(err).WithField("guild", p.GuildID).Error("Failed playing sound")
 			if item.CommandRanFrom != 0 {
@@ -130,32 +149,52 @@ func (p *Player) Run() {
 func (p *Player) waitForNextElement() {
 	playersmu.L.Lock()
 	p.playing = false
-	for {
-		if p.stop {
-			p.exit()
-			return
-		}
-
-		if len(p.queue) < 1 {
-			playersmu.Wait()
-			continue
-		}
-
-		break
+	for !p.stop && len(p.queue) < 1 {
+		playersmu.Wait()
 	}
 }
 
-func (p *Player) exit() {
-	if p.vc != nil {
-		p.vc.Disconnect()
+// shutdown is called with playersmu.L held and returns with it released. It leaves voice without holding the lock,
+// which every server's player shares, and keeps this player registered until then so a new one can't join voice
+// in the same server while the old connection is still disconnecting.
+func (p *Player) shutdown() {
+	vc := p.vc
+	p.vc = nil
+	p.queue = nil
+	playersmu.L.Unlock()
+
+	if vc != nil {
+		vc.Disconnect()
 	}
-	if len(p.queue) > 0 {
-		p.queue = nil
-	}
+
+	playersmu.L.Lock()
 	delete(players, p.GuildID)
+	if len(p.afterStop) > 0 {
+		startPlayer(p.GuildID, p.afterStop)
+		p.afterStop = nil
+	}
+	playersmu.L.Unlock()
+}
+
+// playSoundRecovered turns a panic while playing into an error. playSound never holds playersmu, so recovering
+// here can't leave the lock every server's player shares locked.
+func playSoundRecovered(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest, changeChannel bool) (retVC *discordgo.VoiceConnection, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithField("guild", req.GuildID).Warnf("recovered from panic playing sound %d: %v\n%s", req.Sound, r, debug.Stack())
+			retVC, err = vc, errors.Errorf("something went wrong playing the sound")
+		}
+	}()
+	return playSound(p, vc, session, req, changeChannel)
 }
 
 func (p *Player) checkIdleTooLong() {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithField("guild", p.GuildID).Warnf("recovered from panic in soundboard idle checker: %v\n%s", r, debug.Stack())
+		}
+	}()
+
 	t := time.NewTicker(time.Second * 10)
 	defer t.Stop()
 	for {
@@ -198,7 +237,12 @@ func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Sess
 			}
 			return nil, common.ErrWithCaller(err)
 		}
-		<-vc.Connected
+		select {
+		case <-vc.Connected:
+		case <-time.After(voiceConnectTimeout):
+			session.GatewayManager.ChannelVoiceLeave(req.GuildID)
+			return nil, ErrVoiceConnectTimeout
+		}
 		vc.Speaking(true)
 	}
 
@@ -252,8 +296,11 @@ func sendSilence(vc *discordgo.VoiceConnection, n int) error {
 	return nil
 }
 
+const voiceConnectTimeout = 10 * time.Second
+
 var (
-	ErrVoiceSendTimeout = errors.New("Voice send timeout")
+	ErrVoiceSendTimeout    = errors.New("Voice send timeout")
+	ErrVoiceConnectTimeout = errors.New("timed out connecting to the voice channel")
 )
 
 func sendAudio(vc *discordgo.VoiceConnection, frame []byte) error {
