@@ -51,11 +51,12 @@ func (t TicketUserError) Error() string {
 }
 
 const (
-	ErrNoTicketCategory    TicketUserError = "No category for ticket channels set"
-	ErrNoThreadChannel     TicketUserError = "No thread channel for ticket channels set"
-	ErrTitleTooLong        TicketUserError = "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created"
-	ErrMaxOpenTickets      TicketUserError = "You're currently in over 10 open tickets on this server, please close some of the ones you're in."
-	ErrMaxCategoryChannels TicketUserError = "Max channels in category reached (50)"
+	ErrNoTicketCategory     TicketUserError = "No category for ticket channels set"
+	ErrNoThreadChannel      TicketUserError = "No thread channel for ticket channels set"
+	ErrTitleTooLong         TicketUserError = "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created"
+	ErrMaxOpenTickets       TicketUserError = "You're currently in over 10 open tickets on this server, please close some of the ones you're in."
+	ErrMaxCategoryChannels  TicketUserError = "Max channels in category reached (50)"
+	ErrTicketOpenInProgress TicketUserError = "Another ticket is still being opened for you, please try again in a moment."
 )
 
 const (
@@ -69,6 +70,15 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	}
 
 	if checkMaxTickets {
+		lock, err := common.BlockingLeasedLockRedisKey(fmt.Sprintf("tickets_open:%d:%d", gs.ID, ms.User.ID), time.Second*10, time.Second*30)
+		if err != nil {
+			if errors.Is(err, common.ErrMaxLockAttemptsExceeded) {
+				return gs, nil, ErrTicketOpenInProgress
+			}
+			return gs, nil, err
+		}
+		defer lock.Unlock()
+
 		inCurrentTickets, err := models.Tickets(
 			qm.Where("closed_at IS NULL"),
 			qm.Where("guild_id = ?", gs.ID),
@@ -79,7 +89,8 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 
 		count := 0
 		for _, v := range inCurrentTickets {
-			if gs.GetChannel(v.ChannelID) != nil {
+			// a just created ticket's channel may not have reached the state yet
+			if gs.GetChannelOrThread(v.ChannelID) != nil || time.Since(v.CreatedAt) < time.Minute {
 				count++
 			}
 		}
@@ -360,12 +371,9 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			Participants: participants,
 		}
 
-		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: closingTicketMsg,
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
+		common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
+			Content: closingTicketMsg,
+			Flags:   discordgo.MessageFlagsEphemeral,
 		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, "", evt.Context())
 	case "close-reason":
@@ -432,12 +440,9 @@ func handleModal(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, me
 			Participants: participants,
 		}
 
-		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: closingTicketMsg,
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
+		common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
+			Content: closingTicketMsg,
+			Flags:   discordgo.MessageFlagsEphemeral,
 		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, value, evt.Context())
 	}

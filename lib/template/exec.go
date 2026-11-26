@@ -632,6 +632,7 @@ func (s *state) walkTemplate(dot reflect.Value, t *parse.TemplateNode) {
 	newState.tmpl = tmpl
 	newState.tmpl.maxOps = s.tmpl.maxOps
 	newState.tmpl.maxAllocBytes = s.tmpl.maxAllocBytes
+	newState.tmpl.printCheck = s.tmpl.printCheck
 	// No dynamic scoping: template invocations inherit no variables.
 	newState.vars = []variable{{"$", dot}}
 
@@ -1053,6 +1054,7 @@ func (s *state) callExecTemplate(dot reflect.Value, node parse.Node, args []refl
 	newState.tmpl = tmpl
 	newState.tmpl.maxOps = s.tmpl.maxOps
 	newState.tmpl.maxAllocBytes = s.tmpl.maxAllocBytes
+	newState.tmpl.printCheck = s.tmpl.printCheck
 	newState.vars = []variable{{"$", newDot}}
 
 	if newState.walk(newDot, tmpl.Root) == controlFlowReturnValue {
@@ -1298,6 +1300,11 @@ func (s *state) printValue(n parse.Node, v reflect.Value) {
 	iface, ok := printableValue(v)
 	if !ok {
 		s.errorf("can't print %s of type %s", n, v.Type())
+	}
+	if s.tmpl.printCheck != nil {
+		if err := s.tmpl.printCheck(iface); err != nil {
+			s.errorf("%s", err)
+		}
 	}
 	_, err := fmt.Fprint(s.wr, iface)
 	if err != nil {

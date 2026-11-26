@@ -1,13 +1,17 @@
 package cardsagainstdiscord
 
 import (
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
+	"github.com/sirupsen/logrus"
 )
+
+var logger = logrus.WithField("p", "cah")
 
 type GameManager struct {
 	sync.RWMutex
@@ -283,6 +287,12 @@ func (gm *GameManager) TryAdminRemoveGame(admin int64) error {
 }
 
 func (gm *GameManager) HandleInteractionCreate(ic *discordgo.InteractionCreate) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithField("channel", ic.ChannelID).Warnf("recovered from panic handling interaction: %v\n%s", r, debug.Stack())
+		}
+	}()
+
 	if ic.Type != discordgo.InteractionMessageComponent && ic.Type != discordgo.InteractionModalSubmit {
 		return
 	}

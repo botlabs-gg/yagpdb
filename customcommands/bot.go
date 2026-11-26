@@ -154,7 +154,21 @@ var cmdEvalCommand = &commands.YAGCommand{
 			return "Something weird happened... Contact the support server.", nil
 		}
 
+		evalLog := logger.WithFields(logrus.Fields{
+			"guild":      data.GuildData.GS.ID,
+			"channel":    channel.ID,
+			"user_id":    data.Author.ID,
+			"code_bytes": len(code),
+		})
+		// Logged before execution so an eval that crashes the process is still on record.
+		evalLog.WithField("code", limitString(code, 4000)).Info("Executing eval")
+
+		started := time.Now()
 		out, err := ctx.Execute(code)
+		evalLog.WithFields(logrus.Fields{
+			"duration": time.Since(started),
+			"success":  err == nil,
+		}).Info("Finished eval")
 
 		if err != nil {
 			return formatCustomCommandRunErr(code, err), err

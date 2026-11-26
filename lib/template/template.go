@@ -57,6 +57,8 @@ type Template struct {
 	maxOps     int
 
 	maxAllocBytes int
+
+	printCheck func(any) error
 }
 
 // New allocates a new, undefined template with the given name.
@@ -190,6 +192,14 @@ func (t *Template) MaxOps(ops int) *Template {
 func (t *Template) MaxAllocBytes(n int) *Template {
 	t.init()
 	t.maxAllocBytes = n
+	return t
+}
+
+// PrintCheck runs f on every value before an action prints it, as fmt formats the whole value in
+// memory before the output writer can limit it.
+func (t *Template) PrintCheck(f func(any) error) *Template {
+	t.init()
+	t.printCheck = f
 	return t
 }
 

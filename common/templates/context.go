@@ -493,6 +493,17 @@ func putOutputBuffer(buf *bytes.Buffer) {
 	outputBufferPool.Put(buf)
 }
 
+const maxOutputLength = 25000
+
+var errOutputTooBig = errors.New("response grew too big (>25k)")
+
+func checkPrintSize(v any) error {
+	if exceedsSerializedSize(sizeModeFormat, maxOutputLength, v) {
+		return errOutputTooBig
+	}
+	return nil
+}
+
 func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
 
@@ -507,10 +518,11 @@ func (c *Context) executeParsed() (string, error) {
 			parsed = parsed.MaxOps(MaxOpsEvalNormal).MaxAllocBytes(MaxAllocEvalNormal)
 		}
 	}
+	parsed = parsed.PrintCheck(checkPrintSize)
 
 	buf := getOutputBuffer()
 	defer putOutputBuffer(buf)
-	w := LimitWriter(buf, 25000)
+	w := LimitWriter(buf, maxOutputLength)
 
 	started := time.Now()
 
@@ -558,7 +570,7 @@ func (c *Context) executeParsed() (string, error) {
 	result := buf.String()
 	if err != nil {
 		if err == io.ErrShortWrite {
-			err = errors.New("response grew too big (>25k)")
+			err = errOutputTooBig
 		}
 
 		return result, errors.WithMessage(err, "Failed executing template")
@@ -1061,6 +1073,9 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 }
 
 func isContainer(v any) bool {
+	if _, ok := v.(*ComponentBuilder); ok {
+		return true
+	}
 	rv, _ := indirect(reflect.ValueOf(v))
 	switch rv.Kind() {
 	case reflect.Array, reflect.Slice, reflect.Map:
@@ -1079,6 +1094,12 @@ type cyclicValueDetector struct {
 }
 
 func (c *cyclicValueDetector) Check(v reflect.Value) error {
+	if v.IsValid() && v.CanInterface() {
+		if builder, ok := v.Interface().(*ComponentBuilder); ok && builder != nil {
+			return c.checkBuilder(builder)
+		}
+	}
+
 	v, _ = indirect(v)
 	switch v.Kind() {
 	case reflect.Map:
@@ -1121,6 +1142,15 @@ func (c *cyclicValueDetector) Check(v reflect.Value) error {
 	default:
 		return nil
 	}
+}
+
+func (c *cyclicValueDetector) checkBuilder(builder *ComponentBuilder) error {
+	if _, ok := c.ptrSeen[builder]; ok {
+		return errors.New("encountered a cycle via *templates.ComponentBuilder")
+	}
+	c.ptrSeen[builder] = struct{}{}
+	defer delete(c.ptrSeen, builder)
+	return c.Check(reflect.ValueOf(builder.Values))
 }
 
 func detectCyclicValue(v any) error {

@@ -806,9 +806,15 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) any {
 	}
 }
 
+const maxSerializedValueSize = 100000
+
 func serializeValue(v any) ([]byte, error) {
+	if templates.ExceedsEncodedSize(v, maxSerializedValueSize) {
+		return nil, errors.New("value is too large to store (max 100kB)")
+	}
+
 	var b bytes.Buffer
-	enc := msgpack.NewEncoder(templates.LimitWriter(&b, 100000))
+	enc := msgpack.NewEncoder(templates.LimitWriter(&b, maxSerializedValueSize))
 	err := enc.Encode(v)
 	return b.Bytes(), err
 }

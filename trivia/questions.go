@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -26,19 +28,32 @@ type TriviaResponse struct {
 	Questions []*TriviaQuestion `json:"results"`
 }
 
-func FetchQuestions(amount int, difficulty string) ([]*TriviaQuestion, error) {
-	client := &http.Client{}
-	proxy := common.ConfHttpProxy.GetString()
-	if len(proxy) > 0 {
-		proxyUrl, err := url.Parse(proxy)
-		if err == nil {
-			client.Transport = &http.Transport{
-				Proxy: http.ProxyURL(proxyUrl),
+var (
+	questionClientOnce sync.Once
+	questionClient     *http.Client
+)
+
+// triviaHTTPClient is built once so connections are reused, with a timeout so a stalled API can't hang a command
+func triviaHTTPClient() *http.Client {
+	questionClientOnce.Do(func() {
+		questionClient = &http.Client{Timeout: 10 * time.Second}
+		proxy := common.ConfHttpProxy.GetString()
+		if len(proxy) > 0 {
+			proxyUrl, err := url.Parse(proxy)
+			if err == nil {
+				questionClient.Transport = &http.Transport{
+					Proxy: http.ProxyURL(proxyUrl),
+				}
+			} else {
+				logger.WithError(err).Error("Invalid Proxy URL, getting questions without proxy, request maybe ratelimited")
 			}
-		} else {
-			logger.WithError(err).Error("Invalid Proxy URL, getting questions without proxy, request maybe ratelimited")
 		}
-	}
+	})
+	return questionClient
+}
+
+func FetchQuestions(amount int, difficulty string) ([]*TriviaQuestion, error) {
+	client := triviaHTTPClient()
 
 	url := fmt.Sprintf("https://opentdb.com/api.php?amount=%d&encode=base64", amount)
 	if difficulty != "none" {

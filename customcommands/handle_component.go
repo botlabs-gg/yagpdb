@@ -74,12 +74,6 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 			return
 		}
 
-		cMessage, err := common.BotSession.ChannelMessage(cState.ID, interaction.Message.ID)
-		if err == nil {
-			cMessage.GuildID = cState.GuildID
-			interaction.Message = cMessage
-		}
-
 		cID := interaction.MessageComponentData().CustomID
 
 		// continue only if this component was created by a cc
@@ -99,6 +93,12 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 				respondRestrictedInteraction(&interaction)
 			}
 			return
+		}
+
+		cMessage, err := common.BotSession.ChannelMessage(cState.ID, interaction.Message.ID)
+		if err == nil {
+			cMessage.GuildID = cState.GuildID
+			interaction.Message = cMessage
 		}
 
 		deferResponseToCCs(&interaction, triggeredCmds)
@@ -362,9 +362,10 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 		case *discordgo.ActionsRow:
 			for j := 0; j < len(comp.Components); j++ {
 				field, ok := comp.Components[j].(*discordgo.TextInput)
-				if ok {
-					cmdValues = append(cmdValues, field.Value)
+				if !ok {
+					continue
 				}
+				cmdValues = append(cmdValues, field.Value)
 				cID, _ := strings.CutPrefix(field.CustomID, templates.TemplateCustomIDPrefix)
 				modalValues.Set(cID, templates.SDict{
 					"type":      field.Type(),

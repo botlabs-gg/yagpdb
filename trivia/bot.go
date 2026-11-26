@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
@@ -63,18 +65,36 @@ type triviaSession struct {
 
 var ErrSessionInChannel = errors.New("a trivia session already exists in this channel")
 
-func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, difficulty string, duration time.Duration) error {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
+func (tm *triviaSessionManager) hasSessionIn(channelID int64) bool {
 	for _, v := range tm.sessions {
 		if v.ChannelID == channelID {
-			return ErrSessionInChannel
+			return true
 		}
 	}
+	return false
+}
 
+func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, difficulty string, duration time.Duration) error {
+	tm.mu.Lock()
+	busy := tm.hasSessionIn(channelID)
+	tm.mu.Unlock()
+	if busy {
+		return ErrSessionInChannel
+	}
+
+	// fetched without holding tm.mu, which every component interaction on this process also takes
 	triviaQuestions, err := FetchQuestions(1, difficulty)
 	if err != nil {
 		return err
+	}
+	if len(triviaQuestions) == 0 {
+		return commands.NewPublicError("Couldn't get a trivia question right now, try again in a bit")
+	}
+
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	if tm.hasSessionIn(channelID) {
+		return ErrSessionInChannel
 	}
 
 	question := triviaQuestions[0]
@@ -91,6 +111,10 @@ func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, diffic
 			"\U0001F1E8", // Regional ind. C
 			"\U0001F1E9", // Regional ind. D
 		}
+	}
+
+	if len(question.Options) > len(optionEmojis) {
+		return commands.NewPublicError("Got a malformed trivia question, try again")
 	}
 
 	session := &triviaSession{
@@ -143,9 +167,17 @@ func (tm *triviaSessionManager) handleInteractionCreate(evt *eventsystem.EventDa
 }
 
 func (t *triviaSession) tickLoop() {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithField("guild", t.GuildID).Warnf("trivia session panicked: %v\n%s", r, debug.Stack())
+			t.Manager.removeSession(t)
+		}
+	}()
+
 	for {
 		ended := t.tick()
-		if ended || time.Since(t.createdAt) > 1*time.Minute {
+		// the grace period only matters if a round never manages to end on its own
+		if ended || time.Since(t.createdAt) > t.duration+30*time.Second {
 			t.Manager.removeSession(t)
 			return
 		}
@@ -374,6 +406,15 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 			optionIndex = i
 			break
 		}
+	}
+
+	if optionIndex == -1 {
+		response.Data.Content = "That isn't one of the answers for this trivia."
+		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
+		if err != nil {
+			logger.WithError(err).Error("Failed creating interaction response")
+		}
+		return
 	}
 
 	t.SelectedOptions = append(t.SelectedOptions, &pickedOption{

@@ -2,7 +2,6 @@ package cardsagainstdiscord
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"runtime/debug"
 	"slices"
@@ -456,8 +455,7 @@ func (g *Game) stop() {
 func (g *Game) runTicker() {
 	defer func() {
 		if r := recover(); r != nil {
-			stack := string(debug.Stack())
-			log.Println("CAH: cid: ", g.MasterChannel, " recovered from panic in running game!: ", r, "\n", stack)
+			logger.WithField("channel", g.MasterChannel).Warnf("recovered from panic in running game: %v\n%s", r, debug.Stack())
 			go g.Session.ChannelMessageSend(g.MasterChannel, "The running game almost caused a crash! The game has been terminated as a result. Contact the bot owner.")
 			go g.Manager.RemoveGame(g.MasterChannel)
 		}
@@ -1023,7 +1021,11 @@ func (g *Game) handleWinnerPick(ic *discordgo.InteractionCreate, player *Player)
 		return
 	}
 
-	emojiIndex := slices.Index(CardSelectionEmojis, ic.MessageComponentData().Values[0])
+	values := ic.MessageComponentData().Values
+	if len(values) == 0 {
+		return
+	}
+	emojiIndex := slices.Index(CardSelectionEmojis, values[0])
 	if emojiIndex == -1 || emojiIndex >= len(g.Responses) {
 		return
 	}
@@ -1220,8 +1222,13 @@ func (g *Game) handleHandInteraction(player *Player, ic *discordgo.InteractionCr
 			return
 		}
 
+		values := ic.MessageComponentData().Values
+		if len(values) == 0 {
+			return
+		}
+
 		g.LastAction = time.Now()
-		if g.playerPickedCard(player, ic.MessageComponentData().Values[0], ic) {
+		if g.playerPickedCard(player, values[0], ic) {
 			// a modal was opened for a blank card instead
 			return
 		}
@@ -1361,7 +1368,7 @@ func (g *Game) handleBlankCardSubmit(player *Player, ic *discordgo.InteractionCr
 
 	text, _ := data.TextInputValue(CahTextInput)
 	text = strings.TrimSpace(text)
-	if text != "" && index < len(player.Cards) && player.Cards[index] == BlankCard &&
+	if text != "" && index >= 0 && index < len(player.Cards) && player.Cards[index] == BlankCard &&
 		!slices.Contains(player.SelectedCards, index) && len(player.SelectedCards) < g.CurrentPropmpt.NumPick {
 
 		player.Cards[index] = ResponseCard(FilterEveryoneMentions(text))
