@@ -2,14 +2,33 @@ package rss
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/mmcdole/gofeed"
 )
+
+func init() {
+	// the test servers listen on loopback, which the production dialer refuses
+	feedDialContext = (&net.Dialer{}).DialContext
+}
+
+func TestFeedDialerRefusesPrivateAddresses(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer server.Close()
+
+	client := &http.Client{Transport: &http.Transport{DialContext: common.PublicOnlyDialContext}}
+	_, err := client.Get(server.URL)
+	if !errors.Is(err, common.ErrBlockedAddress) {
+		t.Fatalf("expected loopback to be refused, got %v", err)
+	}
+}
 
 const testFeedBody = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>

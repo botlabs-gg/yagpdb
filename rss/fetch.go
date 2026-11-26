@@ -58,16 +58,22 @@ var (
 	feedClient     *http.Client
 )
 
+// feed urls are user supplied, so direct fetches may only reach public addresses
+var feedDialContext = common.PublicOnlyDialContext
+
 // feedHTTPClient is shared across fetches so connections are pooled and reused
 func feedHTTPClient() *http.Client {
 	feedClientOnce.Do(func() {
 		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.DialContext = feedDialContext
 
 		if proxy := common.ConfHttpProxy.GetString(); len(proxy) > 0 {
 			proxyURL, err := url.Parse(proxy)
 			if err != nil {
 				logger.WithError(err).WithField("proxy", proxy).Warn("Invalid HTTP proxy configured for RSS fetcher, falling back to direct fetch")
 			} else {
+				// the proxy itself is usually on a private address, its egress rules decide what is reachable
+				transport.DialContext = http.DefaultTransport.(*http.Transport).DialContext
 				transport.Proxy = http.ProxyURL(proxyURL)
 			}
 		}
