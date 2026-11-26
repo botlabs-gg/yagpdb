@@ -181,6 +181,8 @@ type TriggeredRuleData struct {
 	// not present when checking conditions
 	TriggeredRules    []*ParsedRule
 	ActivatedTriggers []*ParsedPart
+	// TriggerDetails holds what each activated trigger matched, keyed by rule id
+	TriggerDetails map[int64]string
 
 	// Optional data that may not be present
 	CS                     *dstate.ChannelState
@@ -219,7 +221,12 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 			if p.RuleModel.RuleID == t.CurrentRule.Model.ID {
 				builder.WriteString(" (`")
 				builder.WriteString(p.Part.Name())
-				builder.WriteString("`)")
+				builder.WriteString("`")
+				if detail := t.TriggerDetails[t.CurrentRule.Model.ID]; detail != "" {
+					builder.WriteString(": ")
+					builder.WriteString(detail)
+				}
+				builder.WriteString(")")
 				break
 			}
 		}
@@ -232,6 +239,9 @@ type TriggerContext struct {
 	GS   *dstate.GuildSet
 	MS   *dstate.MemberState
 	Data any
+
+	// Detail is set by a trigger to describe what it matched, shown in the punishment reason
+	Detail string
 }
 
 // MessageCondition is a active condition that needs to run on a message

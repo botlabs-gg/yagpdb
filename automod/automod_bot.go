@@ -62,19 +62,20 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 
 	ms := dstate.MemberStateFromMember(msg.Member)
 
-	return !p.CheckTriggers(nil, evt.GS, ms, msg, cs, func(trig *ParsedPart) (activated bool, err error) {
+	return !p.CheckTriggers(nil, evt.GS, ms, msg, cs, func(trig *ParsedPart, triggerCtx *TriggerContext) (activated bool, err error) {
 		cast, ok := trig.Part.(MessageTrigger)
 		if !ok {
 			return
 		}
 
-		return cast.CheckMessage(&TriggerContext{GS: evt.GS, MS: ms, Data: trig.ParsedSettings}, cs, msg)
+		return cast.CheckMessage(triggerCtx, cs, msg)
 	})
 }
 
 func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationName string) {
 	// reset context data
 	ctxData.ActivatedTriggers = nil
+	ctxData.TriggerDetails = nil
 	ctxData.CurrentRule = nil
 	ctxData.TriggeredRules = nil
 
@@ -222,13 +223,13 @@ func (p *Plugin) checkNickname(ms *dstate.MemberState) {
 		return
 	}
 
-	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
+	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart, triggerCtx *TriggerContext) (activated bool, err error) {
 		cast, ok := trig.Part.(NicknameListener)
 		if !ok {
 			return false, nil
 		}
 
-		return cast.CheckNickname(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
+		return cast.CheckNickname(triggerCtx)
 	})
 }
 
@@ -238,13 +239,13 @@ func (p *Plugin) checkGlobalname(ms *dstate.MemberState) {
 		return
 	}
 
-	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
+	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart, triggerCtx *TriggerContext) (activated bool, err error) {
 		cast, ok := trig.Part.(GlobalnameListener)
 		if !ok {
 			return false, nil
 		}
 
-		return cast.CheckGlobalname(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
+		return cast.CheckGlobalname(triggerCtx)
 	})
 }
 
@@ -254,13 +255,13 @@ func (p *Plugin) checkJoin(ms *dstate.MemberState) {
 		return
 	}
 
-	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
+	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart, triggerCtx *TriggerContext) (activated bool, err error) {
 		cast, ok := trig.Part.(JoinListener)
 		if !ok {
 			return false, nil
 		}
 
-		return cast.CheckJoin(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
+		return cast.CheckJoin(triggerCtx)
 	})
 }
 
@@ -291,21 +292,17 @@ func (p *Plugin) handleAutomodExecution(evt *eventsystem.EventData) {
 
 	message, _ := common.BotSession.ChannelMessage(eventData.ChannelID, eventData.MessageID)
 
-	p.CheckTriggers(nil, evt.GS, ms, message, cs, func(trig *ParsedPart) (activated bool, err error) {
+	p.CheckTriggers(nil, evt.GS, ms, message, cs, func(trig *ParsedPart, triggerCtx *TriggerContext) (activated bool, err error) {
 		cast, ok := trig.Part.(AutomodListener)
 		if !ok {
 			return false, nil
 		}
 
-		return cast.CheckRuleID(&TriggerContext{
-			GS:   evt.GS,
-			MS:   ms,
-			Data: trig.ParsedSettings,
-		}, eventData.RuleID)
+		return cast.CheckRuleID(triggerCtx, eventData.RuleID)
 	})
 }
 
-func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, ms *dstate.MemberState, msg *discordgo.Message, cs *dstate.ChannelState, checkF func(trp *ParsedPart) (activated bool, err error)) bool {
+func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, ms *dstate.MemberState, msg *discordgo.Message, cs *dstate.ChannelState, checkF func(trp *ParsedPart, triggerCtx *TriggerContext) (activated bool, err error)) bool {
 
 	if rulesets == nil {
 		var err error
@@ -345,6 +342,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		// Check for triggered rules in this ruleset
 		var triggeredRules []*ParsedRule
 		var activatedTriggers []*ParsedPart
+		var triggerDetails map[int64]string
 
 	OUTER:
 		for _, rule := range rs.Rules {
@@ -358,7 +356,8 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 
 			for _, trig := range rule.Triggers {
 
-				activated, err := checkF(trig)
+				triggerCtx := &TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings}
+				activated, err := checkF(trig, triggerCtx)
 				if err != nil {
 					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking trigger")
 					continue
@@ -367,6 +366,12 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 				if activated {
 					triggeredRules = append(triggeredRules, rule)
 					activatedTriggers = append(activatedTriggers, trig)
+					if triggerCtx.Detail != "" {
+						if triggerDetails == nil {
+							triggerDetails = make(map[int64]string)
+						}
+						triggerDetails[rule.Model.ID] = triggerCtx.Detail
+					}
 					break
 				}
 
@@ -381,6 +386,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 
 		ctxData.TriggeredRules = triggeredRules
 		ctxData.ActivatedTriggers = activatedTriggers
+		ctxData.TriggerDetails = triggerDetails
 
 		if ctxData.Message != nil {
 			ctxData.StrippedMessageContent = PrepareMessageForWordCheck(ctxData.Message.Content)

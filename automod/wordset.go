@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -58,13 +59,38 @@ func (s wordSet) contains(word string) bool {
 	return ok
 }
 
-// wordListTriggered reports whether fields trigger a denylist (any field in the set)
-// or an allowlist (any field not in the set).
-func wordListTriggered(set wordSet, fields []string, blacklist bool) bool {
+// wordListTriggered returns the first field that triggers a denylist (a field in the set)
+// or an allowlist (a field not in the set).
+func wordListTriggered(set wordSet, fields []string, blacklist bool) (word string, triggered bool) {
 	for _, f := range fields {
 		if set.contains(f) == blacklist {
-			return true
+			return f, true
 		}
 	}
-	return false
+	return "", false
+}
+
+const maxReasonWordLength = 50
+
+// wordListMatchDetail describes a word list match for the punishment reason.
+func wordListMatchDetail(guildID, listID int64, word string, blacklist bool) string {
+	listName := "unknown list"
+	if list, err := FindFetchGuildList(guildID, listID); err == nil {
+		listName = list.Name
+	}
+
+	relation := "in"
+	if !blacklist {
+		relation = "not in"
+	}
+
+	return fmt.Sprintf("`%s` %s list `%s`", reasonCodeText(word), relation, reasonCodeText(listName))
+}
+
+func reasonCodeText(s string) string {
+	s = strings.ReplaceAll(s, "`", "'")
+	if utf8.RuneCountInString(s) > maxReasonWordLength {
+		s = string([]rune(s)[:maxReasonWordLength]) + "..."
+	}
+	return s
 }

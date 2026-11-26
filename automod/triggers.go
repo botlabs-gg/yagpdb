@@ -260,7 +260,11 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 		}
 	}
 
-	return wordListTriggered(set, messageFields, wl.Blacklist), nil
+	word, triggered := wordListTriggered(set, messageFields, wl.Blacklist)
+	if triggered {
+		triggerCtx.Detail = wordListMatchDetail(triggerCtx.GS.ID, dataCast.ListID, word, wl.Blacklist)
+	}
+	return triggered, nil
 }
 
 /////////////////////////////////////////////////////////////
@@ -1394,7 +1398,11 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
-	return wordListTriggered(set, fields, nwl.Blacklist), nil
+	word, triggered := wordListTriggered(set, fields, nwl.Blacklist)
+	if triggered {
+		t.Detail = wordListMatchDetail(t.GS.ID, dataCast.ListID, word, nwl.Blacklist)
+	}
+	return triggered, nil
 }
 
 /////////////////////////////////////////////////////////////
@@ -1524,7 +1532,11 @@ func (gwl *GlobalnameWordlistTrigger) CheckGlobalname(t *TriggerContext) (bool, 
 		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
-	return wordListTriggered(set, fields, gwl.Blacklist), nil
+	word, triggered := wordListTriggered(set, fields, gwl.Blacklist)
+	if triggered {
+		t.Detail = wordListMatchDetail(t.GS.ID, dataCast.ListID, word, gwl.Blacklist)
+	}
+	return triggered, nil
 }
 
 /////////////////////////////////////////////////////////////

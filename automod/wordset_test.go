@@ -77,7 +77,7 @@ func TestWordListTriggeredMatchesNaive(t *testing.T) {
 			for _, fields := range [][]string{strings.Fields(prepared), strings.Fields(msg)} {
 				for _, blacklist := range []bool{true, false} {
 					want := naiveWordListTriggered(list, fields, blacklist)
-					got := wordListTriggered(set, fields, blacklist)
+					_, got := wordListTriggered(set, fields, blacklist)
 					if want != got {
 						t.Errorf("list=%q fields=%q blacklist=%v: want %v got %v", list, fields, blacklist, want, got)
 					}
