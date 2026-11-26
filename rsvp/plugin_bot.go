@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -763,26 +764,44 @@ type UpdatingSession struct {
 }
 
 func (u *UpdatingSession) run() {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithField("guild", u.GuildID).WithField("message", u.ID).Warnf("recovered from panic in rsvp embed updater: %v\n%s", r, debug.Stack())
+			updatingSessiosMU.Lock()
+			u.removeLocked()
+			updatingSessiosMU.Unlock()
+		}
+	}()
+
 	for {
 		u.update()
 		time.Sleep(time.Second * 5)
 
-		updatingSessiosMU.Lock()
-		if u.lastEmbedUpdate.After(u.lastModelUpdate) || u.lastEmbedUpdate.Equal(u.lastModelUpdate) {
-			// remove, no need for further updates
-
-			for i, v := range updatingSessionEmbeds {
-				if v == u {
-					updatingSessionEmbeds = append(updatingSessionEmbeds[:i], updatingSessionEmbeds[i+1:]...)
-					break
-				}
-			}
-
-			updatingSessiosMU.Unlock()
+		if u.finished() {
 			return
 		}
+	}
+}
 
-		updatingSessiosMU.Unlock()
+func (u *UpdatingSession) finished() bool {
+	updatingSessiosMU.Lock()
+	defer updatingSessiosMU.Unlock()
+
+	if u.lastEmbedUpdate.Before(u.lastModelUpdate) {
+		return false
+	}
+
+	// no need for further updates
+	u.removeLocked()
+	return true
+}
+
+func (u *UpdatingSession) removeLocked() {
+	for i, v := range updatingSessionEmbeds {
+		if v == u {
+			updatingSessionEmbeds = append(updatingSessionEmbeds[:i], updatingSessionEmbeds[i+1:]...)
+			break
+		}
 	}
 }
 

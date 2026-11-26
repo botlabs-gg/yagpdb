@@ -123,7 +123,7 @@ func (g *Game) editMenu() {
 	channelID, messageID := g.MasterChannel, g.LastMenuMessage
 	version := g.menuVersion.Add(1)
 
-	go func() {
+	g.goSafe("menu edit", func() {
 		g.menuEditMu.Lock()
 		defer g.menuEditMu.Unlock()
 
@@ -138,7 +138,7 @@ func (g *Game) editMenu() {
 			Components: components,
 			Flags:      discordgo.MessageFlagsIsComponentsV2,
 		})
-	}()
+	})
 }
 
 // removeOldInteractions removes the buttons from the menu message, components v2 messages can't be left without components

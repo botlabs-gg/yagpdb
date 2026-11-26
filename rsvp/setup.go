@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -65,6 +66,8 @@ func (s *SetupSession) handleMessage(m *discordgo.Message) {
 	if s.CreatedOnMessageID == m.ID {
 		return
 	}
+
+	defer s.recoverPanic("handleMessage", true)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -305,6 +308,8 @@ func (s *SetupSession) abortError(msg string, err error) {
 }
 
 func (s *SetupSession) loopCheckActive() {
+	defer s.recoverPanic("loopCheckActive", true)
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -315,23 +320,40 @@ func (s *SetupSession) loopCheckActive() {
 		case <-ticker.C:
 		}
 
-		s.mu.Lock()
-		since := time.Since(s.LastAction)
-
-		if since < time.Minute*3 {
-			s.mu.Unlock()
-			continue
+		if s.checkTimedOut() {
+			s.remove()
 		}
+	}
+}
 
-		s.sendMessage("Event setup timed out, you waited over 3 minutes before doing anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
-		s.mu.Unlock()
+func (s *SetupSession) checkTimedOut() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-		// Session expired, remove it
+	if time.Since(s.LastAction) < time.Minute*3 {
+		return false
+	}
+
+	s.sendMessage("Event setup timed out, you waited over 3 minutes before doing anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
+	return true
+}
+
+// recoverPanic must be deferred before s.mu is locked, so the lock is released before cleanup runs
+func (s *SetupSession) recoverPanic(task string, cleanup bool) {
+	r := recover()
+	if r == nil {
+		return
+	}
+
+	logger.WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Warnf("recovered from panic in rsvp setup %s: %v\n%s", task, r, debug.Stack())
+	if cleanup {
 		s.remove()
 	}
 }
 
 func (s *SetupSession) remove() {
+	defer s.recoverPanic("remove", false)
+
 	s.mu.Lock()
 	stopped := s.stopped
 	s.stopped = true

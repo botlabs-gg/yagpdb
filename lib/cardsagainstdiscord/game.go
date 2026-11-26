@@ -420,7 +420,7 @@ func (g *Game) getRandomPlayerCards(num int) []ResponseCard {
 // assumes the game is locked
 func (g *Game) sendAnnouncment(msg string) {
 	if g.LastMenuMessage == 0 || g.lastMenuDisplay == nil {
-		go g.sendContainer(textContainer(0, msg))
+		g.goSafe("announcement", func() { g.sendContainer(textContainer(0, msg)) })
 		return
 	}
 
@@ -452,12 +452,23 @@ func (g *Game) stop() {
 	close(g.stopch)
 }
 
+func (g *Game) goSafe(task string, fn func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.WithField("channel", g.MasterChannel).Warnf("recovered from panic in %s: %v\n%s", task, r, debug.Stack())
+			}
+		}()
+		fn()
+	}()
+}
+
 func (g *Game) runTicker() {
 	defer func() {
 		if r := recover(); r != nil {
 			logger.WithField("channel", g.MasterChannel).Warnf("recovered from panic in running game: %v\n%s", r, debug.Stack())
 			go g.Session.ChannelMessageSend(g.MasterChannel, "The running game almost caused a crash! The game has been terminated as a result. Contact the bot owner.")
-			go g.Manager.RemoveGame(g.MasterChannel)
+			g.goSafe("remove game", func() { g.Manager.RemoveGame(g.MasterChannel) })
 		}
 	}()
 
@@ -514,7 +525,8 @@ func (g *Game) Tick() {
 		}
 
 		if len(warn) > 0 {
-			go g.sendPickWarning(warn, g.StateEntered.Add(g.pickResponseTime()))
+			deadline := g.StateEntered.Add(g.pickResponseTime())
+			g.goSafe("pick warning", func() { g.sendPickWarning(warn, deadline) })
 		}
 
 		if allPlayersDone || time.Since(g.StateEntered) >= g.pickResponseTime() {
@@ -855,7 +867,7 @@ func (g *Game) pickWinnerExpired() {
 
 func (g *Game) gameExpired() {
 	g.Session.ChannelMessageSend(g.MasterChannel, "CAH Game expired, too long without any actions or no players.")
-	go g.Manager.RemoveGame(g.MasterChannel)
+	g.goSafe("remove game", func() { g.Manager.RemoveGame(g.MasterChannel) })
 	g.stop()
 }
 
@@ -911,13 +923,13 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 		}
 
 		g.LastAction = time.Now()
-		go func() {
+		g.goSafe("leave", func() {
 			if err := g.Manager.PlayerTryLeaveGame(user.ID); err != nil {
 				g.reply(ic, "You're not in this game.")
 				return
 			}
 			g.reply(ic, "You left the game.")
-		}()
+		})
 	case CahGamePlayPause:
 		g.handlePlayPauseClick(ic, user)
 	case CahCardSelectMenu:
@@ -927,7 +939,7 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 
 // reply sends a message only the user that used the component sees, the interaction has to be acknowledged already
 func (g *Game) reply(ic *discordgo.InteractionCreate, msg string) {
-	go func() {
+	g.goSafe("reply", func() {
 		_, err := g.Session.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
 			Content:         msg,
 			Flags:           discordgo.MessageFlagsEphemeral,
@@ -936,7 +948,7 @@ func (g *Game) reply(ic *discordgo.InteractionCreate, msg string) {
 		if err != nil {
 			logrus.WithError(err).Error("Failed sending CAH reply")
 		}
-	}()
+	})
 }
 
 func (g *Game) handleJoinClick(ic *discordgo.InteractionCreate, user *discordgo.User, player *Player) {
@@ -951,7 +963,7 @@ func (g *Game) handleJoinClick(ic *discordgo.InteractionCreate, user *discordgo.
 	}
 
 	// joining goes through the manager, which locks this game itself
-	go func() {
+	g.goSafe("join", func() {
 		err := g.Manager.PlayerTryJoinGame(g.MasterChannel, user.ID, username)
 		switch err {
 		case nil:
@@ -972,7 +984,7 @@ func (g *Game) handleJoinClick(ic *discordgo.InteractionCreate, user *discordgo.
 		default:
 			g.reply(ic, "This game is no longer running.")
 		}
-	}()
+	})
 }
 
 func (g *Game) handlePlayPauseClick(ic *discordgo.InteractionCreate, user *discordgo.User) {
@@ -1038,7 +1050,7 @@ func (g *Game) handleWinnerPick(ic *discordgo.InteractionCreate, player *Player)
 		g.presentWinners([]*PickedResonse{picked})
 
 		if g.Players[0].Wins >= g.WinLimit {
-			go g.Manager.RemoveGame(g.MasterChannel)
+			g.goSafe("remove game", func() { g.Manager.RemoveGame(g.MasterChannel) })
 			g.setState(GameStateEnded)
 		} else {
 			g.setState(GameStatePreRoundDelay)
@@ -1105,7 +1117,7 @@ func (g *Game) allVoted() {
 	g.presentWinners(winners)
 
 	if g.Players[0].Wins >= g.WinLimit {
-		go g.Manager.RemoveGame(g.MasterChannel)
+		g.goSafe("remove game", func() { g.Manager.RemoveGame(g.MasterChannel) })
 		g.setState(GameStateEnded)
 	} else {
 		g.setState(GameStatePreRoundDelay)
