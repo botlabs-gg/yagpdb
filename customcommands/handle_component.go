@@ -160,9 +160,7 @@ func respondRestrictedInteraction(interaction *templates.CustomCommandInteractio
 }
 
 func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*TriggeredCC) {
-	if err := templates.RecordInteractionGuild(interaction.ID, interaction.GuildID); err != nil {
-		logger.WithField("guild", interaction.GuildID).WithError(err).Error("failed recording interaction guild")
-	}
+	templates.RecordInteractionGuild(interaction.ID, interaction.GuildID)
 
 	def := &discordgo.InteractionResponse{
 		Data: &discordgo.InteractionResponseData{},

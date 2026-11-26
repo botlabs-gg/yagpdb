@@ -5,11 +5,12 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/mediocregopher/radix/v3"
+	"github.com/karlseguin/ccache"
 )
 
 var ErrTooManyInteractionResponses = errors.New("cannot respond to an interaction > 1 time; consider using a followup")
@@ -460,26 +461,22 @@ func (c *Context) tokenArg(interactionToken any) (sendType sendMessageType, toke
 	return
 }
 
-// Interaction tokens stay valid for 15 minutes.
-const interactionGuildTTLSeconds = 15 * 60
+// Interaction tokens stay valid for 15 minutes. Interactions and every custom command run for a guild,
+// delayed ones included, happen on the process owning the guild's shard, so this can live in memory.
+const (
+	interactionGuildTTL     = 15 * time.Minute
+	maxRecordedInteractions = 100000
+)
 
-func keyInteractionGuild(interactionID int64) string {
-	return "cc_interaction_guild:" + strconv.FormatInt(interactionID, 10)
-}
+var interactionGuilds = ccache.New(ccache.Configure().MaxSize(maxRecordedInteractions))
 
 // RecordInteractionGuild marks an interaction as belonging to a guild, so templates in
 // that guild may use its token.
-func RecordInteractionGuild(interactionID, guildID int64) error {
-	return common.RedisPool.Do(radix.FlatCmd(nil, "SET", keyInteractionGuild(interactionID), guildID, "EX", interactionGuildTTLSeconds))
+func RecordInteractionGuild(interactionID, guildID int64) {
+	interactionGuilds.Set(strconv.FormatInt(interactionID, 10), guildID, interactionGuildTTL)
 }
 
-var interactionInGuild = func(interactionID, guildID int64) bool {
-	var recordedGuildID int64
-	reply := radix.MaybeNil{Rcv: &recordedGuildID}
-	err := common.RedisPool.Do(radix.Cmd(&reply, "GET", keyInteractionGuild(interactionID)))
-	if err != nil {
-		logger.WithError(err).Error("failed checking interaction guild")
-		return false
-	}
-	return !reply.Nil && recordedGuildID == guildID
+func interactionInGuild(interactionID, guildID int64) bool {
+	item := interactionGuilds.Get(strconv.FormatInt(interactionID, 10))
+	return item != nil && !item.Expired() && item.Value().(int64) == guildID
 }

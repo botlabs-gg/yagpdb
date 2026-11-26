@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
@@ -15,14 +16,9 @@ func testInteractionToken(id int64) string {
 
 func TestTokenArgRestrictsToGuild(t *testing.T) {
 	const guildID, otherGuildID = 100, 200
-	recorded := map[int64]int64{1: guildID, 2: otherGuildID}
-
-	orig := interactionInGuild
-	interactionInGuild = func(interactionID, gID int64) bool {
-		g, ok := recorded[interactionID]
-		return ok && g == gID
-	}
-	defer func() { interactionInGuild = orig }()
+	RecordInteractionGuild(1, guildID)
+	RecordInteractionGuild(2, otherGuildID)
+	interactionGuilds.Set("5", int64(guildID), -time.Second)
 
 	current := testInteractionToken(3)
 	ctx := &Context{
@@ -42,6 +38,7 @@ func TestTokenArgRestrictsToGuild(t *testing.T) {
 		{"same guild", testInteractionToken(1), true},
 		{"other guild", testInteractionToken(2), false},
 		{"unknown interaction", testInteractionToken(4), false},
+		{"expired record", testInteractionToken(5), false},
 		{"garbage", "not a token", false},
 	}
 
