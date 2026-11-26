@@ -123,3 +123,18 @@ func TestGetAllTextContents(t *testing.T) {
 		}
 	}
 }
+
+func TestGetAllTextContentsTypedNilComponents(t *testing.T) {
+	m := &Message{
+		Content: "hi",
+		Components: []TopLevelComponent{
+			(*Container)(nil), (*ActionsRow)(nil), (*Section)(nil), (*TextDisplay)(nil),
+			&Container{Components: []TopLevelComponent{(*TextDisplay)(nil), &ActionsRow{Components: []InteractiveComponent{(*Button)(nil)}}, &Section{Accessory: (*Button)(nil)}}},
+		},
+	}
+
+	got := m.GetAllTextContents()
+	if len(got) != 1 || got[0] != "hi" {
+		t.Fatalf("got %q, want [hi]", got)
+	}
+}

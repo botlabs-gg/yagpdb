@@ -243,14 +243,29 @@ func (e *MessageEmbed) appendTexts(dst []string) []string {
 func appendComponentTexts(dst []string, c MessageComponent) []string {
 	switch t := c.(type) {
 	case *Container:
+		if t == nil {
+			return dst
+		}
 		return appendComponentTexts(dst, *t)
 	case *Section:
+		if t == nil {
+			return dst
+		}
 		return appendComponentTexts(dst, *t)
 	case *ActionsRow:
+		if t == nil {
+			return dst
+		}
 		return appendComponentTexts(dst, *t)
 	case *TextDisplay:
+		if t == nil {
+			return dst
+		}
 		return appendComponentTexts(dst, *t)
 	case *Button:
+		if t == nil {
+			return dst
+		}
 		return appendComponentTexts(dst, *t)
 	case Container:
 		for _, child := range t.Components {

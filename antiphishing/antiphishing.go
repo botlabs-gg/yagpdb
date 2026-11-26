@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
@@ -65,8 +66,14 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var (
+	domainListClient = &http.Client{Timeout: time.Minute}
+	// runs while handling messages, so it must give up quickly
+	urlCheckClient = &http.Client{Timeout: 5 * time.Second}
+)
+
 func getAllPhishingDomains() ([]string, error) {
-	client := &http.Client{}
+	client := domainListClient
 	req, _ := http.NewRequest("GET", getAllPhishingDomainsUrl, nil)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "*/*")
@@ -85,7 +92,7 @@ func getAllPhishingDomains() ([]string, error) {
 }
 
 func getRecentlyUpdatedPhishingDomains(seconds uint32) ([]string, []string, error) {
-	client := &http.Client{}
+	client := domainListClient
 	reqUrl := fmt.Sprintf("%s/%v", getRecentPhishingDomainUpdatesUrl, seconds)
 	req, _ := http.NewRequest("GET", reqUrl, nil)
 	req.Header.Add("Content-Type", "application/json")
@@ -177,18 +184,18 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 		Message string `json:"message"`
 	}{stringifiedUrlList})
 	queryString := string(queryBytes)
-	client := &http.Client{}
 	req, _ := http.NewRequest("POST", fallbackPhishingUrlCheckAPI, strings.NewReader(queryString))
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "*/*")
 	req.Header.Add("Content-Length", strconv.Itoa(len(queryString)))
 	req.Header.Add("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
-	resp, err := client.Do(req)
+	resp, err := urlCheckClient.Do(req)
 	if err != nil {
 		logrus.WithError(err).Error("[antiphishing] Failed checking bitflowAntiFish API ")
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 404 {
 		bitflowAntifishResponse.Match = false
@@ -201,10 +208,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 		return nil, err
 	}
 
-	req.Body.Close()
-	defer resp.Body.Close()
-
-	bytes, err := io.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		logrus.WithError(err).Error("[antiphishing] Error parsing response body from bitflowAntiFish API")
 		return nil, err

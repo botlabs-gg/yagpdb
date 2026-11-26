@@ -587,22 +587,40 @@ func (p *Plugin) FetchGuildRulesets(guildID int64) ([]*ParsedRuleset, error) {
 	return cast, nil
 }
 
-func FetchGuildLists(guildID int64) ([]*models.AutomodList, error) {
+type guildLists struct {
+	lists    []*models.AutomodList
+	wordSets map[int64]wordSet
+}
+
+func fetchCachedGuildLists(guildID int64) (*guildLists, error) {
 	v, err := cachedLists.GetCustomFetch(guildID, func(key any) (any, error) {
 		lists, err := models.AutomodLists(qm.Where("guild_id = ?", guildID)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
 
-		return []*models.AutomodList(lists), nil
+		wordSets := make(map[int64]wordSet, len(lists))
+		for _, l := range lists {
+			wordSets[l.ID] = newWordSet(l.Content)
+		}
+
+		return &guildLists{lists: lists, wordSets: wordSets}, nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	cast := v.([]*models.AutomodList)
-	return cast, nil
+	return v.(*guildLists), nil
+}
+
+func FetchGuildLists(guildID int64) ([]*models.AutomodList, error) {
+	cached, err := fetchCachedGuildLists(guildID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cached.lists, nil
 }
 
 var ErrListNotFound = errors.New("list not found")
@@ -620,6 +638,20 @@ func FindFetchGuildList(guildID int64, listID int64) (*models.AutomodList, error
 	}
 
 	return nil, ErrListNotFound
+}
+
+func FindFetchGuildWordSet(guildID int64, listID int64) (wordSet, error) {
+	cached, err := fetchCachedGuildLists(guildID)
+	if err != nil {
+		return nil, err
+	}
+
+	set, ok := cached.wordSets[listID]
+	if !ok {
+		return nil, ErrListNotFound
+	}
+
+	return set, nil
 }
 
 func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data any) (retry bool, err error) {

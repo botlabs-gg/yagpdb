@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/botlabs-gg/yagpdb/v2/serverpreview"
+	gsafebrowsing "github.com/google/safebrowsing"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -235,7 +236,10 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 type GuildInvites struct {
 	createdAt time.Time
 	invites   map[string]bool
+	failed    bool
 }
+
+const failedInviteFetchRetry = 5 * time.Minute
 
 type cachedGuildInvites struct {
 	sync.RWMutex
@@ -275,10 +279,10 @@ func (c *cachedGuildInvites) get(guildId int64) (GuildInvites, bool) {
 	return guildInvite, ok
 }
 
-func (c *cachedGuildInvites) set(guildID int64, invites map[string]bool) {
+func (c *cachedGuildInvites) set(guildID int64, invites map[string]bool, failed bool) {
 	c.Lock()
 	defer c.Unlock()
-	c.guilds[guildID] = GuildInvites{time.Now(), invites}
+	c.guilds[guildID] = GuildInvites{time.Now(), invites, failed}
 }
 
 var invitesCache cachedGuildInvites
@@ -301,20 +305,17 @@ func CheckMessageForBadInvites(msg *discordgo.Message, includeExtraText bool) (c
 		}
 
 		guildInvites, ok := invitesCache.get(guildID)
+		if ok && guildInvites.failed && time.Since(guildInvites.createdAt) > failedInviteFetchRetry {
+			ok = false
+		}
 		if !ok { // we do not have a cache for this guild yet, create it
+			// failures and empty results are cached too, otherwise every invite-like message
+			// in a guild where the bot can't list invites makes another request to discord
 			invites, err := common.BotSession.GuildInvites(guildID)
 			if err != nil {
 				logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
-				return true // assume bad since discord...
 			}
 
-			// if there are no invites for this guild
-			// assume it is a bad invite.
-			if len(invites) == 0 {
-				return true
-			}
-
-			// add invites to the cache
 			inviteMap := make(map[string]bool)
 			for _, invite := range invites {
 				inviteMap[invite.Code] = true
@@ -324,10 +325,13 @@ func CheckMessageForBadInvites(msg *discordgo.Message, includeExtraText bool) (c
 				inviteMap[guild.VanityURLCode] = true
 			}
 
-			invitesCache.set(guildID, inviteMap)
+			invitesCache.set(guildID, inviteMap, err != nil)
 
-			// overwrite the empty invite map
-			// with the one just returned by discord
+			// assume it is a bad invite if discord failed or the guild has no invites
+			if err != nil || len(invites) == 0 {
+				return true
+			}
+
 			guildInvites = GuildInvites{
 				invites: inviteMap,
 			}
@@ -544,45 +548,66 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 }
 
 func (s *SitesRule) checkMessage(message *discordgo.Message) (banned bool, item string, threatList string) {
+	// safebrowsing is batched over the contents before the first banned or scam link,
+	// so the reported item matches checking each content in order
+	var checked []string
 	for _, content := range messageTexts(message, s.IncludeExtraText) {
-		content = confusables.NormalizeQueryEncodedText(content)
-		matches := common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(content), -1)
-		for _, v := range matches {
-			if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && !strings.HasPrefix(v, "steam://") {
-				v = "http://" + v
-			}
-
-			parsed, err := url.ParseRequestURI(v)
-			if err != nil {
-				logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
-			} else {
-				if banned, item := s.isBanned(parsed.Host); banned {
-					return true, item, ""
-				}
-			}
-		}
-
-		if s.ScamLinkProtection {
-			scamLink, err := antiphishing.CheckMessageForPhishingDomains(common.ForwardSlashReplacer.Replace(content))
-			if err != nil {
-				logger.WithError(err).Error("Failed checking urls against antiphishing APIs")
-			} else if scamLink != "" {
-				return true, scamLink, ""
-			}
-		}
-
-		// Check safebrowsing
-		if s.GoogleSafeBrowsingEnabled {
-			threat, err := safebrowsing.CheckString(common.ForwardSlashReplacer.Replace(content))
-			if err != nil {
-				logger.WithError(err).Error("Failed checking urls against google safebrowser")
-			} else if threat != nil {
+		content = common.ForwardSlashReplacer.Replace(confusables.NormalizeQueryEncodedText(content))
+		if item := s.findBannedLink(content); item != "" {
+			if threat := s.checkSafeBrowsing(checked); threat != nil {
 				return true, threat.Pattern, threat.ThreatType.String()
+			}
+			return true, item, ""
+		}
+		checked = append(checked, content)
+	}
+
+	if threat := s.checkSafeBrowsing(checked); threat != nil {
+		return true, threat.Pattern, threat.ThreatType.String()
+	}
+
+	return false, "", ""
+}
+
+func (s *SitesRule) findBannedLink(content string) string {
+	matches := common.LinkRegex.FindAllString(content, -1)
+	for _, v := range matches {
+		if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && !strings.HasPrefix(v, "steam://") {
+			v = "http://" + v
+		}
+
+		parsed, err := url.ParseRequestURI(v)
+		if err != nil {
+			logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
+		} else {
+			if banned, item := s.isBanned(parsed.Host); banned {
+				return item
 			}
 		}
 	}
 
-	return false, "", ""
+	if s.ScamLinkProtection {
+		scamLink, err := antiphishing.CheckMessageForPhishingDomains(content)
+		if err != nil {
+			logger.WithError(err).Error("Failed checking urls against antiphishing APIs")
+		} else if scamLink != "" {
+			return scamLink
+		}
+	}
+
+	return ""
+}
+
+func (s *SitesRule) checkSafeBrowsing(contents []string) *gsafebrowsing.URLThreat {
+	if !s.GoogleSafeBrowsingEnabled || len(contents) == 0 {
+		return nil
+	}
+
+	threat, err := safebrowsing.CheckStrings(contents)
+	if err != nil {
+		logger.WithError(err).Error("Failed checking urls against google safebrowser")
+	}
+	return threat
 }
 
 func (s *SitesRule) isBanned(host string) (bool, string) {
