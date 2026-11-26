@@ -226,7 +226,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (any, error) {
 	triggerType := ""
 	switch data.TriggerType {
 	case dcmd.TriggerTypeSlashCommands:
-		rawCommand = yc.Name + " (slashcommand)"
+		rawCommand = slashCommandRawString(data.SlashCommandTriggerData.Interaction, yc.Name)
 		triggerType = "slashcommand"
 	default:
 		rawCommand = data.TraditionalTriggerData.Message.Content
