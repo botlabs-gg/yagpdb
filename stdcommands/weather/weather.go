@@ -1,8 +1,6 @@
 package weather
 
 import (
-	"io"
-
 	"net/http"
 	"net/url"
 	"regexp"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/lunixbochs/vtclean"
 )
 
@@ -36,19 +35,8 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (any, error) {
 		where := data.Args[0].Str()
 
-		req, err := http.NewRequest("GET", "http://wttr.in/"+url.PathEscape(where)+"?m", nil)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("User-Agent", "curl/7.49.1")
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-
-		body, err := io.ReadAll(resp.Body)
+		header := http.Header{"User-Agent": []string{"curl/7.49.1"}}
+		_, body, err := util.HTTPGet(data.Context(), "https://wttr.in/"+url.PathEscape(where)+"?m", header)
 		if err != nil {
 			return nil, err
 		}

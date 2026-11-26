@@ -2,11 +2,11 @@ package dadjoke
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 type Joke struct {
@@ -23,20 +23,8 @@ var Command = &commands.YAGCommand{
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (any, error) {
-		req, err := http.NewRequest("GET", "https://icanhazdadjoke.com", nil)
-		if err != nil {
-			return nil, err
-		}
-		//Set the headers that will be sent to the API to determine the response.
-		req.Header.Set("Accept", "application/json")
-		req.Header.Add("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
-
-		apiResp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer apiResp.Body.Close()
-		bytes, err := io.ReadAll(apiResp.Body)
+		header := http.Header{"Accept": []string{"application/json"}}
+		_, bytes, err := util.HTTPGet(data.Context(), "https://icanhazdadjoke.com", header)
 		if err != nil {
 			return nil, err
 		}

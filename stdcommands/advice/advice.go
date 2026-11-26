@@ -3,11 +3,11 @@ package advice
 import (
 	"encoding/json"
 	"math/rand"
-	"net/http"
 	"net/url"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,13 +24,13 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (any, error) {
 		//return "The API this command used has been shut down :(", nil
 		random := true
-		addr := "http://api.adviceslip.com/advice"
+		addr := "https://api.adviceslip.com/advice"
 		if data.Args[0].Str() != "" {
 			random = false
-			addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
+			addr = "https://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
 		}
 
-		resp, err := http.Get(addr)
+		_, body, err := util.HTTPGet(data.Context(), addr, nil)
 		if err != nil {
 			logrus.WithError(err).Errorf("Failed getting advice from adviceslip api, using fallback")
 			return randomAdvice(), nil
@@ -44,7 +44,7 @@ var Command = &commands.YAGCommand{
 			decoded = &SearchAdviceResp{}
 		}
 
-		err = json.NewDecoder(resp.Body).Decode(&decoded)
+		err = json.Unmarshal(body, &decoded)
 		if err != nil {
 			logrus.WithError(err).Errorf("Failed to decode adviceslip api response, using fallback")
 			return randomAdvice(), nil

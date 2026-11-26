@@ -64,7 +64,10 @@ func hiddenChannelPerms(data *dcmd.Data, target *dstate.MemberState, channelID i
 		return "I can't see that channel, use the /viewperms slash command to check permissions in it"
 	}
 
-	resolved := data.SlashCommandTriggerData.Interaction.DataCommand.Resolved.Channels[channelID]
+	var resolved *discordgo.Channel
+	if dc := data.SlashCommandTriggerData.Interaction.DataCommand; dc != nil && dc.Resolved != nil {
+		resolved = dc.Resolved.Channels[channelID]
+	}
 	if resolved == nil {
 		return "I can't see that channel"
 	}

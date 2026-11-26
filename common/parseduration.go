@@ -1,6 +1,7 @@
 package common
 
 import (
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -8,6 +9,15 @@ import (
 
 	"emperror.dev/errors"
 )
+
+var ErrDurationTooLong = errors.New("duration is too long")
+
+func addDuration(a, b time.Duration) (time.Duration, error) {
+	if b > 0 && a > math.MaxInt64-b {
+		return 0, ErrDurationTooLong
+	}
+	return a + b, nil
+}
 
 // Parses a time string like 1day3h
 func ParseDuration(str string) (time.Duration, error) {
@@ -32,7 +42,9 @@ func ParseDuration(str string) (time.Duration, error) {
 					return 0, err
 				}
 
-				dur += d
+				if dur, err = addDuration(dur, d); err != nil {
+					return 0, err
+				}
 
 				currentNumBuf = ""
 				currentModifierBuf = ""
@@ -51,7 +63,9 @@ func ParseDuration(str string) (time.Duration, error) {
 			return 0, errors.WrapIf(err, "not a duration")
 		}
 
-		dur += d
+		if dur, err = addDuration(dur, d); err != nil {
+			return 0, err
+		}
 	}
 
 	return dur, nil
@@ -63,26 +77,31 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 		return 0, err
 	}
 
-	parsedDur := time.Duration(parsedNum)
-
+	var unit time.Duration
 	switch {
 	case strings.HasPrefix(modifierStr, "s"):
-		parsedDur = parsedDur * time.Second
+		unit = time.Second
 	case modifierStr == "", (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')):
-		parsedDur = parsedDur * time.Minute
+		unit = time.Minute
 	case strings.HasPrefix(modifierStr, "h"):
-		parsedDur = parsedDur * time.Hour
+		unit = time.Hour
 	case strings.HasPrefix(modifierStr, "d"):
-		parsedDur = parsedDur * time.Hour * 24
+		unit = time.Hour * 24
 	case strings.HasPrefix(modifierStr, "w"):
-		parsedDur = parsedDur * time.Hour * 24 * 7
+		unit = time.Hour * 24 * 7
 	case strings.HasPrefix(modifierStr, "mo"):
-		parsedDur = parsedDur * time.Hour * 24 * 30
+		unit = time.Hour * 24 * 30
 	case strings.HasPrefix(modifierStr, "y"):
-		parsedDur = parsedDur * time.Hour * 24 * 365
+		unit = time.Hour * 24 * 365
 	default:
 		return 0, errors.New("couldn't figure out what '" + numStr + modifierStr + "' was")
 	}
+
+	if parsedNum < 0 || parsedNum > math.MaxInt64/int64(unit) {
+		return 0, ErrDurationTooLong
+	}
+
+	parsedDur := time.Duration(parsedNum) * unit
 
 	return parsedDur, nil
 

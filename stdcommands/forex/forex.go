@@ -1,6 +1,7 @@
 package forex
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -41,7 +43,7 @@ var Command = &commands.YAGCommand{
 		var currenciesResult Currencies
 		var exchangeRateResult ExchangeRate
 
-		err := requestAPI(currenciesAPIURL, &currenciesResult)
+		err := requestAPI(data.Context(), currenciesAPIURL, &currenciesResult)
 		if err != nil {
 			return nil, err
 		}
@@ -58,8 +60,12 @@ var Command = &commands.YAGCommand{
 
 		// If the currency isn't supported by API.
 		if !toExist || !fromExist {
+			var guildID int64
+			if data.GuildData != nil {
+				guildID = data.GuildData.GS.ID
+			}
 			return paginatedmessages.NewPaginatedResponse(
-				data.GuildData.GS.ID, data.ChannelID, 1, maxPages, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				guildID, data.ChannelID, 1, maxPages, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					embed, err := errEmbed(currenciesResult, page)
 					if err != nil {
 						return nil, err
@@ -68,7 +74,7 @@ var Command = &commands.YAGCommand{
 				}), nil
 		}
 
-		err = requestAPI(fmt.Sprintf("https://api.frankfurter.app/latest?amount=%.3f&from=%s&to=%s", amount, from, to), &exchangeRateResult)
+		err = requestAPI(data.Context(), fmt.Sprintf("https://api.frankfurter.app/latest?amount=%.3f&from=%s&to=%s", amount, from, to), &exchangeRateResult)
 		if err != nil {
 			return nil, err
 		}
@@ -84,28 +90,17 @@ var Command = &commands.YAGCommand{
 	},
 }
 
-func requestAPI(query string, result any) error {
-	req, err := http.NewRequest("GET", query, nil)
+func requestAPI(ctx context.Context, query string, result any) error {
+	status, body, err := util.HTTPGet(ctx, query, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
+	if status != http.StatusOK {
 		return commands.NewPublicError("Failed to convert, Please verify your input")
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal(body, result)
 }
 
 func errEmbed(currenciesResult Currencies, page int) (*discordgo.MessageEmbed, error) {

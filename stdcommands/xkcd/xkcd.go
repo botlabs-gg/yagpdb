@@ -1,16 +1,16 @@
 package xkcd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-
 	"math/rand"
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 type Xkcd struct {
@@ -46,9 +46,12 @@ var Command = &commands.YAGCommand{
 
 		//first query to get latest number
 		latest := false
-		xkcd, err := getComic()
+		xkcd, err := getComic(data.Context())
 		if err != nil {
 			return "Something happened whilst getting the comic!", err
+		}
+		if xkcd.Num < 1 {
+			return "Something happened whilst getting the comic!", nil
 		}
 
 		xkcdNum := rand.Int63n(xkcd.Num) + 1
@@ -70,7 +73,7 @@ var Command = &commands.YAGCommand{
 
 		//if no latest flag is set, fetches a comic by number
 		if !latest {
-			xkcd, err = getComic(xkcdNum)
+			xkcd, err = getComic(data.Context(), xkcdNum)
 			if err != nil {
 				return "Something happened whilst getting the comic!", err
 			}
@@ -95,7 +98,7 @@ var Command = &commands.YAGCommand{
 	},
 }
 
-func getComic(number ...int64) (*Xkcd, error) {
+func getComic(ctx context.Context, number ...int64) (*Xkcd, error) {
 	xkcd := Xkcd{}
 	queryUrl := XkcdHost + XkcdJson
 
@@ -103,21 +106,12 @@ func getComic(number ...int64) (*Xkcd, error) {
 		queryUrl = fmt.Sprintf(XkcdHost+"%d/"+XkcdJson, number[0])
 	}
 
-	req, err := http.NewRequest("GET", queryUrl, nil)
+	status, body, err := util.HTTPGet(ctx, queryUrl, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("xkcd returned status %d", status)
 	}
 
 	queryErr := json.Unmarshal(body, &xkcd)

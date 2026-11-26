@@ -179,7 +179,11 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		var sb strings.Builder
-		for i, role := range member.Member.Roles {
+		var roles []int64
+		if member.Member != nil {
+			roles = member.Member.Roles
+		}
+		for i, role := range roles {
 			if i == 25 {
 				sb.WriteString("... and more")
 				break

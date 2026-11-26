@@ -1,8 +1,11 @@
 package define
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"regexp"
 
@@ -11,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/dpatrie/urbandictionary"
 )
 
@@ -36,7 +40,7 @@ var Command = &commands.YAGCommand{
 			paginatedView = false
 		}
 
-		qResp, err := urbandictionary.Query(data.Args[0].Str())
+		qResp, err := queryUrbanDictionary(data.Context(), data.Args[0].Str())
 		if err != nil {
 			return "Failed querying :(", err
 		}
@@ -97,6 +101,24 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 	}
 
 	return embed
+}
+
+const urbanDictionaryAPIEndpoint = "https://api.urbandictionary.com/v0/define?term="
+
+func queryUrbanDictionary(ctx context.Context, term string) (*urbandictionary.SearchResult, error) {
+	status, body, err := util.HTTPGet(ctx, urbanDictionaryAPIEndpoint+url.QueryEscape(term), nil)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("urban dictionary returned status %d", status)
+	}
+
+	res := &urbandictionary.SearchResult{}
+	if err := json.Unmarshal(body, res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 const urbanDictionaryDefineEndpoint = "https://www.urbandictionary.com/define.php?term="

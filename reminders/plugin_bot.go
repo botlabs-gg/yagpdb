@@ -245,7 +245,7 @@ var cmds = []*commands.YAGCommand{
 
 			// check perms
 			if reminder.UserID != discordgo.StrID(parsed.Author.ID) {
-				if reminder.GuildID != parsed.GuildData.GS.ID {
+				if parsed.GuildData == nil || reminder.GuildID != parsed.GuildData.GS.ID {
 					return "You can only delete reminders that are not your own in the guild the reminder was originally created", nil
 				}
 

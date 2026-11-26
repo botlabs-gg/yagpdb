@@ -1,9 +1,9 @@
 package inspire
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -15,6 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{
@@ -45,7 +46,7 @@ var Command = &commands.YAGCommand{
 			paginatedView = true
 		}
 		if paginatedView {
-			result, err := inspireFromAPI(true, season)
+			result, err := inspireFromAPI(data.Context(), true, season)
 			if err != nil {
 				return nil, err
 			}
@@ -53,7 +54,8 @@ var Command = &commands.YAGCommand{
 			return paginatedmessages.NewPaginatedResponse(
 				data.GuildData.GS.ID, data.ChannelID, 1, 15, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					if page-1 == len(inspireArray) {
-						result, err := inspireFromAPI(true, season)
+						// page changes happen after the command context has ended
+						result, err := inspireFromAPI(context.Background(), true, season)
 						if err != nil {
 							return nil, err
 						}
@@ -62,7 +64,7 @@ var Command = &commands.YAGCommand{
 					return createInspireEmbed(inspireArray[page-1], true), nil
 				}), nil
 		}
-		inspData, err := inspireFromAPI(false, season)
+		inspData, err := inspireFromAPI(data.Context(), false, season)
 		if err != nil {
 			return fmt.Sprintf("%s\nInspiroBot wonky... sad times :/", err), err
 		}
@@ -71,7 +73,7 @@ var Command = &commands.YAGCommand{
 	},
 }
 
-func inspireFromAPI(mindfulnessMode bool, season string) (string, error) {
+func inspireFromAPI(ctx context.Context, mindfulnessMode bool, season string) (string, error) {
 	query := "https://inspirobot.me/api?generate=true"
 	if mindfulnessMode {
 		query = fmt.Sprintf("https://inspirobot.me/api?generateFlow=1&sessionID=%d", time.Now().UTC().Unix())
@@ -79,33 +81,24 @@ func inspireFromAPI(mindfulnessMode bool, season string) (string, error) {
 		query = "https://inspirobot.me/api?generate=true&season=" + season
 	}
 
-	req, err := http.NewRequest("GET", query, nil)
+	status, body, err := util.HTTPGet(ctx, query, nil)
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
+	if status != http.StatusOK {
+		return "", commands.NewPublicError("HTTP err: ", status)
 	}
 
-	if resp.StatusCode != 200 {
-		return "", commands.NewPublicError("HTTP err: ", resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
 	if mindfulnessMode {
 		var mindful MindfulnessMode
 
-		err := json.Unmarshal([]byte(body), &mindful)
+		err := json.Unmarshal(body, &mindful)
 		if err != nil {
 			return "", err
+		}
+		if len(mindful.Data) < 2 {
+			return "", commands.NewPublicError("InspiroBot returned no quote")
 		}
 
 		mindfulness := mindful.Data[1].Text

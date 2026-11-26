@@ -210,8 +210,13 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		}
 
 		parseErr := dcmd.ParseCmdArgs(data)
-		// Stop here if it's autocomplete; we don't need to block it
+		// Stop here if it's autocomplete; it skips the running command lock and cooldown,
+		// but suggestions can leak server data so the other checks still apply
 		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
+			if !canExecute && (resp == nil || resp.Type != ReasonCooldown) {
+				yc.PostCommandExecuted(settings, data, []*discordgo.ApplicationCommandOptionChoice{}, nil)
+				return nil, nil
+			}
 			if parseErr != nil {
 				return nil, parseErr
 			}
