@@ -12,6 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
 	"github.com/botlabs-gg/yagpdb/v2/common/multiratelimit"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
@@ -174,6 +175,23 @@ func handleLoad(w http.ResponseWriter, r *http.Request) {
 	}
 	if activeGuild.GetChannelOrThread(channelID) == nil {
 		writeErr("That message is not in a channel of this server")
+		return
+	}
+
+	// the bot can read every channel, so only load messages the requester could read in Discord themselves
+	if web.GetIsReadOnly(r.Context()) {
+		writeErr("You need write access to the control panel to load messages")
+		return
+	}
+	const readPerms = discordgo.PermissionViewChannel | discordgo.PermissionReadMessageHistory
+	member := web.ContextMember(r.Context())
+	if member == nil || member.User == nil {
+		writeErr("Couldn't check your access to that channel, try reloading the page")
+		return
+	}
+	perms, err := activeGuild.GetMemberPermissions(channelID, member.User.ID, member.Roles)
+	if err != nil || perms&readPerms != readPerms {
+		writeErr("You can't read messages in that channel")
 		return
 	}
 

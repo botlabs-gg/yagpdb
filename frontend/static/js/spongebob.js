@@ -158,6 +158,7 @@ function showAlerts(alertsJson) {
 		if (alert.Style === "success") {
 			notice = new PNotify({
 				title: alert.Message,
+				title_escape: true,
 				text: "(Click to dismiss)",
 				type: 'success',
 				addclass: 'stack-bar-top click-2-close',
@@ -172,6 +173,7 @@ function showAlerts(alertsJson) {
 		} else if (alert.Style === "danger") {
 			notice = new PNotify({
 				title: alert.Message,
+				title_escape: true,
 				text: "Read the docs and contact support if you don't know what went wrong.\n(Click to dismiss)",
 				type: 'error',
 				addclass: 'stack-bar-top click-2-close',

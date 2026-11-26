@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 	"fmt"
@@ -11,11 +12,13 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
@@ -183,6 +186,19 @@ func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl
 	return tmpl, nil
 }
 
+const errRoleAboveEditor = "You can only make role commands for roles below your own highest role"
+
+// editorIsAboveRole follows Discord's rule that you can only hand out roles below your own, so a control panel
+// editor can't create a self-assignable role ranked above themselves.
+func editorIsAboveRole(ctx context.Context, g *dstate.GuildSet, roleID int64) bool {
+	member := web.ContextMember(ctx)
+	role := g.GetRole(roleID)
+	if member == nil || member.User == nil || role == nil {
+		return false
+	}
+	return bot.IsMemberAboveRole(g, dstate.MemberStateFromMember(member), role)
+}
+
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
@@ -201,6 +217,11 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		} else {
 			tmpl.AddAlerts(web.ErrorAlert(`Already a role command with that name in the "` + existing.R.RoleGroup.Name + `" group; delete it or use a different name`))
 		}
+		return tmpl, nil
+	}
+
+	if !editorIsAboveRole(r.Context(), g, form.Role) {
+		tmpl.AddAlerts(web.ErrorAlert(errRoleAboveEditor))
 		return tmpl, nil
 	}
 
@@ -256,6 +277,10 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 
 	if cmd.GuildID != g.ID {
 		return tmpl.AddAlerts(web.ErrorAlert("That's not your command")), nil
+	}
+
+	if formCmd.Role != cmd.Role && !editorIsAboveRole(r.Context(), g, formCmd.Role) {
+		return tmpl.AddAlerts(web.ErrorAlert(errRoleAboveEditor)), nil
 	}
 
 	cmd.Name = formCmd.Name

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -20,6 +21,8 @@ var (
 	SessionCookieName = "yagpdb-session-3"
 	OauthConf         *oauth2.Config
 )
+
+const oauthStateCookieName = "yagpdb-oauth-state"
 
 func InitOauth() {
 	OauthConf = &oauth2.Config{
@@ -52,6 +55,17 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 
+	// ties the state to this browser, so a login link started by someone else can't finish in it
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    csrfToken,
+		MaxAge:   500,
+		Path:     "/confirm_login",
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Secure:   https || exthttps,
+	})
+
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -60,11 +74,27 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	state := r.FormValue("state")
+	stateCookie, cookieErr := r.Cookie(oauthStateCookieName)
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    "none",
+		MaxAge:   -1,
+		Path:     "/confirm_login",
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Secure:   https || exthttps,
+	})
+	if cookieErr != nil || state == "" || subtle.ConstantTimeCompare([]byte(stateCookie.Value), []byte(state)) != 1 {
+		CtxLogger(ctx).Info("Oauth state did not match this browser's login")
+		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
+		return
+	}
+
 	if ok, err := CheckCSRFToken(state); !ok {
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
 		} else {
-			CtxLogger(ctx).Infof("Invalid oauth state %s ", state)
+			CtxLogger(ctx).Info("Invalid or expired oauth state")
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -113,9 +143,18 @@ func isLocalRedirect(path string) bool {
 // HandleLogout signs straight back in when given a page to return to, which
 // is how someone switches to another Discord account.
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
+	// logout is a plain link, so refuse one started from another site rather than turning it into a POST
+	if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
 	rawToken := r.Context().Value(common.ContextKeyYagToken)
 	if rawToken != nil {
 		discorddata.EvictSession(rawToken.(string))
+		if err := common.RedisPool.Do(radix.Cmd(nil, "HDEL", "web_sessions", rawToken.(string))); err != nil {
+			CtxLogger(r.Context()).WithError(err).Error("Failed removing session on logout")
+		}
 	}
 
 	redirectTo := "/"
@@ -144,7 +183,6 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 // CreateCSRFToken creates a csrf token and adds it the list
 func CreateCSRFToken() (string, error) {
 	str := RandBase64(32)
-	logger.Infof("generated new CSRF Token %s", str)
 	err := common.MultipleCmds(
 		radix.Cmd(nil, "LPUSH", "csrf", str),
 		radix.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
@@ -160,7 +198,6 @@ func CheckCSRFToken(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	logger.Infof("%s in csrf token list removed with count %d", token, num)
 	return num > 0, nil
 }
 

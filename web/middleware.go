@@ -64,6 +64,11 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		// no other site may frame the control panel (clickjacking)
+		w.Header().Set("Content-Security-Policy", "frame-ancestors 'self'")
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		inner.ServeHTTP(w, r.WithContext(ctx))
 	}
 

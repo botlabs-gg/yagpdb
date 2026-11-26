@@ -302,7 +302,7 @@ func setupRoutes() *goji.Mux {
 	RootMux.Handle(pat.Get("/api/:server"), ServerPublicAPIMux)
 	RootMux.Handle(pat.Get("/api/:server/*"), ServerPublicAPIMux)
 
-	ServerPublicAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChannelPermissions)))
+	ServerPublicAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(RequireServerAdminMiddleware(APIHandler(HandleChannelPermissions))))
 	ServerPublicAPIMux.Handle(pat.Get("/status.json"), RequireActiveServer(APIHandler(HandleGuildStatusJSON)))
 
 	// Server selection has its own handler

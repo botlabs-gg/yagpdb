@@ -314,13 +314,13 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	notificationStatus := "disabled"
 	if general.NotificationChannel != 0 {
 		if channel := ag.GetChannel(general.NotificationChannel); channel != nil {
-			notificationStatus = "#" + channel.Name
+			notificationStatus = "#" + html.EscapeString(channel.Name)
 		} else {
 			notificationStatus = "invalid channel"
 		}
 	}
 
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, enabledDisabled, targetRole, general.Operation, notificationStatus))
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, enabledDisabled, targetRole, html.EscapeString(general.Operation), notificationStatus))
 
 	return templateData, nil
 }

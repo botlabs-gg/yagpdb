@@ -162,8 +162,17 @@ $(function(){
     $.getJSON("https://srhpyqt94yxb.statuspage.io/api/v2/incidents/unresolved.json", function(data) {
         if (data.incidents) {
             data.incidents.forEach(function(incident) {
-                const incidentLink = `<a href="${incident.shortlink}" target="_blank">${incident.name}</a>`
-                addAlertHTML("warning", `Discord's ${incident.status} an incident: ${incidentLink}. Functionality may be limited.`);
+                // third party content, built as text rather than HTML
+                const link = $("<a/>").attr({ target: "_blank", rel: "noopener" }).text(incident.name);
+                if (/^https:\/\//.test(incident.shortlink)) link.attr("href", incident.shortlink);
+                const body = $("<span/>").append(
+                    document.createTextNode("Discord's " + incident.status + " an incident: "),
+                    link,
+                    document.createTextNode(". Functionality may be limited.")
+                );
+                $("<div/>").addClass("row").append(
+                    $("<div/>").addClass("col-lg-12").append($("<div/>").addClass("alert alert-warning").append(body))
+                ).appendTo("#alerts");
             })
         }
     });
