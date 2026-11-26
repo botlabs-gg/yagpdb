@@ -856,14 +856,6 @@ func baseContextFuncs(c *Context) {
 	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
 
-	//TODO: Remove these component functions
-	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
-	c.addContextFunc("sendComponentMessage", c.tmplSendComponentsMessage(true, false))
-	c.addContextFunc("sendComponentMessageNoEscape", c.tmplSendComponentsMessage(false, false))
-	c.addContextFunc("sendComponentMessageNoEscapeRetID", c.tmplSendComponentsMessage(false, true))
-	c.addContextFunc("editComponentMessage", c.tmplEditComponentsMessage(true))
-	c.addContextFunc("editComponentMessageNoEscape", c.tmplEditComponentsMessage(false))
-
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
@@ -1595,66 +1587,6 @@ func (s *ComponentBuilder) ToComplexMessage() (*discordgo.MessageSend, error) {
 
 	if len(componentArgs.Components) > 0 {
 		components, err := CreateComponentArray(&msg.Files, componentArgs)
-		if err != nil {
-			return nil, err
-		}
-
-		err = validateTopLevelComponentsCustomIDs(components, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		msg.Components = components
-	}
-	return msg, nil
-}
-
-func (s *ComponentBuilder) ToComplexMessageEdit() (*discordgo.MessageEdit, error) {
-	empty := ""
-	msg := &discordgo.MessageEdit{
-		AllowedMentions: discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
-		Flags:           discordgo.MessageFlagsIsComponentsV2,
-		Content:         &empty,
-		Embeds:          []*discordgo.MessageEmbed{},
-	}
-
-	componentArgs := &ComponentBuilder{}
-	for i, key := range s.Components {
-		val := s.Values[i]
-
-		switch strings.ToLower(key) {
-		case "allowed_mentions":
-			if val == nil {
-				msg.AllowedMentions = discordgo.AllowedMentions{}
-				continue
-			}
-			parsed, err := parseAllowedMentions(val)
-			if err != nil {
-				return nil, err
-			}
-			msg.AllowedMentions = *parsed
-		case "silent":
-			if val == nil || val == false {
-				continue
-			}
-			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
-		case "ephemeral":
-			if val == nil || val == false {
-				continue
-			}
-			msg.Flags |= discordgo.MessageFlagsEphemeral
-		case "suppress_embeds":
-			if val == nil || val == false {
-				continue
-			}
-			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
-		default:
-			componentArgs.Add(key, val)
-		}
-	}
-
-	if len(componentArgs.Components) > 0 {
-		components, err := CreateComponentArray(nil, componentArgs)
 		if err != nil {
 			return nil, err
 		}
