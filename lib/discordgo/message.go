@@ -119,7 +119,7 @@ type Message struct {
 	Attachments []*MessageAttachment `json:"attachments"`
 
 	// A list of components attached to the message.
-	Components []TopLevelComponent `json:"-"`
+	Components []TopLevelComponent `json:"components"`
 
 	// A list of embeds present in the message. Multiple
 	// embeds can currently only be sent by webhooks.
