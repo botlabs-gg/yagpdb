@@ -17,8 +17,11 @@ const (
 	// hi{2,1000} are common and the largest trigger in use compiles to about 8000, while stacked repeats such
 	// as .{0,999}.{0,999}... reach 20000 and more.
 	MaxTriggerRegexProgramSize = 10000
-	// Leaves room for chunking idioms such as .{1,1000}, which compiles to about 2000.
-	MaxTemplateRegexProgramSize = 10000
+	// Template regexes aren't cached between runs, and word lists built from stored data are common. A word
+	// list compiles to about one instruction per character, so this fits any list held in a single db entry.
+	MaxTemplateRegexProgramSize = 100000
+	// Caps the regexes compiled by one template execution in total.
+	MaxTemplateRegexTotalProgramSize = 200000
 )
 
 // UserRegexCacheBudget is the approximate number of bytes of compiled regexes a user regex cache holds.
@@ -41,23 +44,32 @@ func userRegexProgramSize(pattern string) (int, error) {
 
 // CheckUserRegex returns an error if pattern is invalid or compiles to more than maxProgramSize instructions.
 func CheckUserRegex(pattern string, maxProgramSize int) error {
+	_, err := checkedUserRegexProgramSize(pattern, maxProgramSize)
+	return err
+}
+
+func checkedUserRegexProgramSize(pattern string, maxProgramSize int) (int, error) {
 	n, err := userRegexProgramSize(pattern)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if n > maxProgramSize {
-		return fmt.Errorf("regex is too complex (compiles to %d instructions, max %d), try smaller repeat counts", n, maxProgramSize)
+		return 0, fmt.Errorf("regex is too complex (compiles to %d instructions, max %d), try smaller repeat counts", n, maxProgramSize)
 	}
-	return nil
+	return n, nil
 }
 
-// CompileUserRegex compiles a user supplied regex after checking it with CheckUserRegex.
-func CompileUserRegex(pattern string, maxProgramSize int) (*regexp.Regexp, error) {
-	if err := CheckUserRegex(pattern, maxProgramSize); err != nil {
-		return nil, err
+// CompileUserRegex compiles a user supplied regex after checking it with CheckUserRegex, and returns its
+// program size.
+func CompileUserRegex(pattern string, maxProgramSize int) (*regexp.Regexp, int, error) {
+	n, err := checkedUserRegexProgramSize(pattern, maxProgramSize)
+	if err != nil {
+		return nil, 0, err
 	}
-	return regexp.Compile(pattern)
+
+	re, err := regexp.Compile(pattern)
+	return re, n, err
 }
 
 // cachedUserRegex implements ccache.Sized so the cache's MaxSize acts as a byte budget.
