@@ -1782,11 +1782,15 @@ func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
 		return nil, ErrRegexCacheLimit
 	}
 
-	compiled, err := common.CompileUserRegex(r, common.MaxTemplateRegexProgramSize)
+	compiled, size, err := common.CompileUserRegex(r, common.MaxTemplateRegexProgramSize)
 	if err != nil {
 		return nil, err
 	}
 
+	if c.regexProgramSize+size > common.MaxTemplateRegexTotalProgramSize {
+		return nil, fmt.Errorf("regexes in this command are too complex in total (compile to %d instructions, max %d)", c.regexProgramSize+size, common.MaxTemplateRegexTotalProgramSize)
+	}
+	c.regexProgramSize += size
 	c.RegexCache[r] = compiled
 
 	return compiled, nil

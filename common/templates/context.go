@@ -255,7 +255,8 @@ type Context struct {
 
 	IsPremium bool
 
-	RegexCache map[string]*regexp.Regexp
+	RegexCache       map[string]*regexp.Regexp
+	regexProgramSize int
 
 	CurrentFrame *ContextFrame
 
